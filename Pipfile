@@ -1,0 +1,12 @@
+[packages]
+
+[dev-packages]
+"flake8" = "*"
+sphinx-click = "*"
+pytest = "*"
+mock = "*"
+sphinx = "*"
+twine = "*"
+pytest-xdist = "*"
+invoke = "*"
+"e1839a8" = {path = ".", editable = true}
