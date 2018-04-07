@@ -32,7 +32,13 @@ tests_require = [
     'pytest',
     'pytest-xdist',
 ]
-
+install_requires = [
+    'packaging',
+    'pathlib2; python_version < "3.0"',
+    'six',
+    'delegator.py',
+    'pep514tools',
+]
 
 setup(
     name="pythonfinder",
@@ -62,7 +68,7 @@ setup(
     package_dir={"": "src"},
     packages=find_packages(
         where="src",
-        exclude=["docs", "tests*", "tasks"],
+        exclude=["docs", "tests*"],
     ),
     entry_points={
         "console_scripts": [

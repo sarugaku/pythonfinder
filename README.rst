@@ -7,6 +7,7 @@ Installation
 Install from `PyPI`_:
 
   ::
+  
     $ pipenv install --pre pythonfinder
 
 Install from `Github`_:

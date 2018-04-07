@@ -1,5 +1,0 @@
-packaging==17.1
-pathlib2==2.3.0
-scandir==1.7
-six==1.11.0
-delegator.py==0.1.0
