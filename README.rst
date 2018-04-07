@@ -37,6 +37,13 @@ Using PythonFinder is easy.  Simply import it and ask for a python:
     >>> PythonFinder.from_version('2.7')
     '/home/techalchemy/.pyenv/versions/2.7.14/python'
 
+PythonFinder can even find beta releases!
+
+  ::
+  
+    >>> PythonFinder.from_version('3.7')
+    '/home/techalchemy/.pyenv/versions/3.7.0b1/bin/python'
+
 Windows Support
 ****************
 

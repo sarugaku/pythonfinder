@@ -2,11 +2,11 @@
 import os
 import six
 import delegator
-packaging.version import parse as parse_version
+from packaging.version import parse as parse_version
 try:
     from pathlib import Path
 except ImportError:
-    pathlib2 import Path
+    from pathlib2 import Path
 
 
 PYENV_INSTALLED = (bool(os.environ.get('PYENV_SHELL')) or bool(os.environ.get('PYENV_ROOT')))
@@ -94,7 +94,7 @@ class PythonFinder(PathFinder):
 
     @classmethod
     def from_windows_finder(cls, version):
-        from pep514tools import environment
+        from pythonfinder._vendor.pep514tools import environment
         versions = environment.find(version)
         path = None
         for version_object in versions:

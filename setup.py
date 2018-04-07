@@ -4,7 +4,7 @@ import os
 import re
 import sys
 
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, Command
 
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -25,6 +25,9 @@ def find_version(*file_paths):
         return version_match.group(1)
     raise RuntimeError("Unable to find version string.")
 
+if sys.argv[-1] == "publish":
+    os.system("python setup.py sdist bdist_wheel upload")
+    sys.exit()
 
 long_description = read('README.rst')
 
@@ -33,12 +36,45 @@ tests_require = [
     'pytest-xdist',
 ]
 install_requires = [
+    'click',
     'packaging',
     'pathlib2; python_version < "3.0"',
     'six',
     'delegator.py',
-    'pep514tools',
 ]
+
+
+class UploadCommand(Command):
+    """Support setup.py publish."""
+    description = 'Build and publish the package.'
+    user_options = []
+
+    @staticmethod
+    def status(s):
+        """Prints things in bold."""
+        print('\033[1m{0}\033[0m'.format(s))
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        try:
+            self.status('Removing previous builds…')
+            rmtree(os.path.join(here, 'dist'))
+        except FileNotFoundError:
+            pass
+        self.status('Building Source distribution…')
+        os.system('{0} setup.py sdist'.format(sys.executable))
+        self.status('Uploading the package to PyPi via Twine…')
+        os.system('twine upload dist/*')
+        self.status('Pushing git tags…')
+        os.system('git tag v{0}'.format(find_version("src", "pythonfinder", "__init__.py")))
+        os.system('git push --tags')
+        sys.exit()
+
 
 setup(
     name="pythonfinder",
@@ -78,9 +114,7 @@ setup(
     tests_require=tests_require,
     zip_safe=False,
     python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*',
-    install_requires=[
-        'click',
-    ],
+    install_requires=install_requires,
     extras_require={
         'testing': tests_require,
     },
