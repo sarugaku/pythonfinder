@@ -74,9 +74,9 @@ class PythonFinder(PathFinder):
         if os.path.isabs(python) and os.access(python, os.X_OK):
             return python
         if python.startswith('py'):
-            windows_finder, version = python.split(' ', 1)
-            if windows_finder == 'py' and version.startswith('-'):
-                version = version.strip('-').split(' ', 1)[0]
+            windows_finder = python.split()
+            if len(windows_finder) > 1 and windows_finder[0] == 'py' and windows_finder[1].startswith('-'):
+                version = windows_finder[1].strip('-').split()[0]
                 return cls.from_version(version)
             return cls.WHICH_PYTHON.get(python) or cls.which(python)
 
