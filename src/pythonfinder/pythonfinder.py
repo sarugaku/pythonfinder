@@ -43,6 +43,7 @@ class PathFinder(object):
     @classmethod
     def _populate_which_dict(cls):
         for path in os.environ.get('PATH', '').split(os.pathsep):
+            path = os.path.expandvars(path)
             files = os.listdir(path)
             for fn in files:
                 full_path = os.sep.join([path, fn])
