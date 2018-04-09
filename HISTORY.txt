@@ -1,3 +1,6 @@
+0.0.2dev0
+- Documentation updates
+- Windows finder variable expansion
 0.0.1dev0
 - Initial commit
 - Base functionality

@@ -74,6 +74,10 @@ class PythonFinder(PathFinder):
         if os.path.isabs(python) and os.access(python, os.X_OK):
             return python
         if python.startswith('py'):
+            windows_finder, version = python.split(' ', 1)
+            if windows_finder == 'py' and version.startswith('-'):
+                version = version.strip('-').split(' ', 1)[0]
+                return cls.from_version(version)
             return cls.WHICH_PYTHON.get(python) or cls.which(python)
 
     @classmethod
@@ -114,6 +118,7 @@ class PythonFinder(PathFinder):
         runtime_execs = []
         exts = list(filter(None, os.environ.get('PATHEXT', '').split(os.pathsep)))
         for path in os.environ.get('PATH', '').split(os.pathsep):
+            path = os.path.expandvars(path)
             from glob import glob
             pythons = glob(os.sep.join([path, 'python*']))
             execs = [match for rule in match_rules for match in fnmatch.filter(pythons, rule)]

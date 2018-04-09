@@ -30,7 +30,7 @@ Using PythonFinder is easy.  Simply import it and ask for a python:
 
   ::
   
-    >>> from pythonfinder import PythonFinder
+    >>> from pythonfinder.pythonfinder import PythonFinder
     >>> PythonFinder.from_line('python3')
     '/home/techalchemy/.pyenv/versions/3.6.5/python3'
     
@@ -52,13 +52,16 @@ PythonFinder natively supports windows via both the *PATH* environment variable 
   ::
   
     >>> PythonFinder.from_line('python')
-    "C:\\Program\\\\ Files\\Python36\\python.exe"
+    WindowsPath('C:/Program Files/Python36/python.exe')
     
     >>> PythonFinder.from_version('2.7')
-    "C:\\Python27\\python.exe"
-    
+    WindowsPath('C:/Python27/python.exe')
+
+    >>> PythonFinder.from_version('3.6')
+    WindowsPath('C:/Program Files/Python36/python.exe')
+
     >>> PythonFinder.from_line('py -3')
-    "C:\\Program\\\\ Files\\Python36\\python.exe"
+    WindowsPath('C:/Program Files/Python36/python.exe')
 
 Integrations
 *************
