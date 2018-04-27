@@ -1,0 +1,15 @@
+diff --git a/src/pythonfinder/_vendor/pep514tools/_registry.py b/src/pythonfinder/_vendor/pep514tools/_registry.py
+index 31c6d5a..2611f60 100644
+--- a/src/pythonfinder/_vendor/pep514tools/_registry.py
++++ b/src/pythonfinder/_vendor/pep514tools/_registry.py
+@@ -109,8 +109,8 @@ class RegistryAccessor(object):
+             with winreg.OpenKeyEx(self._root, self.subkey, 0, winreg.KEY_READ | self._flags) as key:
+                 for i in count():
+                     subkey_names.append(winreg.EnumKey(key, i))
+-            except OSError:
+-                pass
++        except OSError:
++            pass
+         return iter(self[k] for k in subkey_names)
+ 
+     def __getitem__(self, key):
