@@ -108,7 +108,7 @@ setup(
     ),
     entry_points={
         "console_scripts": [
-            "pyfinder=pythonfinder:cli",
+            "pyfinder=pythonfinder.cli:cli",
         ],
     },
     tests_require=tests_require,
