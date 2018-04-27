@@ -9,4 +9,5 @@ sphinx = "*"
 twine = "*"
 pytest-xdist = "*"
 invoke = "*"
+crayons = "*"
 "e1839a8" = {path = ".", editable = true}

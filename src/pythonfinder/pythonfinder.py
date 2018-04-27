@@ -153,6 +153,8 @@ class PythonFinder(PathFinder):
     @classmethod
     def register_python(cls, path, full_version, pre=False, pyenv=False):
         parsed_version = parse_version(full_version)
+        if isinstance(parsed_version._version, str):
+            return
         pre = pre or parsed_version.is_prerelease
         major_minor = '.'.join(['{0}'.format(v) for v in parsed_version._version.release[:2]])
         major = '{0}'.format(parsed_version._version.release[0])
@@ -172,7 +174,7 @@ class PythonFinder(PathFinder):
                     cls.PYTHON_VERSIONS[v] = path
         else:
             for v in[full_version, major_minor, major]:
-                if (not cls.PYENV_VERSIONS.get(v) and (v == major and not pre) or v != major) or cls.MAX_PYTHON[v] == full_version:
+                if (not cls.PYENV_VERSIONS.get(v) and (v == major and not pre) or v != major) or cls.MAX_PYTHON.get(v) == full_version:
                     cls.PYENV_VERSIONS[v] = path
             if not cls.PYTHON_VERSIONS.get(full_version):
                 cls.PYTHON_VERSIONS[full_version] = path
