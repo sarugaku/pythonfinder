@@ -105,8 +105,8 @@ class RegistryAccessor(object):
 
     def __iter__(self):
         subkey_names = []
-        with winreg.OpenKeyEx(self._root, self.subkey, 0, winreg.KEY_READ | self._flags) as key:
-            try:
+        try:
+            with winreg.OpenKeyEx(self._root, self.subkey, 0, winreg.KEY_READ | self._flags) as key:
                 for i in count():
                     subkey_names.append(winreg.EnumKey(key, i))
             except OSError:

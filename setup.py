@@ -62,11 +62,6 @@ class UploadCommand(Command):
         pass
 
     def run(self):
-        try:
-            self.status('Removing previous builds…')
-            rmtree(os.path.join(here, 'dist'))
-        except FileNotFoundError:
-            pass
         self.status('Building Source distribution…')
         os.system('{0} setup.py sdist'.format(sys.executable))
         self.status('Uploading the package to PyPi via Twine…')
