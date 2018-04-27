@@ -41,6 +41,7 @@ install_requires = [
     'pathlib2; python_version < "3.0"',
     'six',
     'delegator.py',
+    'crayons',
 ]
 
 
