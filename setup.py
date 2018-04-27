@@ -41,6 +41,7 @@ install_requires = [
     'pathlib2; python_version < "3.0"',
     'six',
     'delegator.py',
+    'crayons',
 ]
 
 
@@ -108,7 +109,7 @@ setup(
     ),
     entry_points={
         "console_scripts": [
-            "pyfinder=pythonfinder:cli",
+            "pyfinder=pythonfinder.cli:cli",
         ],
     },
     tests_require=tests_require,
