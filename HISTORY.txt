@@ -1,10 +1,19 @@
+0.0.5
+ - path cleanup for output
+ - fix windows major version tracking
+ - track achitectures
+0.0.4
+ - Windows fixes
+ - pep514 patch to fix environment.findall
+0.0.3
+ - Fix finder for pyenv
 0.0.2dev2
-- Bugfix
+ - Bugfix
 0.0.2dev1
-- Finder bugfix
+ - Finder bugfix
 0.0.2dev0
-- Documentation updates
-- Windows finder variable expansion
+ - Documentation updates
+ - Windows finder variable expansion
 0.0.1dev0
-- Initial commit
-- Base functionality
+ - Initial commit
+ - Base functionality

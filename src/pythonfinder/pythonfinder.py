@@ -1,8 +1,10 @@
 # -*- coding=utf-8 -*-
 import os
-import six
+import sys
 import delegator
+import platform
 from packaging.version import parse as parse_version
+from collections import defaultdict
 try:
     from pathlib import Path
 except ImportError:
@@ -11,6 +13,13 @@ except ImportError:
 
 PYENV_INSTALLED = (bool(os.environ.get('PYENV_SHELL')) or bool(os.environ.get('PYENV_ROOT')))
 PYENV_ROOT = os.environ.get('PYENV_ROOT', os.path.expanduser('~/.pyenv'))
+IS_64BIT_OS = None
+SYSTEM_ARCH = platform.architecture()[0]
+
+if sys.maxsize > 2**32:
+    IS_64BIT_OS = (platform.machine() == 'AMD64')
+else:
+    IS_64BIT_OS = False
 
 
 def shellquote(s):
@@ -62,6 +71,7 @@ class PythonFinder(PathFinder):
     PYTHON_VERSIONS = {}
     PYTHON_PATHS = {}
     MAX_PYTHON = {}
+    PYTHON_ARCHS = defaultdict(dict)
     WHICH_PYTHON = {}
     RUNTIMES = ['python', 'pypy', 'ipy', 'jython', 'pyston']
 
@@ -82,12 +92,12 @@ class PythonFinder(PathFinder):
             return cls.WHICH_PYTHON.get(python) or cls.which(python)
 
     @classmethod
-    def from_version(cls, version):
+    def from_version(cls, version, architecture=None):
         guess = cls.PYTHON_VERSIONS.get(cls.MAX_PYTHON.get(version, version))
         if guess:
             return guess
         if os.name == 'nt':
-            path = cls.from_windows_finder(version)
+            path = cls.from_windows_finder(version, architecture)
         else:
             parsed_version = parse_version(version)
             full_version = parsed_version.base_version
@@ -95,22 +105,32 @@ class PythonFinder(PathFinder):
                 path = cls.from_pyenv(full_version)
             else:
                 path = cls._crawl_path_for_version(full_version)
+        if path and not isinstance(path, Path):
+            path = Path(path)
         return path
 
     @classmethod
-    def from_windows_finder(cls, version):
+    def from_windows_finder(cls, version=None, arch=None):
+        if not cls.PYTHON_VERSIONS:
+            cls._populate_windows_python_versions()
+        if arch:
+            return cls.PYTHON_ARCHS[version][arch]
+        return cls.PYTHON_VERSIONS[version]
+
+    @classmethod
+    def _populate_windows_python_versions(cls):
         from pythonfinder._vendor.pep514tools import environment
-        versions = environment.find(version)
+        versions = environment.findall()
         path = None
         for version_object in versions:
             path = Path(version_object.info.install_path.__getattr__('')).joinpath('python.exe')
             version = version_object.info.sys_version
             full_version = version_object.info.version
-            for v in [version, full_version]:
+            architecture = getattr(version_object, 'sys_architecture', SYSTEM_ARCH)
+            for v in [version, full_version, architecture]:
                 if not cls.PYTHON_VERSIONS.get(v):
                     cls.PYTHON_VERSIONS[v] = '{0}'.format(path)
-            cls.register_python(path, full_version)
-        return cls.PYTHON_VERSIONS[version]
+            cls.register_python(path, full_version, architecture)
 
     @classmethod
     def _populate_python_versions(cls):
@@ -151,9 +171,18 @@ class PythonFinder(PathFinder):
         return cls.PYENV_VERSIONS[version]
 
     @classmethod
-    def register_python(cls, path, full_version, pre=False, pyenv=False):
+    def register_python(cls, path, full_version, pre=False, pyenv=False, arch=None):
+        if not arch:
+            import platform
+            arch, _ = platform.architecture()
         parsed_version = parse_version(full_version)
         if isinstance(parsed_version._version, str):
+            if arch == SYSTEM_ARCH or SYSTEM_ARCH.startswith(str(arch)):
+                cls.PYTHON_VERSIONS[parsed_version._version] = path
+            cls.MAX_PYTHON[parsed_version._version] = parsed_version._version
+            cls.PYTHON_VERSION[parsed_version._version] = parsed_version._version
+            cls.PYTHON_PATHS[path] = parsed_version._version
+            cls.PYTHON_ARCHS[parsed_version._version][arch] = path
             return
         pre = pre or parsed_version.is_prerelease
         major_minor = '.'.join(['{0}'.format(v) for v in parsed_version._version.release[:2]])
@@ -165,19 +194,27 @@ class PythonFinder(PathFinder):
                     cls.MAX_PYTHON[full_version] = parsed_version.base_version
             cls.MAX_PYTHON[major_minor] = parsed_version.base_version
             cls.PYTHON_VERSIONS[major_minor] = path
-            if parsed_version > parse_version(cls.MAX_PYTHON.get(major, '0.0.0')):
-                cls.MAX_PYTHON[major] = parsed_version.base_version
-                cls.PYTHON_VERSIONS[major] = path
+            if arch == SYSTEM_ARCH or SYSTEM_ARCH.startswith(str(arch)):
+                if parsed_version > parse_version(cls.MAX_PYTHON.get(major, '0.0.0')):
+                    cls.MAX_PYTHON[major] = parsed_version.base_version
+                    cls.PYTHON_VERSIONS[major] = path
         if not pyenv:
             for v in [full_version, major_minor, major]:
-                if not cls.PYTHON_VERSIONS.get(v) or cls.MAX_PYTHON[v] == full_version:
-                    cls.PYTHON_VERSIONS[v] = path
+                if not cls.PYTHON_VERSIONS.get(v) or cls.MAX_PYTHON.get(v) == full_version:
+                    if cls.MAX_PYTHON.get(v) == full_version and not (arch == SYSTEM_ARCH or SYSTEM_ARCH.startswith(str(arch))):
+                        pass
+                    else:
+                        cls.PYTHON_VERSIONS[v] = path
+                if not cls.PYTHON_ARCHS.get(v, {}).get(arch):
+                    cls.PYTHON_ARCHS[v][arch] = path
         else:
-            for v in[full_version, major_minor, major]:
+            for v in [full_version, major_minor, major]:
                 if (not cls.PYENV_VERSIONS.get(v) and (v == major and not pre) or v != major) or cls.MAX_PYTHON.get(v) == full_version:
                     cls.PYENV_VERSIONS[v] = path
             if not cls.PYTHON_VERSIONS.get(full_version):
                 cls.PYTHON_VERSIONS[full_version] = path
+            if not cls.PYTHON_ARCHS.get(v, {}).get(arch):
+                    cls.PYTHON_ARCHS[v][arch] = path
 
     @classmethod
     def populate_pyenv_runtimes(cls):
