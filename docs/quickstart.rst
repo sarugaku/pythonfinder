@@ -13,8 +13,8 @@ PythonFinder: Cross Platform Search Tool for Finding Pythons
 .. image:: https://img.shields.io/badge/Say%20Thanks-!-1EAEDB.svg
     :target: https://saythanks.io/to/techalchemy
 
-.. image:: https://readthedocs.org/projects/pythonfinder/badge/?version=latest
-    :target: http://pythonfinder.readthedocs.io/en/latest/?badge=latest
+.. image:: https://readthedocs.org/projects/pythonfinder/badge/?version=master
+    :target: http://pythonfinder.readthedocs.io/en/master/?badge=master
     :alt: Documentation Status
 
 
