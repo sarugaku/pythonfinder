@@ -112,19 +112,16 @@ extlinks = {
     'pull': ('https://github.com/techalchemy/pythonfinder/pull/%s', 'PR #'),
 }
 html_theme_options = {
-    # 'collapsiblesidebar': True,
-    # 'externalrefs': True,
-    # 'issues_url': 'https://github.com/techalchemy/pythonfinder/issues',
     'display_version': True,
     'prev_next_buttons_location': 'bottom',
-    # 'style_external_links': False,
-    # 'vcs_pageview_mode': '',
+    'style_external_links': True,
+    'vcs_pageview_mode': '',
     # Toc options
     'collapse_navigation': True,
     'sticky_navigation': True,
     'navigation_depth': 4,
     'includehidden': True,
-    # 'titles_only': False
+    'titles_only': False
 }
 smart_quotes = False
 
