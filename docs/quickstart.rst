@@ -34,7 +34,7 @@ Install from `Github`_:
     $ pipenv install -e git+https://github.com/techalchemy/pythonfinder.git#egg=pythonfinder
 
 
-.. _PyPI: https://www.pypi.org/projects/pythonfinder
+.. _PyPI: https://www.pypi.org/project/pythonfinder
 .. _Github: https://github.com/techalchemy/pythonfinder
 
 
