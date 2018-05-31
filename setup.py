@@ -42,6 +42,7 @@ install_requires = [
     'six',
     'delegator.py',
     'crayons',
+    'attrs',
 ]
 
 

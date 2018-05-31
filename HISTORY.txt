@@ -1,3 +1,9 @@
+0.0.6
+ - Fix imports.
+ - Prepend paths to os path rather than overriding.
+ - Handle not found errors when populating which dict.
+ - Allow paths to be passed in properly for virtualenv detection.
+ - Allow output of all python versions.
 0.0.5
  - path cleanup for output
  - fix windows major version tracking

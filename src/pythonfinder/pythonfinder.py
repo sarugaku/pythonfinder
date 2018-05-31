@@ -38,22 +38,49 @@ def shellquote(s):
 
 class PathFinder(object):
     WHICH = {}
+    PATH = None
 
-    def __init__(self, path=None):
-        self.path = path if path else os.environ.get('PATH')
+    def __init__(self, path=None, system=False):
+        """A generic object for locating files on the system path.
+
+        :param str path: OS Formatted path to prepend to OS environment, defaults to None
+        :param bool system: When true, append paths instead of prepending, defaults to False
+        """
+
+        search = os.environ.get('PATH')
+        if path:
+            if system:
+                path = os.pathsep.join([os.path.dirname(sys.executable), search, path])
+            else:
+                path = os.pathsep.join([path, search])
+        else:
+            if system:
+                path = os.pathsep.join([os.path.dirname(sys.executable), search])
+        PathFinder.PATH = path if path else os.environ.get('PATH')
         self._populate_which_dict()
 
     @classmethod
     def which(cls, cmd):
+        """Find a system executable, respecting the set order of the path provided.
+
+        :param cmd: The command to search for.
+        :type cmd: str
+        :return: The path to the command requested.
+        :rtype: str
+        """
+
         if not cls.WHICH:
             cls._populate_which_dict()
         return cls.WHICH.get(cmd, cmd)
 
     @classmethod
     def _populate_which_dict(cls):
-        for path in os.environ.get('PATH', '').split(os.pathsep):
+        for path in cls.PATH.split(os.pathsep):
             path = os.path.expandvars(path)
-            files = os.listdir(path)
+            try:
+                files = os.listdir(path)
+            except OSError:
+                continue
             for fn in files:
                 full_path = os.sep.join([path, fn])
                 if os.access(full_path, os.X_OK) and not os.path.isdir(full_path):
@@ -75,13 +102,68 @@ class PythonFinder(PathFinder):
     WHICH_PYTHON = {}
     RUNTIMES = ['python', 'pypy', 'ipy', 'jython', 'pyston']
 
-    def __init__(self, path=None, version=None, full_version=None):
+    def __init__(self, path=None, venv=None, system=False, version=None, full_version=None):
+        """Finder class for finding python and related executables across platforms/envs.
+
+        :param path: OS formatted path to prepend to os.environ['PATH'], defaults to None
+        :param path: str, optional
+        :param venv: Virtualenv root to search, prepends bin directory to path, defaults to None
+        :param venv: str, optional
+        :param system: When `True`, append to the path instead of prepending, defaults to False
+        :param system: bool, optional
+        :param version: Python version to search for, defaults to None
+        :param version: str, optional
+        :param full_version: Full python version to search for, defaults to None
+        :param full_version: str, optional
+        """
+
         self.version = version
+        if venv:
+            bin_dir = 'Scripts' if os.name == 'nt' else 'bin'
+            venv_search_loc = os.path.abspath(os.path.join(venv, bin_dir))
+            if path:
+                path = os.pathsep.join([venv_search_loc, path])
+            else:
+                path = venv_search_loc
         self.full_version = full_version
-        super(PythonFinder, self).__init__(path=path)
+        super(PythonFinder, self).__init__(path=path, system=system)
+
+    def get_pyenv_versions(self):
+        """Refresh the internal mapping of pyenv runtimes and return a map of versions to paths.
+
+        :return: A dictionary mapping pyenv versions to respective paths.
+        :rtype: dict
+        """
+
+        if not PYENV_INSTALLED:
+            return {}
+        self._populate_pyenv_runtimes()
+        return self.PYENV_VERSIONS
+
+    def get_python_paths(self):
+        """Refresh python path mapping and return it.
+
+        :return: A mapping of python paths to python versions.
+        :rtype: dict
+        """
+
+        if not self.PYTHON_PATHS:
+            if os.name == 'nt':
+                self._populate_windows_python_versions()
+            else:
+                self._populate_python_versions()
+        return self.PYTHON_PATHS
 
     @classmethod
     def from_line(cls, python):
+        """Given an ambiguous python line (path, launcher input, or exe name), find it and return its path.
+
+        :param python: Ambiguous input referring to a python executable of some kind.
+        :type python: str
+        :return: Path to the referenced python executable.
+        :rtype: str
+        """
+
         if os.path.isabs(python) and os.access(python, os.X_OK):
             return python
         if python.startswith('py'):
@@ -93,6 +175,23 @@ class PythonFinder(PathFinder):
 
     @classmethod
     def from_version(cls, version, architecture=None):
+        """Given a version specifier, find the matching path on the filesystem and return it.
+
+        :param version: A version of python.
+        :type version: str
+        :param architecture: System architecture (windows only), defaults to None
+        :param architecture: str, optional
+        :return: Path to python executable.
+        :rtype: :class:`pathlib.Path`
+
+        For example:
+
+          ::
+
+            >>> PythonFinder.from_version('2.7', architecture='64bit')
+            WindowsPath('C:/Python27/python.exe')
+        """
+
         guess = cls.PYTHON_VERSIONS.get(cls.MAX_PYTHON.get(version, version))
         if guess:
             return guess
@@ -138,7 +237,7 @@ class PythonFinder(PathFinder):
         match_rules = ['*python', '*python?', '*python?.?', '*python?.?m']
         runtime_execs = []
         exts = list(filter(None, os.environ.get('PATHEXT', '').split(os.pathsep)))
-        for path in os.environ.get('PATH', '').split(os.pathsep):
+        for path in cls.PATH.split(os.pathsep):
             path = os.path.expandvars(path)
             from glob import glob
             pythons = glob(os.sep.join([path, 'python*']))
@@ -180,7 +279,7 @@ class PythonFinder(PathFinder):
             if arch == SYSTEM_ARCH or SYSTEM_ARCH.startswith(str(arch)):
                 cls.PYTHON_VERSIONS[parsed_version._version] = path
             cls.MAX_PYTHON[parsed_version._version] = parsed_version._version
-            cls.PYTHON_VERSION[parsed_version._version] = parsed_version._version
+            cls.PYTHON_VERSIONS[parsed_version._version] = parsed_version._version
             cls.PYTHON_PATHS[path] = parsed_version._version
             cls.PYTHON_ARCHS[parsed_version._version][arch] = path
             return
