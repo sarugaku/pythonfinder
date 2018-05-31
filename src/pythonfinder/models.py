@@ -1,9 +1,10 @@
 # -*- coding=utf-8 -*-
 import attr
 import os
-import subprocess
+import delegator
 import sys
 from collections import defaultdict
+from fnmatch import fnmatch
 from packaging.version import parse as parse_version, Version
 
 try:
@@ -18,22 +19,14 @@ PYTHON_IMPLEMENTATIONS = (
     'pypy',
 )
 
-KNOWN_EXTS = {'exe', 'py', 'fish', 'sh'}
+KNOWN_EXTS = {'exe', 'py', 'fish', 'sh', ''}
 KNOWN_EXTS = KNOWN_EXTS | set(filter(None, os.environ.get('PATHEXT', '').split(os.pathsep)))
-
-
-def _run(arg_list):
-    """Wrapper around `subprocess.check_output` with decoding for bytestrings."""
-    result = subprocess.check_output(arg_list)
-    if hasattr(result, 'decode'):
-        result = result.decode()
-    return result.strip()
 
 
 def get_python_version(path):
     """Get python version string using subprocess from a given path."""
     version_cmd = [path, "-c", "import sys; print(sys.version.split()[0])"]
-    return _run(version_cmd)
+    return delegator.run(version_cmd).out.strip()
 
 
 def optional_instance_of(cls):
@@ -88,7 +81,7 @@ class PathEntry(object):
 
     @property
     def is_python(self):
-        return (self.is_executable and any(self.path.name.lower().startswith(py_name) for py_name in PYTHON_IMPLEMENTATIONS) and not any(self.path.name.lower().endswith(bad_name) for bad_name in ['-config', '-build']))
+        return self.is_executable and PythonVersion.is_python_name(self.path.name)
 
 
 @attr.s
@@ -169,6 +162,9 @@ class PythonVersion(object):
     @classmethod
     def parse(cls, version):
         version = parse_version(version)
+        if not version or not version.release:
+            raise ValueError('Not a valid python version: %r' % version)
+            return
         if len(version.release) >= 3:
             major, minor, patch = version.release[:3]
         elif len(version.release) == 2:
@@ -188,16 +184,30 @@ class PythonVersion(object):
             'version': version,
         }
 
+    @staticmethod
+    def is_python_name(name):
+        rules = ['*python', '*python?', '*python?.?', '*python?.?m']
+        match_rules = []
+        for rule in rules:
+            match_rules.extend([
+                '{0}.{1}'.format(rule, ext) if ext else '{0}'.format(rule) for ext in KNOWN_EXTS
+            ])
+        if not any(name.lower().startswith(py_name) for py_name in PYTHON_IMPLEMENTATIONS):
+            return False
+        return any(fnmatch(name, rule) for rule in match_rules)
+
     @classmethod
     def from_path(cls, path):
         if not isinstance(path, PathEntry):
             path = PathEntry(path)
         if not path.is_python:
             raise ValueError('Not a valid python path: %s' % path.path)
-        try:
-            instance_dict = cls.parse(get_python_version(str(path.path)))
-        except subprocess.CalledProcessError:
+            return
+        py_version = get_python_version(str(path.path))
+        instance_dict = cls.parse(py_version)
+        if not isinstance(instance_dict.get('version'), Version):
             raise ValueError('Not a valid python path: %s' % path.path)
+            return
         instance_dict.update({'comes_from': path})
         return cls(**instance_dict)
 
