@@ -26,8 +26,7 @@ class Finder(object):
         return self._windows_finder
 
     def which(self, exe):
-        p = SystemPath.create()
-        return p.which(exe)
+        return self.system_path.which(exe)
 
     def find_python_version(self, major, minor=None, patch=None, pre=False, dev=False):
         if major and not minor and not patch and not pre and not dev and '.' in major:

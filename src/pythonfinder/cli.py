@@ -18,7 +18,7 @@ from .pythonfinder import Finder
 def cli(
     ctx, find=False, which=False, findall=False
 ):
-    if not find and not findall:
+    if not find and not findall and not which:
         click.echo('Please provide a command', color='red')
         sys.exit(1)
     finder = Finder()
@@ -32,7 +32,7 @@ def cli(
             click.echo('Found Python Version: {0}'.format(found), color='white')
             sys.exit(0)
     elif which:
-        found = finder.system_path.which(find.strip())
+        found = finder.system_path.which(which.strip())
         if found:
             click.echo('Found Executable: {0}'.format(found), color='white')
             sys.exit(0)
