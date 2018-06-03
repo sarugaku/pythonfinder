@@ -4,7 +4,7 @@ import platform
 from fnmatch import fnmatch
 from packaging.version import parse as parse_version, Version
 from ..environment import SYSTEM_ARCH
-from ..utils import KNOWN_EXTS, PYTHON_IMPLEMENTATIONS, _filter_none, optional_instance_of, get_python_version
+from ..utils import KNOWN_EXTS, PYTHON_IMPLEMENTATIONS, _filter_none, optional_instance_of, get_python_version, ensure_path
 
 
 try:
@@ -94,7 +94,7 @@ class PythonVersion(object):
         if not isinstance(instance_dict.get('version'), Version):
             raise ValueError('Not a valid python path: %s' % path.path)
             return
-        architecture, _ = platform.architecture(str(path.path))
+        architecture, _ = platform.architecture(path.path.as_posix())
         instance_dict.update({'comes_from': path, 'architecture': architecture})
         return cls(**instance_dict)
 

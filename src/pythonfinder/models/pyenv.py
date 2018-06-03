@@ -4,7 +4,7 @@ from collections import defaultdict
 from . import BaseFinder
 from .path import VersionPath
 from .python import PythonVersion
-from ..utils import optional_instance_of
+from ..utils import optional_instance_of, ensure_path
 
 
 try:
@@ -35,6 +35,5 @@ class PyenvFinder(BaseFinder):
 
     @classmethod
     def create(cls, root):
-        if not isinstance(root, Path):
-            root = Path(root)
+        root = ensure_path(root)
         return cls(root=root)

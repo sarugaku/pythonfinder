@@ -5,12 +5,7 @@ from collections import defaultdict
 from . import BaseFinder
 from .path import VersionPath
 from .python import PythonVersion
-
-
-try:
-    from pathlib import Path
-except ImportError:
-    from pathlib2 import Path
+from ..utils import ensure_path
 
 
 @attr.s
@@ -24,7 +19,7 @@ class WindowsFinder(BaseFinder):
         env_versions = pep514env.findall()
         path = None
         for version_object in env_versions:
-            path = Path(version_object.info.install_path.__getattr__(''))
+            path = ensure_path(version_object.info.install_path.__getattr__(''))
             version = version_object.info.sys_version
             py_version = PythonVersion.from_windows_launcher(version_object)
             default_path = path / 'python.exe'

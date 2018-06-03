@@ -73,6 +73,20 @@ def path_is_python(path):
     return path_is_executable(path) and is_python_name(path.name)
 
 
+def ensure_path(path):
+    """Given a path (either a string or a Path object), expand variables and return a Path object.
+
+    :param path: A string or a :class:`~pathlib.Path` object.
+    :type path: str or :class:`~pathlib.Path`
+    :return: A fully expanded Path object.
+    :rtype: :class:`~pathlib.Path`
+    """
+
+    if isinstance(path, Path):
+        return Path(os.path.expandvars(path.as_posix()))
+    return Path(os.path.expandvars(path))
+
+
 def _filter_none(k, v):
     if v:
         return True

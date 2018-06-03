@@ -7,7 +7,7 @@ from collections import defaultdict
 from . import BasePath
 from .python import PythonVersion
 from ..environment import PYENV_INSTALLED, PYENV_ROOT
-from ..utils import optional_instance_of, filter_pythons, path_is_known_executable, is_python_name
+from ..utils import optional_instance_of, filter_pythons, path_is_known_executable, is_python_name, ensure_path
 
 try:
     from pathlib import Path
@@ -207,11 +207,12 @@ class PathEntry(BasePath):
         :rtype: :class:`pythonfinder.models.PathEntry`
         """
 
-        _new = cls(path=Path(os.path.expandvars(str(path))), is_root=is_root, only_python=only_python, pythons=None)
+        target = ensure_path(path)
+        _new = cls(path=target, is_root=is_root, only_python=only_python, pythons=pythons)
         if pythons and only_python:
             children = {}
             for pth, python in pythons.items():
-                pth = Path(os.path.expandvars(str(pth)))
+                pth = ensure_path(pth)
                 children[pth.as_posix()] = PathEntry(path=pth, is_root=False, only_python=only_python, py_version=python)
             _new._children = children
         return _new
@@ -242,8 +243,7 @@ class VersionPath(SystemPath):
         """Accepts a path to a base python version directory.
 
         Generates the pyenv version listings for it"""
-        if not isinstance(path, Path):
-            path = Path(path)
+        path = ensure_path(path)
         path_entries = defaultdict(PathEntry)
         if not path.name.lower() in ['scripts', 'bin']:
             bin_name = 'Scripts' if os.name == 'nt' else 'bin'
