@@ -34,7 +34,10 @@ class WindowsFinder(BaseFinder):
             path = Path(version_object.info.install_path.__getattr__(''))
             version = version_object.info.sys_version
             py_version = PythonVersion.from_windows_launcher(version_object)
-            exe_path = version_object.info.install_path.executable_path
+            default_path = path / 'python.exe'
+            if not default_path.exists():
+                default_path = path / 'Scripts' / 'python.exe'
+            exe_path = getattr(version_object.info.install_path, 'executable_path', default_path)
             path_entry_dict = {
                 'path': path,
                 'only_python': True,
