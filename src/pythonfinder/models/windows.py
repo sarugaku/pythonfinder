@@ -33,7 +33,7 @@ class WindowsFinder(BaseFinder):
         for version_object in versions:
             path = Path(version_object.info.install_path.__getattr__(''))
             version = version_object.info.sys_version
-            py_version = PythonVersion.from_windows_launcher(version)
+            py_version = PythonVersion.from_windows_launcher(version_object)
             path_entry_dict = {
                 'path': path,
                 'only_python': True,
