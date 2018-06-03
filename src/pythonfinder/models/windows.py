@@ -17,18 +17,9 @@ except ImportError:
 class WindowsFinder(BaseFinder):
     versions = attr.ib()
 
-    def find_python_version(self, major, minor=None, patch=None, pre=False, dev=False):
-        if major:
-            major = int(major)
-        if minor:
-            minor = int(minor)
-        if patch:
-            patch = int(patch)
-        return super(WindowsFinder, self).find_python_version(major, minor=minor, patch=patch, pre=pre, dev=dev)
-
     @versions.default
     def get_versions(self):
-        versions = defaultdict(list)
+        versions = defaultdict(VersionPath)
         from pythonfinder._vendor.pep514tools import environment as pep514env
         env_versions = pep514env.findall()
         path = None
@@ -45,5 +36,9 @@ class WindowsFinder(BaseFinder):
                 'only_python': True,
                 'pythons': {exe_path: py_version}
             }
-            versions[py_version.version_tuple].append(VersionPath.create(**path_entry_dict))
+            versions[py_version.version_tuple[:5]] = VersionPath.create(**path_entry_dict)
         return versions
+
+    @classmethod
+    def create(cls):
+        return cls()

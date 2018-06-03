@@ -14,7 +14,7 @@ except ImportError:
 
 
 @attr.s
-class PyenvPath(BaseFinder):
+class PyenvFinder(BaseFinder):
     root = attr.ib(default=None, validator=optional_instance_of(Path))
     versions = attr.ib()
 

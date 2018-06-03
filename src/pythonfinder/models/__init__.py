@@ -4,6 +4,7 @@ import operator
 import six
 from ..utils import KNOWN_EXTS
 
+
 @six.add_metaclass(abc.ABCMeta)
 class BaseFinder(object):
 
@@ -14,6 +15,14 @@ class BaseFinder(object):
     @classmethod
     def create(cls):
         raise NotImplementedError
+
+    @property
+    def version_paths(self):
+        return self.versions.values()
+
+    @property
+    def expanded_paths(self):
+        return (p.paths.values() for p in self.version_paths)
 
 
 class BasePath(object):

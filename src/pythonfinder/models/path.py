@@ -23,7 +23,7 @@ class SystemPath(object):
     path_order = attr.ib(default=attr.Factory(list))
     python_version_dict = attr.ib()
     only_python = attr.ib(default=False)
-    pyenv_instance = attr.ib(default=None, validator=optional_instance_of('PyenvPath'))
+    pyenv_finder = attr.ib(default=None, validator=optional_instance_of('PyenvPath'))
 
     @property
     def executables(self):
@@ -52,23 +52,44 @@ class SystemPath(object):
         #: slice in pyenv
         if not self.__class__ == SystemPath:
             return
+        if os.name == 'nt':
+            self._setup_windows()
         if PYENV_INSTALLED:
             self._setup_pyenv()
 
     def _setup_pyenv(self):
-            from .pyenv import PyenvPath
-            last_pyenv = next((p for p in reversed(self.path_order) if PYENV_ROOT.lower() in p.lower()), None)
-            pyenv_index = self.path_order.index(last_pyenv)
-            self.pyenv_instance = PyenvPath.create(root=PYENV_ROOT)
-            paths = (v.paths.values() for v in self.pyenv_instance.versions.values())
-            root_paths = (p for path in paths for p in path if p.is_root)
-            before_path = self.path_order[:pyenv_index+1]
-            after_path = self.path_order[pyenv_index+2:]
-            self.path_order = before_path + [p.path.as_posix() for p in root_paths] + after_path
-            self.paths.update({
-                p.path: p
-                for p in root_paths
-            })
+        from .pyenv import PyenvFinder
+        last_pyenv = next((p for p in reversed(self.path_order) if PYENV_ROOT.lower() in p.lower()), None)
+        pyenv_index = self.path_order.index(last_pyenv)
+        self.pyenv_finder = PyenvFinder.create(root=PYENV_ROOT)
+        # paths = (v.paths.values() for v in self.pyenv_finder.versions.values())
+        root_paths = (p for path in self.pyenv_finder.expanded_paths for p in path if p.is_root)
+        before_path = self.path_order[:pyenv_index+1]
+        after_path = self.path_order[pyenv_index+2:]
+        self.path_order = before_path + [p.path.as_posix() for p in root_paths] + after_path
+        self.paths.update({
+            p.path: p
+            for p in root_paths
+        })
+
+    def _setup_windows(self):
+        from .windows import WindowsFinder
+        self.windows_finder = WindowsFinder.create()
+        root_paths = (p for path in self.windows_finder.expanded_paths for p in path if p.is_root)
+        venv = os.environ.get('VIRTUAL_ENV')
+        path_addition = [p.path.as_posix() for p in root_paths]
+        if venv:
+            venv_index = self.path_order.index(venv)
+            before_path = self.path_order[:venv_index+1]
+            after_path = self.path_order[venv_index+2:]
+            self.path_order = before_path + path_addition + after_path
+        else:
+            after_path = self.path_order[:]
+            self.path_order = path_addition + after_path
+        self.paths.update({
+            p.path: p
+            for p in root_paths
+        })
 
     def get_path(self, path):
         _path = self.paths.get(path)
