@@ -28,9 +28,9 @@ class WindowsFinder(BaseFinder):
     def get_versions(self):
         versions = defaultdict(list)
         from pythonfinder._vendor.pep514tools import environment as pep514env
-        versions = pep514env.findall()
+        env_versions = pep514env.findall()
         path = None
-        for version_object in versions:
+        for version_object in env_versions:
             path = Path(version_object.info.install_path.__getattr__(''))
             version = version_object.info.sys_version
             py_version = PythonVersion.from_windows_launcher(version_object)
