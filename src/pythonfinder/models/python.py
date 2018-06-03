@@ -33,30 +33,31 @@ class PythonVersion(object):
         :rtype: tuple
         """
 
-        return (self.major, self.minor, self.patch, self.is_prerelease, self.is_devrelease)
+        return (
+            self.major,
+            self.minor,
+            self.patch,
+            self.is_prerelease,
+            self.is_devrelease,
+        )
 
     def matches(self, major, minor=None, patch=None, pre=False, dev=False):
         return (
-            self.major == major and
-            (minor is None or self.minor == minor) and
-            (patch is None or self.patch == patch) and
-            (pre is None or self.is_prerelease == pre) and
-            (dev is None or self.is_devrelease == dev)
+            self.major == major
+            and (minor is None or self.minor == minor)
+            and (patch is None or self.patch == patch)
+            and (pre is None or self.is_prerelease == pre)
+            and (dev is None or self.is_devrelease == dev)
         )
 
     def as_major(self):
         self_dict = attr.asdict(self, recurse=False, filter=_filter_none).copy()
-        self_dict.update({
-            'minor': None,
-            'patch': None,
-        })
+        self_dict.update({"minor": None, "patch": None})
         return self.create(**self_dict)
 
     def as_minor(self):
         self_dict = attr.asdict(self, recurse=False, filter=_filter_none).copy()
-        self_dict.update({
-            'patch': None,
-        })
+        self_dict.update({"patch": None})
         return self.create(**self_dict)
 
     @classmethod
@@ -76,9 +77,9 @@ class PythonVersion(object):
         try:
             version = parse_version(version)
         except TypeError:
-            raise ValueError('Unable to parse version: %s' % version)
+            raise ValueError("Unable to parse version: %s" % version)
         if not version or not version.release:
-            raise ValueError('Not a valid python version: %r' % version)
+            raise ValueError("Not a valid python version: %r" % version)
             return
         if len(version.release) >= 3:
             major, minor, patch = version.release[:3]
@@ -90,13 +91,13 @@ class PythonVersion(object):
             minor = None
             patch = None
         return {
-            'major': major,
-            'minor': minor,
-            'patch': patch,
-            'is_prerelease': version.is_prerelease,
-            'is_postrelease': version.is_postrelease,
-            'is_devrelease': version.is_devrelease,
-            'version': version,
+            "major": major,
+            "minor": minor,
+            "patch": patch,
+            "is_prerelease": version.is_prerelease,
+            "is_postrelease": version.is_postrelease,
+            "is_devrelease": version.is_devrelease,
+            "version": version,
         }
 
     @classmethod
@@ -114,18 +115,19 @@ class PythonVersion(object):
         """
 
         from .path import PathEntry
+
         if not isinstance(path, PathEntry):
             path = PathEntry(path)
         if not path.is_python:
-            raise ValueError('Not a valid python path: %s' % path.path)
+            raise ValueError("Not a valid python path: %s" % path.path)
             return
         py_version, _ = get_python_version(str(path.path))
         instance_dict = cls.parse(py_version)
-        if not isinstance(instance_dict.get('version'), Version):
-            raise ValueError('Not a valid python path: %s' % path.path)
+        if not isinstance(instance_dict.get("version"), Version):
+            raise ValueError("Not a valid python path: %s" % path.path)
             return
         architecture, _ = platform.architecture(path.path.as_posix())
-        instance_dict.update({'comes_from': path, 'architecture': architecture})
+        instance_dict.update({"comes_from": path, "architecture": architecture})
         return cls(**instance_dict)
 
     @classmethod
@@ -138,17 +140,24 @@ class PythonVersion(object):
         """
 
         from .path import PathEntry
+
         creation_dict = cls.parse(launcher_entry.info.version)
-        base_path = ensure_path(launcher_entry.info.install_path.__getattr__(''))
-        default_path = base_path / 'python.exe'
+        base_path = ensure_path(launcher_entry.info.install_path.__getattr__(""))
+        default_path = base_path / "python.exe"
         if not default_path.exists():
-            default_path = base_path / 'Scripts' / 'python.exe'
-        exe_path = ensure_path(getattr(launcher_entry.info.install_path, 'executable_path', default_path))
-        creation_dict.update({
-            'architecture': getattr(launcher_entry, 'sys_architecture', SYSTEM_ARCH),
-            'comes_from': PathEntry.create(exe_path, only_python=True),
-            'executable': exe_path
-        })
+            default_path = base_path / "Scripts" / "python.exe"
+        exe_path = ensure_path(
+            getattr(launcher_entry.info.install_path, "executable_path", default_path)
+        )
+        creation_dict.update(
+            {
+                "architecture": getattr(
+                    launcher_entry, "sys_architecture", SYSTEM_ARCH
+                ),
+                "comes_from": PathEntry.create(exe_path, only_python=True),
+                "executable": exe_path,
+            }
+        )
         return cls.create(**creation_dict)
 
     @classmethod

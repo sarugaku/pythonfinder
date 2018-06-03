@@ -21,14 +21,14 @@ class PyenvFinder(BaseFinder):
     @versions.default
     def get_versions(self):
         versions = defaultdict(VersionPath)
-        for p in self.root.glob('versions/*'):
+        for p in self.root.glob("versions/*"):
             version = PythonVersion.parse(p.name)
             version_tuple = (
-                version.get('major'),
-                version.get('minor'),
-                version.get('patch'),
-                version.get('is_prerelease'),
-                version.get('is_devrelease'),
+                version.get("major"),
+                version.get("minor"),
+                version.get("patch"),
+                version.get("is_prerelease"),
+                version.get("is_devrelease"),
             )
             versions[version_tuple] = VersionPath.create(path=p, only_python=True)
         return versions

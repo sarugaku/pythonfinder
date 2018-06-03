@@ -11,15 +11,12 @@ except ImportError:
     from pathlib2 import Path
 
 
-PYTHON_IMPLEMENTATIONS = (
-    'python',
-    'ironpython',
-    'jython',
-    'pypy',
-)
+PYTHON_IMPLEMENTATIONS = ("python", "ironpython", "jython", "pypy")
 
-KNOWN_EXTS = {'exe', 'py', 'fish', 'sh', ''}
-KNOWN_EXTS = KNOWN_EXTS | set(filter(None, os.environ.get('PATHEXT', '').split(os.pathsep)))
+KNOWN_EXTS = {"exe", "py", "fish", "sh", ""}
+KNOWN_EXTS = KNOWN_EXTS | set(
+    filter(None, os.environ.get("PATHEXT", "").split(os.pathsep))
+)
 
 
 def _run(cmd):
@@ -28,9 +25,16 @@ def _run(cmd):
     :param list cmd: A list representing the command you want to run.
     :returns: A 2-tuple of (output, error)
     """
-    encoding = locale.getdefaultlocale()[1] or 'utf-8'
+    encoding = locale.getdefaultlocale()[1] or "utf-8"
     env = os.environ.copy()
-    c = subprocess.Popen(cmd, encoding=encoding, env=env, universal_newlines=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    c = subprocess.Popen(
+        cmd,
+        encoding=encoding,
+        env=env,
+        universal_newlines=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
     output, err = c.communicate()
     return output.strip(), err.strip()
 
@@ -54,16 +58,23 @@ def path_is_executable(path):
 
 
 def path_is_known_executable(path):
-    return path_is_executable(path) or os.access(str(path), os.R_OK) and path.suffix in KNOWN_EXTS
+    return (
+        path_is_executable(path)
+        or os.access(str(path), os.R_OK)
+        and path.suffix in KNOWN_EXTS
+    )
 
 
 def is_python_name(name):
-    rules = ['*python', '*python?', '*python?.?', '*python?.?m']
+    rules = ["*python", "*python?", "*python?.?", "*python?.?m"]
     match_rules = []
     for rule in rules:
-        match_rules.extend([
-            '{0}.{1}'.format(rule, ext) if ext else '{0}'.format(rule) for ext in KNOWN_EXTS
-        ])
+        match_rules.extend(
+            [
+                "{0}.{1}".format(rule, ext) if ext else "{0}".format(rule)
+                for ext in KNOWN_EXTS
+            ]
+        )
     if not any(name.lower().startswith(py_name) for py_name in PYTHON_IMPLEMENTATIONS):
         return False
     return any(fnmatch(name, rule) for rule in match_rules)

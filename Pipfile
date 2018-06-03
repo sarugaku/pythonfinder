@@ -13,3 +13,10 @@ crayons = "*"
 "e1839a8" = {path = ".", editable = true}
 sphinx-rtd-theme = "*"
 rope = "*"
+black = "*"
+
+[scripts]
+black = "python -m black src/pythonfinder"
+
+[pipenv]
+allow_prereleases = true
