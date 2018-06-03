@@ -16,14 +16,14 @@ from .pythonfinder import Finder
 # @click.version_option(prog_name=crayons.normal('pyfinder', bold=True), version=__version__)
 @click.pass_context
 def cli(
-    ctx, find=False, findall=False
+    ctx, find=False, which=False, findall=False
 ):
     if not find and not findall:
         click.echo('Please provide a command', color='red')
         sys.exit(1)
     finder = Finder()
     if find:
-        
+
         if any([find.startswith('{0}'.format(n)) for n in range(10)]):
             found = finder.find_python_version(find.strip())
         else:

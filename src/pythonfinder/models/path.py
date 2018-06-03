@@ -75,7 +75,7 @@ class SystemPath(object):
     def _setup_windows(self):
         from .windows import WindowsFinder
         self.windows_finder = WindowsFinder.create()
-        root_paths = (p for path in self.windows_finder.expanded_paths for p in path if p.is_root)
+        root_paths = (p for p in self.windows_finder.paths if p.is_root)
         venv = os.environ.get('VIRTUAL_ENV')
         path_addition = [p.path.as_posix() for p in root_paths]
         if venv:
@@ -121,6 +121,10 @@ class SystemPath(object):
         """
 
         sub_finder = operator.methodcaller('find_python_version', major, minor=minor, patch=patch, pre=pre, dev=dev)
+        if os.name == 'nt' and self.windows_finder:
+            windows_finder_version = sub_finder(self.windows_finder)
+            if windows_finder_version:
+                return windows_finder_version
         paths = [self.get_path(k) for k in self.path_order]
         path_filter = filter(None, [sub_finder(p) for p in paths])
         if major and not minor and not patch:
@@ -148,9 +152,11 @@ class SystemPath(object):
             paths = [path,] + paths
         if sys:
             paths = [os.path.dirname(sys.executable),] + paths
+        _path_objects = [ensure_path(p.strip('"')) for p in paths]
+        paths = [p.as_posix() for p in _path_objects]
         path_entries.update({
-            p: PathEntry.create(path=p, is_root=True, only_python=only_python)
-            for p in paths
+            p.as_posix(): PathEntry.create(path=p, is_root=True, only_python=only_python)
+            for p in _path_objects
         })
         return cls(paths=path_entries, path_order=paths, only_python=only_python)
 

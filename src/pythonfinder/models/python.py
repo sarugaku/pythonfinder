@@ -24,9 +24,16 @@ class PythonVersion(object):
     version = attr.ib(default=None, validator=optional_instance_of(Version))
     architecture = attr.ib(default=None)
     comes_from = attr.ib(default=None)
+    executable = attr.ib(default=None)
 
     @property
     def version_tuple(self):
+        """Provides a tuple of (major, minor, patch, pre, dev)
+
+        Returns:
+            tuple -- A tuple describing the python version meetadata contained.
+        """
+
         return (self.major, self.minor, self.patch, self.is_prerelease, self.is_devrelease)
 
     def matches(self, major, minor=None, patch=None, pre=False, dev=False):
@@ -55,10 +62,25 @@ class PythonVersion(object):
 
     @classmethod
     def parse(cls, version):
+        """Parse a valid version string into a dictionary
+
+        Arguments:
+            version {str} -- A valid version string
+
+        Raises:
+            ValueError -- Unable to parse version string
+            ValueError -- Not a valid python version
+
+        Returns:
+            dict -- A dictionary with the keys 'major', 'minor', 'patch',
+                                                'is_prerelease', 'is_postrelease',
+                                                'is_devrelease', and 'version'
+        """
+
         try:
             version = parse_version(version)
         except TypeError:
-            raise ValueError('Unable to parse version: %s' % version)    
+            raise ValueError('Unable to parse version: %s' % version)
         if not version or not version.release:
             raise ValueError('Not a valid python version: %r' % version)
             return
@@ -83,6 +105,18 @@ class PythonVersion(object):
 
     @classmethod
     def from_path(cls, path):
+        """Parses a python version from a system path.
+
+        Arguments:
+            path {str or PathEntry} -- A string or :class:`~pythonfinder.models.path.PathEntry`
+
+        Raises:
+            ValueError -- Not a valid python path
+
+        Returns:
+            :class:`~pythonfinder.models.python.PythonVersion` -- An instance of a PythonVersion.
+        """
+
         from .path import PathEntry
         if not isinstance(path, PathEntry):
             path = PathEntry(path)
@@ -100,8 +134,27 @@ class PythonVersion(object):
 
     @classmethod
     def from_windows_launcher(cls, launcher_entry):
+        """Create a new PythonVersion instance from a Windows Launcher Entry
+
+        Arguments:
+            launcher_entry -- A python launcher environment object.
+
+        Returns:
+            :class:`~pythonfinder.models.python.PythonVersion` -- An instance of a PythonVersion.
+        """
+
+        from .path import PathEntry
         creation_dict = cls.parse(launcher_entry.info.version)
-        creation_dict.update({'architecture': getattr(launcher_entry, 'sys_architecture', SYSTEM_ARCH)})
+        base_path = ensure_path(launcher_entry.info.install_path.__getattr__(''))
+        default_path = base_path / 'python.exe'
+        if not default_path.exists():
+            default_path = base_path / 'Scripts' / 'python.exe'
+        exe_path = ensure_path(getattr(launcher_entry.info.install_path, 'executable_path', default_path))
+        creation_dict.update({
+            'architecture': getattr(launcher_entry, 'sys_architecture', SYSTEM_ARCH),
+            'comes_from': PathEntry.create(exe_path, only_python=True),
+            'executable': exe_path
+        })
         return cls.create(**creation_dict)
 
     @classmethod
