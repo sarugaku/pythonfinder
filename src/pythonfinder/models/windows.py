@@ -18,11 +18,13 @@ class WindowsFinder(BaseFinder):
     versions = attr.ib()
 
     def find_python_version(self, major, minor=None, patch=None, pre=False, dev=False):
-        match = self.versions.get((major, minor, patch, pre, dev))
-        if not match:
-            return
-        version_sort = operator.attrgetter('as_python.version')
-        return next((c for c in sorted(match, key=version_sort, reverse=True)), None)
+        if major:
+            major = int(major)
+        if minor:
+            minor = int(minor)
+        if patch:
+            patch = int(patch)
+        return super(WindowsFinder, self).find_python_version(major, minor=minor, patch=patch, pre=pre, dev=dev)
 
     @versions.default
     def get_versions(self):
