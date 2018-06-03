@@ -3,7 +3,7 @@ import attr
 import operator
 from collections import defaultdict
 from . import BaseFinder
-from .path import VersionPath, PathEntry, SystemPath
+from .path import PathEntry
 from .python import PythonVersion
 from ..utils import ensure_path
 

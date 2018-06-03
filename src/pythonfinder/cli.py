@@ -13,14 +13,15 @@ from .pythonfinder import Finder
 @click.option('--find', default=False, nargs=1, help="Find a specific python version.")
 @click.option('--which', default=False, nargs=1, help="Run the which commend.")
 @click.option('--findall', is_flag=True, default=False, help="Find all python versions.")
+@click.option('--version', is_flag=True, default=False, help="Display PythonFinder version.")
 # @click.version_option(prog_name=crayons.normal('pyfinder', bold=True), version=__version__)
 @click.pass_context
 def cli(
-    ctx, find=False, which=False, findall=False
+    ctx, find=False, which=False, findall=False, version=False
 ):
-    if not find and not findall and not which:
-        click.echo('Please provide a command', color='red')
-        sys.exit(1)
+    if version:
+        click.echo('{0} version {1}'.format(crayons.white('PythonFinder', bold=True), crayons.yellow(__version__)))
+        sys.exit(0)
     finder = Finder()
     if find:
 
@@ -31,15 +32,20 @@ def cli(
         if found:
             click.echo('Found Python Version: {0}'.format(found), color='white')
             sys.exit(0)
+        else:
+            click.echo('Failed to find matching executable...')
+            sys.exit(1)
     elif which:
         found = finder.system_path.which(which.strip())
         if found:
             click.echo('Found Executable: {0}'.format(found), color='white')
             sys.exit(0)
+        else:
+            click.echo('Failed to find matching executable...')
+            sys.exit(1)
     else:
-        # TODO: implement this
-        click.echo('This is not yet implemented')
-        sys.exit(0)
+        click.echo('Please provide a command', color='red')
+        sys.exit(1)
     sys.exit()
 
 

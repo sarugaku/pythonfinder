@@ -40,7 +40,7 @@ class BasePath(object):
         name_getter = operator.attrgetter('path.name')
         return next((child for child in finder if name_getter(child).lower() in valid_names), None)
 
-    def find_python_version(self, major, minor=None, patch=None, pre=False, dev=False):
+    def find_python_version(self, major, minor=None, patch=None, pre=None, dev=None):
         """Search or self for the specified Python version and return the first match.
 
         :param major: Major version number.
@@ -61,8 +61,6 @@ class BasePath(object):
             return
         finder = (c for c in self.children.values() if is_py(c) and py_version(c))
         py_filter = filter(None, filter(lambda c: version_matcher(py_version(c)), finder))
-        if not minor and not patch:
-            return next((child for child in py_filter), None)
         version_sort = operator.attrgetter('py_version.version')
         return next((c for c in sorted(py_filter, key=version_sort, reverse=True)), None)
 

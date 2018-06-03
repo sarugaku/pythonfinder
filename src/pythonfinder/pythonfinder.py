@@ -1,6 +1,6 @@
 # -*- coding=utf-8 -*-
 import os
-from packaging.version import parse as parse_version
+import six
 from .models import SystemPath
 
 
@@ -28,10 +28,10 @@ class Finder(object):
     def which(self, exe):
         return self.system_path.which(exe)
 
-    def find_python_version(self, major, minor=None, patch=None, pre=False, dev=False):
-        if major and not minor and not patch and not pre and not dev and '.' in major:
-            from .models import PythonVersion
+    def find_python_version(self, major, minor=None, patch=None, pre=None, dev=None):
+        if major and not minor and not patch and not pre and not dev and isinstance(major, six.string_types):
             if '.' in major:
+                from .models import PythonVersion
                 version_dict = PythonVersion.parse(major)
                 major = version_dict['major']
                 minor = version_dict['minor']

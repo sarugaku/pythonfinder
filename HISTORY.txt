@@ -1,3 +1,9 @@
+0.1.0
+ - Complete rewrite using attrs.
+ - Fix issues with path ordering, prioritization, import sorting etc.
+ - Fast lookups.
+ - Architecture support on all platforms.
+ - Modularized codebase for ease of maintainership.
 0.0.6
  - Fix imports.
  - Prepend paths to os path rather than overriding.

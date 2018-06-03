@@ -1,10 +1,9 @@
 # -*- coding=utf-8 -*-
 import attr
 import platform
-from fnmatch import fnmatch
 from packaging.version import parse as parse_version, Version
 from ..environment import SYSTEM_ARCH
-from ..utils import KNOWN_EXTS, PYTHON_IMPLEMENTATIONS, _filter_none, optional_instance_of, get_python_version, ensure_path
+from ..utils import _filter_none, optional_instance_of, get_python_version, ensure_path
 
 
 try:
@@ -28,10 +27,10 @@ class PythonVersion(object):
 
     @property
     def version_tuple(self):
-        """Provides a tuple of (major, minor, patch, pre, dev)
+        """Provides a version tuple for using as a dictionary key.
 
-        Returns:
-            tuple -- A tuple describing the python version meetadata contained.
+        :return: A tuple describing the python version meetadata contained.
+        :rtype: tuple
         """
 
         return (self.major, self.minor, self.patch, self.is_prerelease, self.is_devrelease)
@@ -41,8 +40,8 @@ class PythonVersion(object):
             self.major == major and
             (minor is None or self.minor == minor) and
             (patch is None or self.patch == patch) and
-            self.is_prerelease == pre and
-            self.is_devrelease == dev
+            (pre is None or self.is_prerelease == pre) and
+            (dev is None or self.is_devrelease == dev)
         )
 
     def as_major(self):
@@ -64,17 +63,14 @@ class PythonVersion(object):
     def parse(cls, version):
         """Parse a valid version string into a dictionary
 
-        Arguments:
-            version {str} -- A valid version string
-
         Raises:
             ValueError -- Unable to parse version string
             ValueError -- Not a valid python version
 
-        Returns:
-            dict -- A dictionary with the keys 'major', 'minor', 'patch',
-                                                'is_prerelease', 'is_postrelease',
-                                                'is_devrelease', and 'version'
+        :param version: A valid version string
+        :type version: str
+        :return: A dictionary with metadata about the specified python version.
+        :rtype: dict.
         """
 
         try:
@@ -107,14 +103,14 @@ class PythonVersion(object):
     def from_path(cls, path):
         """Parses a python version from a system path.
 
-        Arguments:
-            path {str or PathEntry} -- A string or :class:`~pythonfinder.models.path.PathEntry`
-
         Raises:
             ValueError -- Not a valid python path
 
-        Returns:
-            :class:`~pythonfinder.models.python.PythonVersion` -- An instance of a PythonVersion.
+        :param path: A string or :class:`~pythonfinder.models.path.PathEntry`
+        :type path: str or :class:`~pythonfinder.models.path.PathEntry` instance
+        :param launcher_entry: A python launcher environment object.
+        :return: An instance of a PythonVersion.
+        :rtype: :class:`~pythonfinder.models.python.PythonVersion`
         """
 
         from .path import PathEntry
@@ -136,11 +132,9 @@ class PythonVersion(object):
     def from_windows_launcher(cls, launcher_entry):
         """Create a new PythonVersion instance from a Windows Launcher Entry
 
-        Arguments:
-            launcher_entry -- A python launcher environment object.
-
-        Returns:
-            :class:`~pythonfinder.models.python.PythonVersion` -- An instance of a PythonVersion.
+        :param launcher_entry: A python launcher environment object.
+        :return: An instance of a PythonVersion.
+        :rtype: :class:`~pythonfinder.models.python.PythonVersion`
         """
 
         from .path import PathEntry

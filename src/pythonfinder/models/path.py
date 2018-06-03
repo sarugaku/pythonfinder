@@ -107,7 +107,7 @@ class SystemPath(object):
         sub_which = operator.methodcaller('which', name=executable)
         return next(filter(None, [sub_which(self.get_path(k)) for k in self.path_order]), None)
 
-    def find_python_version(self, major, minor=None, patch=None, pre=False, dev=False):
+    def find_python_version(self, major, minor=None, patch=None, pre=None, dev=None):
         """Search for a specific python version on the path.
 
         :param major: Major python version to search for.
@@ -127,8 +127,6 @@ class SystemPath(object):
                 return windows_finder_version
         paths = [self.get_path(k) for k in self.path_order]
         path_filter = filter(None, [sub_finder(p) for p in paths])
-        if major and not minor and not patch:
-            return next((p for p in path_filter), None)
         version_sort = operator.attrgetter('as_python.version')
         return next((c for c in sorted(path_filter, key=version_sort, reverse=True)), None)
 
