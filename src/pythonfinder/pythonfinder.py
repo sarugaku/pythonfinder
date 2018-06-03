@@ -22,7 +22,7 @@ class Finder(object):
     def windows_finder(self):
         if os.name == 'nt' and not self._windows_finder:
             from .models import WindowsFinder
-            self._windows_finder = WindowsFinder.create()
+            self._windows_finder = WindowsFinder()
         return self._windows_finder
 
     def which(self, exe):
