@@ -23,7 +23,7 @@ class WindowsFinder(BaseFinder):
         )
         version_sort = operator.attrgetter("version")
         return next(
-            (c for c in sorted(py_filter, key=version_sort, reverse=True)), None
+            (c.comes_from for c in sorted(py_filter, key=version_sort, reverse=True)), None
         )
 
     @versions.default
