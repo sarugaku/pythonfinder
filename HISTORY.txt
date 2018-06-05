@@ -1,5 +1,7 @@
 0.1.1
  - Always return PathEntry objects, even on windows.
+ - Add virtualenv support.
+ - Fix windows path ordering.
 0.1.0
  - Complete rewrite using attrs.
  - Fix issues with path ordering, prioritization, import sorting etc.

@@ -30,6 +30,7 @@ class SystemPath(object):
     python_version_dict = attr.ib()
     only_python = attr.ib(default=False)
     pyenv_finder = attr.ib(default=None, validator=optional_instance_of("PyenvPath"))
+    system = attr.ib(default=False)
 
     @property
     def executables(self):
@@ -62,6 +63,23 @@ class SystemPath(object):
             self._setup_windows()
         if PYENV_INSTALLED:
             self._setup_pyenv()
+        venv = os.environ.get('VIRTUAL_ENV')
+        if venv:
+            if os.name == 'nt':
+                bin_dir = 'Scripts'
+            else:
+                bin_dir = 'bin'
+            p = Path(venv)
+            self.path_order = [(p / bin_dir).as_posix()] + self.path_order
+            self.paths[p] = PathEntry.create(
+                path=p, is_root=True, only_python=False
+            )
+        if self.system:
+            syspath = Path(sys.executable)
+            self.path_order = [syspath.parent.as_posix()] + self.path_order
+            self.paths[syspath.parent.as_posix()] = PathEntry.create(
+                path=syspath.parent, is_root=True, only_python=True
+            )
 
     def _setup_pyenv(self):
         from .pyenv import PyenvFinder
@@ -88,16 +106,8 @@ class SystemPath(object):
 
         self.windows_finder = WindowsFinder.create()
         root_paths = (p for p in self.windows_finder.paths if p.is_root)
-        venv = os.environ.get("VIRTUAL_ENV")
         path_addition = [p.path.as_posix() for p in root_paths]
-        if venv:
-            venv_index = self.path_order.index(venv)
-            before_path = self.path_order[: venv_index + 1]
-            after_path = self.path_order[venv_index + 2 :]
-            self.path_order = before_path + path_addition + after_path
-        else:
-            after_path = self.path_order[:]
-            self.path_order = path_addition + after_path
+        self.path_order = self.path_order[:] + path_addition
         self.paths.update({p.path: p for p in root_paths})
 
     def get_path(self, path):
@@ -117,7 +127,7 @@ class SystemPath(object):
         """
         sub_which = operator.methodcaller("which", name=executable)
         return next(
-            filter(None, [sub_which(self.get_path(k)) for k in self.path_order]), None
+            (sub_which(self.get_path(k)) for k in self.path_order), None
         )
 
     def find_python_version(self, major, minor=None, patch=None, pre=None, dev=None):
@@ -165,8 +175,6 @@ class SystemPath(object):
         paths = os.environ.get("PATH").split(os.pathsep)
         if path:
             paths = [path] + paths
-        if sys:
-            paths = [os.path.dirname(sys.executable)] + paths
         _path_objects = [ensure_path(p.strip('"')) for p in paths]
         paths = [p.as_posix() for p in _path_objects]
         path_entries.update(
@@ -177,7 +185,7 @@ class SystemPath(object):
                 for p in _path_objects
             }
         )
-        return cls(paths=path_entries, path_order=paths, only_python=only_python)
+        return cls(paths=path_entries, path_order=paths, only_python=only_python, system=system)
 
 
 @attr.s

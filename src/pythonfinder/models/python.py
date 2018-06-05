@@ -1,5 +1,6 @@
 # -*- coding=utf-8 -*-
 import attr
+import copy
 import platform
 from packaging.version import parse as parse_version, Version
 from ..environment import SYSTEM_ARCH
@@ -154,11 +155,14 @@ class PythonVersion(object):
                 "architecture": getattr(
                     launcher_entry, "sys_architecture", SYSTEM_ARCH
                 ),
-                "comes_from": PathEntry.create(exe_path, only_python=True),
                 "executable": exe_path,
             }
         )
-        return cls.create(**creation_dict)
+        py_version = cls.create(**creation_dict)
+        comes_from = PathEntry.create(exe_path, only_python=True)
+        comes_from.py_version = copy.deepcopy(py_version)
+        py_version.comes_from = comes_from
+        return py_version
 
     @classmethod
     def create(cls, **kwargs):
