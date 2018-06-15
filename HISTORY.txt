@@ -1,3 +1,7 @@
+0.1.3
+ - Fixed lookups of non-chmod+x paths with `which` calls.
+ - Fixed bug which affected parsing of stdout and stderr when the result was of Nonetype.
+ - Always resolve paths to python to ensure we aren't parsing symlinks.
 0.1.2
  - Always return PathEntry objects, even on windows.
  - Add virtualenv support.
