@@ -67,11 +67,11 @@ class SystemPath(object):
         if PYENV_INSTALLED:
             self._setup_pyenv()
         venv = os.environ.get('VIRTUAL_ENV')
+        if os.name == 'nt':
+            bin_dir = 'Scripts'
+        else:
+            bin_dir = 'bin'
         if venv:
-            if os.name == 'nt':
-                bin_dir = 'Scripts'
-            else:
-                bin_dir = 'bin'
             p = Path(venv)
             self.path_order = [(p / bin_dir).as_posix()] + self.path_order
             self.paths[p] = PathEntry.create(
@@ -79,9 +79,12 @@ class SystemPath(object):
             )
         if self.system:
             syspath = Path(sys.executable)
-            self.path_order = [syspath.parent.as_posix()] + self.path_order
-            self.paths[syspath.parent.as_posix()] = PathEntry.create(
-                path=syspath.parent, is_root=True, only_python=True
+            syspath_bin = syspath.parent
+            if syspath_bin.name != bin_dir and syspath_bin.joinpath(bin_dir).exists():
+                syspath_bin = syspath_bin / bin_dir
+            self.path_order = [syspath_bin.as_posix()] + self.path_order
+            self.paths[syspath_bin.as_posix()] = PathEntry.create(
+                path=syspath_bin, is_root=True, only_python=False
             )
 
     def _setup_pyenv(self):
