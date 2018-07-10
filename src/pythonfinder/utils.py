@@ -30,25 +30,21 @@ def _run(cmd):
     :returns: A 2-tuple of (output, error)
     """
     encoding = locale.getdefaultlocale()[1] or "utf-8"
-    env = os.environ.copy()
-    popen_args = {
-        'env': env,
-        'universal_newlines': True,
-    }
-    if six.PY3 and sys.version_info[:2] >= (3, 6):
-        popen_args['encoding'] = encoding
-    c = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **popen_args)
-    output, err = c.communicate()
-    output = output.strip() if output else None
-    err = err.strip() if err else None
-    return output, err
+    c = subprocess.Popen(
+        cmd,
+        env=os.environ.copy(),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    out, err = c.communicate()
+    return out.decode(encoding).strip(), err.decode(encoding).strip()
 
 
 def get_python_version(path):
     """Get python version string using subprocess from a given path."""
     version_cmd = [path, "-c", "import sys; print(sys.version.split()[0])"]
     try:
-        out, err = _run(version_cmd)
+        out, _ = _run(version_cmd)
     except OSError:
         raise InvalidPythonVersion("%s is not a valid python path" % path)
     if not out:
