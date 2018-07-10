@@ -1,4 +1,5 @@
 [packages]
+bumpversion = "*"
 
 [dev-packages]
 "flake8" = "*"
@@ -14,6 +15,7 @@ crayons = "*"
 sphinx-rtd-theme = "*"
 rope = "*"
 black = "*"
+parver = "*"
 
 [scripts]
 black = "python -m black src/pythonfinder"
