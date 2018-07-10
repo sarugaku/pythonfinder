@@ -35,7 +35,7 @@ def _run(cmd):
         'env': env,
         'universal_newlines': True,
     }
-    if six.PY3:
+    if six.PY3 and sys.version_info[:2] >= (3, 6):
         popen_args['encoding'] = encoding
     c = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **popen_args)
     output, err = c.communicate()

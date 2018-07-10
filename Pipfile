@@ -15,6 +15,7 @@ crayons = "*"
 sphinx-rtd-theme = "*"
 rope = "*"
 black = "*"
+parver = "*"
 
 [scripts]
 black = "python -m black src/pythonfinder"
