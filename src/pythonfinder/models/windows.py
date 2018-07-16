@@ -27,10 +27,10 @@ class WindowsFinder(BaseFinder):
         return [c.comes_from for c in sorted(py_filter, key=version_sort, reverse=True)]
 
     def find_python_version(self, major=None, minor=None, patch=None, pre=None, dev=None):
-        return next(
-            self.find_all_python_versions(
+        return next((
+            v for v in self.find_all_python_versions(
                 major=major, minor=minor, patch=patch, pre=pre, dev=dev
-            ), None
+            )), None
         )
 
     @versions.default
