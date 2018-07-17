@@ -1,10 +1,12 @@
 # -*- coding=utf-8 -*-
 from __future__ import print_function, absolute_import
 import attr
+import copy
 import operator
 import os
 import sys
 from collections import defaultdict
+from itertools import chain
 from . import BasePath
 from .python import PythonVersion
 from ..environment import PYENV_INSTALLED, PYENV_ROOT
@@ -13,7 +15,7 @@ from ..utils import (
     optional_instance_of,
     filter_pythons,
     path_is_known_executable,
-    is_python_name,
+    looks_like_python,
     ensure_path,
     fs_str
 )
@@ -36,27 +38,45 @@ class SystemPath(object):
     pyenv_finder = attr.ib(default=None, validator=optional_instance_of("PyenvPath"))
     system = attr.ib(default=False)
 
+    __finders = attr.ib(default=attr.Factory(list))
+
+    def _register_finder(self, finder):
+        if not finder in self.__finders:
+            self.__finders.append(finder)
+
     @property
     def executables(self):
         if not self._executables:
-            self._executables = [p for p in self.paths.values() if p.is_executable]
+            self._executables = [p for p in chain(*(child.children.values() for child in self.paths.values())) if p.is_executable]
         return self._executables
 
     @property
     def python_executables(self):
+        python_executables = {}
         if not self._python_executables:
-            self._python_executables = [p for p in self.paths.values() if p.is_python]
+            for child in self.paths.values():
+                if child.pythons:
+                    python_executables.update(dict(child.pythons))
+            for finder in self.__finders:
+                if finder.pythons:
+                    python_executables.update(dict(finder.pythons))
+            self._python_executables = python_executables
         return self._python_executables
 
     def get_python_version_dict(self):
         version_dict = defaultdict(list)
-        for p in self.python_executables:
-            try:
-                version_object = PythonVersion.from_path(p)
-            except (ValueError, InvalidPythonVersion):
+        for finder in self.__finders:
+            for version, entry in finder.versions.items():
+                if entry not in version_dict[version]:
+                    version_dict[version].append(entry)
+        for p, entry in self.python_executables.items():
+            version = entry.as_python
+            if not version:
                 continue
-            version_dict[version_object.version_tuple].append(version_object)
-        self.python_version_dict = version_dict
+            version = version.version_tuple
+            if version and entry not in version_dict[version]:
+                version_dict[version].append(entry)
+        return version_dict
 
     def __attrs_post_init__(self):
         #: slice in pyenv
@@ -72,7 +92,7 @@ class SystemPath(object):
         else:
             bin_dir = 'bin'
         if venv and (self.system or self.global_search):
-            p = Path(venv)
+            p = ensure_path(venv)
             self.path_order = [(p / bin_dir).as_posix()] + self.path_order
             self.paths[p] = PathEntry.create(
                 path=p, is_root=True, only_python=False
@@ -83,10 +103,10 @@ class SystemPath(object):
             if syspath_bin.name != bin_dir and syspath_bin.joinpath(bin_dir).exists():
                 syspath_bin = syspath_bin / bin_dir
             self.path_order = [syspath_bin.as_posix()] + self.path_order
-            self.paths[syspath_bin.as_posix()] = PathEntry.create(
+            self.paths[syspath_bin] = PathEntry.create(
                 path=syspath_bin, is_root=True, only_python=False
             )
-        self.get_python_version_dict()
+        self.python_version_dict = self.get_python_version_dict()
 
     def _setup_pyenv(self):
         from .pyenv import PyenvFinder
@@ -110,6 +130,7 @@ class SystemPath(object):
             before_path + [p.path.as_posix() for p in root_paths] + after_path
         )
         self.paths.update({p.path: p for p in root_paths})
+        self._register_finder(self.pyenv_finder)
 
     def _setup_windows(self):
         from .windows import WindowsFinder
@@ -119,13 +140,14 @@ class SystemPath(object):
         path_addition = [p.path.as_posix() for p in root_paths]
         self.path_order = self.path_order[:] + path_addition
         self.paths.update({p.path: p for p in root_paths})
+        self._register_finder(self.windows_finder)
 
     def get_path(self, path):
-        path = Path(path)
+        path = ensure_path(path)
         _path = self.paths.get(path.as_posix())
         if not _path and path.as_posix() in self.path_order:
             _path =  PathEntry.create(
-                path=path.resolve(), is_root=True, only_python=self.only_python
+                path=path.absolute(), is_root=True, only_python=self.only_python
             )
             self.paths[path.as_posix()] = _path
         return _path
@@ -275,28 +297,22 @@ class PathEntry(BasePath):
                 child.as_posix(): PathEntry.create(path=child, is_root=False)
                 for child in self._filter_children()
             }
+        elif not self.is_dir:
+            return {self.path.as_posix(): self}
         return self._children
 
     @pythons.default
     def get_pythons(self):
-        pythons = defaultdict(list)
+        pythons = defaultdict()
         if self.is_dir:
             for path, entry in self.children.items():
-                _path = entry.path
-                try:
-                    _path = _path.resolve()
-                except OSError:
-                    _path = _path.absolute()
+                _path = ensure_path(entry.path)
                 if entry.is_python:
-                    pythons[_path.as_posix()].append(entry)
+                    pythons[_path.as_posix()] = entry
         else:
             if self.is_python:
-                _path = self.path
-                try:
-                    _path = _path.resolve()
-                except OSError:
-                    _path = _path.absolute()
-                pythons[_path].append(self)
+                _path = ensure_path(self.path)
+                pythons[_path.as_posix()] = copy.deepcopy(self)
         return pythons
 
     @property
@@ -360,7 +376,7 @@ class PathEntry(BasePath):
     @property
     def is_python(self):
         return self.is_executable and (
-            self.py_version or is_python_name(self.path.name)
+            self.py_version or looks_like_python(self.path.name)
         )
 
 

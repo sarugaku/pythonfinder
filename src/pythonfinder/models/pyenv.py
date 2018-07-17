@@ -37,7 +37,7 @@ class PyenvFinder(BaseFinder):
 
     @pythons.default
     def get_pythons(self):
-        pythons = defaultdict(list)
+        pythons = defaultdict()
         for v in self.versions.values():
             for p in v.paths.values():
                 _path = p.path
@@ -47,7 +47,7 @@ class PyenvFinder(BaseFinder):
                     _path = _path.absolute()
                 _path = _path.as_posix()
                 if p.is_python:
-                    pythons[_path].append(p)
+                    pythons[_path] = p
         return pythons
 
     @classmethod

@@ -5,7 +5,7 @@ import operator
 from collections import defaultdict
 from . import BaseFinder
 from .path import PathEntry
-from .python import PythonVersion
+from .python import PythonVersion, VersionMap
 from ..exceptions import InvalidPythonVersion
 from ..utils import ensure_path
 
@@ -15,6 +15,7 @@ class WindowsFinder(BaseFinder):
     paths = attr.ib(default=attr.Factory(list))
     version_list = attr.ib(default=attr.Factory(list))
     versions = attr.ib()
+    pythons = attr.ib()
 
     def find_all_python_versions(self, major=None, minor=None, patch=None, pre=None, dev=None, arch=None):
         version_matcher = operator.methodcaller(
@@ -57,9 +58,17 @@ class WindowsFinder(BaseFinder):
             self.paths.append(base_dir)
         return versions
 
-    @property
-    def pythons(self):
-        return self.versions
+    @pythons.default
+    def get_pythons(self):
+        pythons = defaultdict()
+        for version in self.version_list:
+            _path = py_version.comes_from.path
+            try:
+                _path = _path.resolve()
+            except OSError:
+                _path = _path.absolute()
+            pythons[_path.as_posix()] = _path
+        return pythons
 
     @classmethod
     def create(cls):
