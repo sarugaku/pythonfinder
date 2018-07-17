@@ -198,15 +198,23 @@ class PythonVersion(object):
 
 @attr.s
 class VersionMap(object):
-    versions = attr.ib(default=attr.Factory(defaultdict(list)))
+    versions = attr.ib(default=attr.Factory(defaultdict))
+
+    @property
+    def paths(self):
+        return [p.path for version in self.versions.values() for p in version]
 
     def add_entry(self, entry):
         version = entry.as_python
         if version:
-            entries = versions[version.version_tuple]
-            paths = {p.path for p in self.versions.get(version.version_tuple, [])}
-            if entry.path not in paths:
-                self.versions[version.version_tuple].append(entry)
+            version_tuple = version.version_tuple
+            if version_tuple not in self.versions.keys():
+                self.versions[version_tuple] = [entry,]
+            else:
+                entries = self.versions.get(version_tuple, [])
+                paths = {p.path for p in entries}
+                if entry.path not in paths:
+                    self.versions[version_tuple].append(entry)
 
     def merge(self, target):
         for version, entries in target.versions.items():
@@ -216,4 +224,5 @@ class VersionMap(object):
                 current_entries = {p.path for p in self.versions.get(version)}
                 new_entries = {p.path for p in entries}
                 new_entries -= current_entries
-                self.versions[version].append([e for e in entries if e.path in new_entries])
+                if new_entries:
+                    self.versions[version].append([e for e in entries if e.path in new_entries])

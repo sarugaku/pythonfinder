@@ -19,7 +19,7 @@ class BaseFinder(object):
 
     @property
     def version_paths(self):
-        return self.versions.values()
+        return self.pyenv_versions.values()
 
     @property
     def expanded_paths(self):

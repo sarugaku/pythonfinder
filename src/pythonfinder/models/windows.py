@@ -36,7 +36,7 @@ class WindowsFinder(BaseFinder):
 
     @versions.default
     def get_versions(self):
-        versions = defaultdict(PathEntry)
+        versions = VersionMap()
         from pythonfinder._vendor.pep514tools import environment as pep514env
 
         env_versions = pep514env.findall()
@@ -54,7 +54,8 @@ class WindowsFinder(BaseFinder):
                 only_python=True,
                 pythons={py_version.comes_from.path: py_version},
             )
-            versions[py_version.version_tuple[:5]] = base_dir
+            # versions[py_version.version_tuple[:5]] = base_dir
+            versions.add_entry(base_dir)
             self.paths.append(base_dir)
         return versions
 

@@ -4,7 +4,7 @@ import attr
 from collections import defaultdict
 from . import BaseFinder
 from .path import VersionPath
-from .python import PythonVersion
+from .python import PythonVersion, VersionMap
 from ..utils import optional_instance_of, ensure_path
 
 
@@ -17,10 +17,11 @@ except ImportError:
 @attr.s
 class PyenvFinder(BaseFinder):
     root = attr.ib(default=None, validator=optional_instance_of(Path))
-    versions = attr.ib()
+    pyenv_versions = attr.ib()
+    versions = attr.ib(default=attr.Factory(VersionMap))
     pythons = attr.ib()
 
-    @versions.default
+    @pyenv_versions.default
     def get_versions(self):
         versions = defaultdict(VersionPath)
         for p in self.root.glob("versions/*"):
@@ -38,16 +39,12 @@ class PyenvFinder(BaseFinder):
     @pythons.default
     def get_pythons(self):
         pythons = defaultdict()
-        for v in self.versions.values():
+        for version_tuple, v in self.pyenv_versions.items():
             for p in v.paths.values():
-                _path = p.path
-                try:
-                    _path = _path.resolve()
-                except OSError:
-                    _path = _path.absolute()
-                _path = _path.as_posix()
+                _path = ensure_path(p.path)
                 if p.is_python:
-                    pythons[_path] = p
+                    pythons[_path.as_posix()] = p
+                    self.versions.add_entry(p)
         return pythons
 
     @classmethod

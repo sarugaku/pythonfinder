@@ -8,7 +8,7 @@ import sys
 from collections import defaultdict
 from itertools import chain
 from . import BasePath
-from .python import PythonVersion
+from .python import PythonVersion, VersionMap
 from ..environment import PYENV_INSTALLED, PYENV_ROOT
 from ..exceptions import InvalidPythonVersion
 from ..utils import (
@@ -64,19 +64,13 @@ class SystemPath(object):
         return self._python_executables
 
     def get_python_version_dict(self):
-        version_dict = defaultdict(list)
+        version_map = VersionMap()
         for finder in self.__finders:
-            for version, entry in finder.versions.items():
-                if entry not in version_dict[version]:
-                    version_dict[version].append(entry)
-        for p, entry in self.python_executables.items():
-            version = entry.as_python
-            if not version:
-                continue
-            version = version.version_tuple
-            if version and entry not in version_dict[version]:
-                version_dict[version].append(entry)
-        return version_dict
+            version_map.merge(finder.versions)
+        for child in self.paths.values():
+            if child.pythons:
+                version_map.merge(child.versions)
+        return attr.asdict(version_map)
 
     def __attrs_post_init__(self):
         #: slice in pyenv
@@ -278,6 +272,7 @@ class PathEntry(BasePath):
     is_root = attr.ib(default=True)
     only_python = attr.ib(default=False)
     py_version = attr.ib(default=None)
+    versions = attr.ib(default=attr.Factory(VersionMap))
     pythons = attr.ib()
 
     def __str__(self):
@@ -303,16 +298,18 @@ class PathEntry(BasePath):
 
     @pythons.default
     def get_pythons(self):
-        pythons = defaultdict()
+        pythons = defaultdict(list)
         if self.is_dir:
             for path, entry in self.children.items():
                 _path = ensure_path(entry.path)
                 if entry.is_python:
                     pythons[_path.as_posix()] = entry
-        else:
-            if self.is_python:
-                _path = ensure_path(self.path)
-                pythons[_path.as_posix()] = copy.deepcopy(self)
+                    self.versions.add_entry(entry)
+        elif self.is_python:
+            _path = ensure_path(self.path)
+            entry = copy.deepcopy(self)
+            pythons[_path.as_posix()] = entry
+            self.versions.add_entry(entry)
         return pythons
 
     @property
@@ -321,7 +318,7 @@ class PathEntry(BasePath):
             if not self.py_version:
                 try:
                     from .python import PythonVersion
-                    self.py_version = PythonVersion.from_path(self.path)
+                    self.py_version = PythonVersion.from_path(copy.deepcopy(self))
                 except (ValueError, InvalidPythonVersion):
                     self.py_version = None
         return self.py_version
@@ -370,7 +367,7 @@ class PathEntry(BasePath):
         try:
             ret_val = self.path.is_dir()
         except OSError:
-            ret_val False
+            ret_val = False
         return ret_val
 
     @property
