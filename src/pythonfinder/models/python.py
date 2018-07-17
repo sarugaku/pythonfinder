@@ -67,13 +67,14 @@ class PythonVersion(object):
             self.is_devrelease,
         )
 
-    def matches(self, major=None, minor=None, patch=None, pre=False, dev=False):
+    def matches(self, major=None, minor=None, patch=None, pre=False, dev=False, arch=None):
         return (
             (major is None or self.major == major)
             and (minor is None or self.minor == minor)
             and (patch is None or self.patch == patch)
             and (pre is None or self.is_prerelease == pre)
             and (dev is None or self.is_devrelease == dev)
+            and (arch is None or self.architecture == arch)
         )
 
     def as_major(self):

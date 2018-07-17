@@ -16,9 +16,9 @@ class WindowsFinder(BaseFinder):
     version_list = attr.ib(default=attr.Factory(list))
     versions = attr.ib()
 
-    def find_all_python_versions(self, major=None, minor=None, patch=None, pre=None, dev=None):
+    def find_all_python_versions(self, major=None, minor=None, patch=None, pre=None, dev=None, arch=None):
         version_matcher = operator.methodcaller(
-            "matches", major=major, minor=minor, patch=patch, pre=pre, dev=dev
+            "matches", major=major, minor=minor, patch=patch, pre=pre, dev=dev, arch=None
         )
         py_filter = filter(
             None, filter(lambda c: version_matcher(c), self.version_list)
@@ -26,10 +26,10 @@ class WindowsFinder(BaseFinder):
         version_sort = operator.attrgetter("version_sort")
         return [c.comes_from for c in sorted(py_filter, key=version_sort, reverse=True)]
 
-    def find_python_version(self, major=None, minor=None, patch=None, pre=None, dev=None):
+    def find_python_version(self, major=None, minor=None, patch=None, pre=None, dev=None, arch=None):
         return next((
             v for v in self.find_all_python_versions(
-                major=major, minor=minor, patch=patch, pre=pre, dev=dev
+                major=major, minor=minor, patch=patch, pre=pre, dev=dev, arch=None
             )), None
         )
 
@@ -56,6 +56,10 @@ class WindowsFinder(BaseFinder):
             versions[py_version.version_tuple[:5]] = base_dir
             self.paths.append(base_dir)
         return versions
+
+    @property
+    def pythons(self):
+        return self.versions
 
     @classmethod
     def create(cls):

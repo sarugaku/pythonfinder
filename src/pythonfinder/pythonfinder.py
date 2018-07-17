@@ -76,5 +76,14 @@ class Finder(object):
             versions = [versions,]
         if os.name == 'nt':
             windows_versions = self.windows_finder.find_all_python_versions(major=major, minor=minor, patch=patch, pre=pre, dev=dev)
-            versions = versions + list(windows_versions)
-        return sorted(versions, key=version_sort, reverse=True)
+            versions = list(windows_versions) + versions
+        paths = sorted(versions, key=version_sort, reverse=True)
+        path_map = {}
+        for path in paths:
+            try:
+                resolved_path = path.path.resolve()
+            except OSError:
+                resolved_path = path.path.absolute()
+            if not path_map.get(resolved_path.as_posix()):
+                path_map[resolved_path.as_posix()] = path
+        return list(path_map.values())
