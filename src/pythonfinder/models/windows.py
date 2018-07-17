@@ -62,12 +62,8 @@ class WindowsFinder(BaseFinder):
     def get_pythons(self):
         pythons = defaultdict()
         for version in self.version_list:
-            _path = py_version.comes_from.path
-            try:
-                _path = _path.resolve()
-            except OSError:
-                _path = _path.absolute()
-            pythons[_path.as_posix()] = _path
+            _path = ensure_path(version.comes_from.path)
+            pythons[_path.as_posix()] = version.comes_from
         return pythons
 
     @classmethod
