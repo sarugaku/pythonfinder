@@ -367,7 +367,11 @@ class PathEntry(BasePath):
 
     @property
     def is_dir(self):
-        return self.path.is_dir()
+        try:
+            ret_val = self.path.is_dir()
+        except OSError:
+            ret_val False
+        return ret_val
 
     @property
     def is_executable(self):
