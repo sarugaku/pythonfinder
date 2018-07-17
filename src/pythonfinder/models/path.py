@@ -370,7 +370,7 @@ class PathEntry(BasePath):
         try:
             ret_val = self.path.is_dir()
         except OSError:
-            ret_val False
+            ret_val = False
         return ret_val
 
     @property
