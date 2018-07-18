@@ -43,6 +43,7 @@ install_requires = [
     'delegator.py',
     'crayons',
     'attrs',
+    'cached-property',
 ]
 
 
