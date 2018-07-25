@@ -20,7 +20,7 @@ Submodules
 
    pythonfinder.cli
    pythonfinder.environment
-   pythonfinder.old_models
+   pythonfinder.models
    pythonfinder.pythonfinder
    pythonfinder.utils
 
