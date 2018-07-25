@@ -9,6 +9,7 @@ Features & Improvements
 - Allow bare calls to ``find_all_python_versions()`` to return all python versions without specifying a major version.  `#5 <https://github.com/sarugaku/pythonfinder/issues/5>`_
   
 - Added efficient crawling and caching when searching for python and other executables.
+
   - Carry architecture support all the way through the search stack to only return available python which matches the desired architecture.
   - Improve sub-path consolidations for searching for executables and pythons.
   - Use lazy loading of python versions to avoid unnecessary subprocess calls.  `#8 <https://github.com/sarugaku/pythonfinder/issues/8>`_
