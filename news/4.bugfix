@@ -1,1 +1,0 @@
-Prevent use of ``VIRTUAL_ENV`` as a search location when ``global_search`` is ``False``.
