@@ -1,5 +1,12 @@
-0.1.4
+1.0.0
  - Fix `subprocess.Popen` calls on python <3.5.
+ - Add support for `global_search` which uses `sys.path` for searching.
+ - Fix support for `system` which uses `sys.executable_prefix` for search priority.
+ - Carry architecture support all the way through the search stack to only return available
+   python which matches the desired architecture.
+ - Improve sub-path consolidations for searching for executables and pythons.
+ - Add cached property support to enhance performance.
+ - Use lazy loading of python versions to avoid unnecessary subprocess calls.
 0.1.3
  - Fixed lookups of non-chmod+x paths with `which` calls.
  - Fixed bug which affected parsing of stdout and stderr when the result was of Nonetype.

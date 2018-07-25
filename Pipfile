@@ -1,5 +1,4 @@
 [packages]
-bumpversion = "*"
 
 [dev-packages]
 "flake8" = "*"
@@ -11,14 +10,22 @@ twine = "*"
 pytest-xdist = "*"
 invoke = "*"
 crayons = "*"
-"e1839a8" = {path = ".", editable = true}
+pythonfinder = {path = ".", editable = true}
 sphinx-rtd-theme = "*"
 rope = "*"
 black = "*"
 parver = "*"
+towncrier = "*"
 
 [scripts]
 black = "python -m black src/pythonfinder"
+draft = "inv release.generate-changelog --draft"
+changelog = "inv release.generate-changelog --commit"
+bump = "inv release.bump-version"
+build = "inv release.build-dists"
+upload = "inv release.upload-dists"
+tag = "inv release.tag-version"
+docs = "sphinx-apidoc --ext-autodoc --ext-viewcode --ext-intersphinx -o docs/ -A 'Dan Ryan <dan@danryan.co>' -R 1.0.0 -V 1.0 -e -M -F src/pythonfinder"
 
 [pipenv]
 allow_prereleases = true

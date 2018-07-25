@@ -4,8 +4,12 @@ import invoke
 from parver import Version
 import re
 import sys
-from .vendoring import mkdir_p, drop_dir, remove_all, _get_git_root
+from .vendoring import drop_dir, remove_all
 TASK_NAME = 'RELEASE'
+
+
+def _get_git_root(ctx):
+    return ctx.run('git rev-parse --show-toplevel', hide=True).stdout
 
 
 def find_version(version_path):
@@ -65,9 +69,12 @@ def upload_dists(ctx, build=False):
 
 
 @invoke.task
-def generate_changelog(ctx, commit=False):
+def generate_changelog(ctx, commit=False, draft=False):
     log('Generating changelog...')
-    ctx.run('towncrier')
+    args = []
+    if draft:
+        args.append("--draft")
+    ctx.run('towncrier {0}'.format(" ".join(args)))
     if commit:
         log('Committing...')
         ctx.run('git add .')

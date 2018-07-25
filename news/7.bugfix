@@ -1,0 +1,1 @@
+Fixed an issue which sometimes caused pythonfinder to prefer prerelease versions.
