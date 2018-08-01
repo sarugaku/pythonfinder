@@ -1,3 +1,12 @@
+1.0.1 (2018-07-31)
+==================
+
+Bug Fixes
+---------
+
+- Fix input string parser when architecture is specified.  `#9 <https://github.com/sarugaku/pythonfinder/issues/9>`_
+
+
 1.0.0 (2018-07-25)
 ==================
 
