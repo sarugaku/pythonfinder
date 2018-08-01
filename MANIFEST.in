@@ -1,2 +1,2 @@
 include README.rst LICENSE.txt HISTORY.txt
-recursive-include *LICENSE*
+recursive-include src/pythonfinder/_vendor/ *LICENSE*
