@@ -63,4 +63,8 @@ setup(
     name="pythonfinder",
     version=find_version("src", "pythonfinder", "__init__.py"),
     package_dir={"": "src"},
+    packages=find_packages('src'),
+    package_data={
+        '': ['LICENSE*', 'README*'],
+    },
 )
