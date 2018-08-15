@@ -13,7 +13,7 @@ crayons = "*"
 pythonfinder = {path = ".", editable = true}
 sphinx-rtd-theme = "*"
 rope = "*"
-black = "*"
+black = {version = "*", markers = "python_version>='3.6'"}
 parver = "*"
 towncrier = "*"
 
