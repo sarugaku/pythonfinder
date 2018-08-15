@@ -7,9 +7,9 @@ from collections import defaultdict
 
 import attr
 
-from . import BaseFinder
 from ..exceptions import InvalidPythonVersion
 from ..utils import ensure_path
+from .mixins import BaseFinder
 from .path import PathEntry
 from .python import PythonVersion, VersionMap
 

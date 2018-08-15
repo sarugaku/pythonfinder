@@ -7,8 +7,8 @@ import attr
 
 from vistir.compat import Path
 
-from . import BaseFinder
 from ..utils import ensure_path, optional_instance_of
+from .mixins import BaseFinder
 from .path import VersionPath
 from .python import PythonVersion
 
