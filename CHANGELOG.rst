@@ -1,3 +1,12 @@
+1.0.2 (2018-08-15)
+==================
+
+Bug Fixes
+---------
+
+- Fix a bug which caused failures when parsing patch releases.  `#10 <https://github.com/sarugaku/pythonfinder/issues/10>`_
+
+
 1.0.1 (2018-07-31)
 ==================
 
