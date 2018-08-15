@@ -62,4 +62,5 @@ class UploadCommand(Command):
 setup(
     name="pythonfinder",
     version=find_version("src", "pythonfinder", "__init__.py"),
+    package_dir={"": "src"},
 )
