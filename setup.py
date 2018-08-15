@@ -62,5 +62,4 @@ class UploadCommand(Command):
 setup(
     name="pythonfinder",
     version=find_version("src", "pythonfinder", "__init__.py"),
-    tests_require=tests_require,
 )
