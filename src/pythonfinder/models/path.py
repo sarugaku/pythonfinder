@@ -15,7 +15,7 @@ from cached_property import cached_property
 
 from vistir.compat import Path, fs_str
 
-from . import BasePath
+from .mixins import BasePath
 from ..environment import PYENV_INSTALLED, PYENV_ROOT
 from ..exceptions import InvalidPythonVersion
 from ..utils import (
