@@ -1,2 +1,20 @@
 include README.rst LICENSE.txt HISTORY.txt
 recursive-include src/pythonfinder/_vendor/ *LICENSE*
+include CHANGELOG.rst
+include pyproject.toml
+
+exclude .editorconfig
+exclude .coveragerc
+exclude .travis.yml
+exclude tox.ini
+exclude appveyor.yml
+exclude Pipfile*
+
+recursive-include docs Makefile *.rst *.py *.bat
+recursive-exclude docs requirements*.txt
+
+prune .github
+prune docs/build
+prune news
+prune tasks
+prune tests

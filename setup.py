@@ -31,21 +31,6 @@ if sys.argv[-1] == "publish":
 
 long_description = read('README.rst')
 
-tests_require = [
-    'pytest',
-    'pytest-xdist',
-]
-install_requires = [
-    'click',
-    'packaging',
-    'pathlib2; python_version < "3.0"',
-    'six',
-    'delegator.py',
-    'crayons',
-    'attrs',
-    'cached-property',
-]
-
 
 class UploadCommand(Command):
     """Support setup.py publish."""
@@ -77,43 +62,5 @@ class UploadCommand(Command):
 setup(
     name="pythonfinder",
     version=find_version("src", "pythonfinder", "__init__.py"),
-    description="A cross-platform python discovery tool to help locate python on any system.",
-    long_description=long_description,
-    classifiers=[
-        "Development Status :: 2 - Pre-Alpha",
-        "Intended Audience :: Developers",
-        "License :: OSI Approved :: MIT License",
-        "Topic :: Software Development :: Build Tools",
-        "Programming Language :: Python",
-        "Programming Language :: Python :: 2",
-        "Programming Language :: Python :: 2.7",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.4",
-        "Programming Language :: Python :: 3.5",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: Implementation :: CPython",
-        "Programming Language :: Python :: Implementation :: PyPy"
-    ],
-    keywords='pythonfinder path finder pathfinder which pep514 pyenv',
-    author='Dan Ryan',
-    author_email='dan@danryan.co',
-    url='https://github.com/techalchemy',
-    license='MIT',
-    package_dir={"": "src"},
-    packages=find_packages(
-        where="src",
-        exclude=["docs", "tests*"],
-    ),
-    entry_points={
-        "console_scripts": [
-            "pyfinder=pythonfinder.cli:cli",
-        ],
-    },
     tests_require=tests_require,
-    zip_safe=False,
-    python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*',
-    install_requires=install_requires,
-    extras_require={
-        'testing': tests_require,
-    },
 )

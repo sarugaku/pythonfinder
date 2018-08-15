@@ -24,7 +24,7 @@ import codecs
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
-root = os.path.dirname(os.path.dirname(__file__))
+root = os.path.dirname(os.path.dirname(os.path.abspath((__file__))))
 
 
 def read(*parts):
@@ -71,6 +71,8 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
     'sphinx.ext.todo',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.autosummary'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -235,3 +237,4 @@ epub_exclude_files = ['search.html']
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
+intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}

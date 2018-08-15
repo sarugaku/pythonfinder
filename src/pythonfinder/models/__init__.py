@@ -1,10 +1,17 @@
 # -*- coding=utf-8 -*-
-from __future__ import print_function, absolute_import
+from __future__ import absolute_import, print_function
+
 import abc
 import operator
-import six
+
 from itertools import chain
+
+import six
+
 from ..utils import KNOWN_EXTS, unnest
+from .path import SystemPath
+from .python import PythonVersion
+from .windows import WindowsFinder
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -126,8 +133,3 @@ class BasePath(object):
             ),
             None,
         )
-
-
-from .path import SystemPath
-from .windows import WindowsFinder
-from .python import PythonVersion

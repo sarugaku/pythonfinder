@@ -1,17 +1,16 @@
 # -*- coding=utf-8 -*-
-from __future__ import print_function, absolute_import
-import attr
+from __future__ import absolute_import, print_function
+
 from collections import defaultdict
+
+import attr
+
+from vistir.compat import Path
+
 from . import BaseFinder
+from ..utils import ensure_path, optional_instance_of
 from .path import VersionPath
 from .python import PythonVersion
-from ..utils import optional_instance_of, ensure_path
-
-
-try:
-    from pathlib import Path
-except ImportError:
-    from pathlib2 import Path
 
 
 @attr.s

@@ -2,13 +2,13 @@ PythonFinder: Cross Platform Search Tool for Finding Pythons
 =============================================================
 
 .. image:: https://img.shields.io/pypi/v/pythonfinder.svg
-    :target: https://pypi.python.org/pypi/pythonfinder
+    :target: https://pypi.org/pypi/pythonfinder
 
 .. image:: https://img.shields.io/pypi/l/pythonfinder.svg
-    :target: https://pypi.python.org/pypi/pythonfinder
+    :target: https://pypi.org/pypi/pythonfinder
 
 .. image:: https://img.shields.io/pypi/pyversions/pythonfinder.svg
-    :target: https://pypi.python.org/pypi/pythonfinder
+    :target: https://pypi.org/pypi/pythonfinder
 
 .. image:: https://img.shields.io/badge/Say%20Thanks-!-1EAEDB.svg
     :target: https://saythanks.io/to/techalchemy
