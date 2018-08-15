@@ -1,5 +1,5 @@
 include README.rst LICENSE.txt HISTORY.txt
-recursive-include src/pythonfinder/_vendor/ *LICENSE*
+recursive-include src/pythonfinder/_vendor *LICENSE* *.txt Makefile
 include CHANGELOG.rst
 include pyproject.toml
 
@@ -9,6 +9,7 @@ exclude .travis.yml
 exclude tox.ini
 exclude appveyor.yml
 exclude Pipfile*
+exclude README.md
 
 recursive-include docs Makefile *.rst *.py *.bat
 recursive-exclude docs requirements*.txt
