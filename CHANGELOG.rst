@@ -1,3 +1,12 @@
+1.1.0 (2018-10-06)
+==================
+
+Bug Fixes
+---------
+
+- Fixed a bug which caused inadvertent inclusion of previously removed python installations on windows.  `#11 <https://github.com/sarugaku/pythonfinder/issues/11>`_
+
+
 1.0.2 (2018-08-15)
 ==================
 
