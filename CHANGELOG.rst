@@ -1,3 +1,12 @@
+1.1.1 (2018-10-11)
+==================
+
+Bug Fixes
+---------
+
+- Fixed an issue which prevented graceful parsing of debug releases of python, which will now be sorted the same as prereleases.  `#12 <https://github.com/sarugaku/pythonfinder/issues/12>`_
+
+
 1.1.0 (2018-10-06)
 ==================
 
