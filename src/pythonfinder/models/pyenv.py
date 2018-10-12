@@ -1,6 +1,8 @@
 # -*- coding=utf-8 -*-
 from __future__ import absolute_import, print_function
 
+import logging
+
 from collections import defaultdict
 
 import attr
@@ -13,9 +15,15 @@ from .path import VersionPath
 from .python import PythonVersion
 
 
+logger = logging.getLogger(__name__)
+
+
 @attr.s
 class PyenvFinder(BaseFinder):
     root = attr.ib(default=None, validator=optional_instance_of(Path))
+    # ignore_unsupported should come before versions, because its value is used
+    # in versions's default initializer.
+    ignore_unsupported = attr.ib(default=False)
     versions = attr.ib()
     pythons = attr.ib()
 
@@ -23,7 +31,16 @@ class PyenvFinder(BaseFinder):
     def get_versions(self):
         versions = defaultdict(VersionPath)
         for p in self.root.glob("versions/*"):
-            version = PythonVersion.parse(p.name)
+            try:
+                version = PythonVersion.parse(p.name)
+            except Exception:
+                if not self.ignore_unsupported:
+                    raise
+                logger.warning(
+                    'Unsupported Python version %r, ignoring...',
+                    p.name, exc_info=True
+                )
+                continue
             version_tuple = (
                 version.get("major"),
                 version.get("minor"),
@@ -47,6 +64,6 @@ class PyenvFinder(BaseFinder):
         return pythons
 
     @classmethod
-    def create(cls, root):
+    def create(cls, root, ignore_unsupported=False):
         root = ensure_path(root)
-        return cls(root=root)
+        return cls(root=root, ignore_unsupported=ignore_unsupported)
