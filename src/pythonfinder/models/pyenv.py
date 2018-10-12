@@ -30,7 +30,7 @@ class PyenvFinder(BaseFinder):
     @versions.default
     def get_versions(self):
         versions = defaultdict(VersionPath)
-        for p in self.root.glob("versions/*"):
+        for p in self.root.glob("versions/[2-3]*"):
             try:
                 version = PythonVersion.parse(p.name)
             except Exception:
