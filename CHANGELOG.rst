@@ -1,3 +1,20 @@
+1.1.2 (2018-10-12)
+==================
+
+Features & Improvements
+-----------------------
+
+- Added support for non-CPython interpreters.  `#16 <https://github.com/sarugaku/pythonfinder/issues/16>`_
+  
+
+Bug Fixes
+---------
+
+- Added support for ignoring unsupported python versions during version search with the flag ``--ignore-unsupported``.  `#14 <https://github.com/sarugaku/pythonfinder/issues/14>`_
+  
+- Added support for pyenv virtualenvs.  `#15 <https://github.com/sarugaku/pythonfinder/issues/15>`_
+
+
 1.1.1 (2018-10-11)
 ==================
 

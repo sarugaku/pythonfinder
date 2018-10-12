@@ -1,1 +1,0 @@
-Added support for ignoring unsupported python versions during version search with the flag ``--ignore-unsupported``.
