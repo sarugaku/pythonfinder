@@ -108,7 +108,7 @@ class PythonVersion(object):
         is_debug = False
         if version.endswith("-debug"):
             is_debug = True
-            version, _, _ = verson.rpartition("-")
+            version, _, _ = version.rpartition("-")
         try:
             version = parse_version(str(version))
         except TypeError:
