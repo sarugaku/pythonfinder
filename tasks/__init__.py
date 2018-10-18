@@ -4,6 +4,7 @@ import invoke
 from . import vendoring
 
 import pathlib
+import re
 import shutil
 import subprocess
 
@@ -159,4 +160,12 @@ def build_docs(ctx):
     ctx.run("sphinx-apidoc {0}".format(" ".join(args)))
 
 
-ns = invoke.Collection(vendoring, release)
+@invoke.task
+def clean_mdchangelog(ctx):
+    changelog = ROOT / "CHANGELOG.md"
+    content = changelog.read_text()
+    content = re.sub(r"([^\n]+)\n?\s+\[\\(#\d+)\]\(https://github\.com/sarugaku/[\w\-]+/issues/\d+\)", r"\1 \2", content, flags=re.MULTILINE)
+    changelog.write_text(content)
+
+
+ns = invoke.Collection(vendoring, release, build_docs, clean_mdchangelog)
