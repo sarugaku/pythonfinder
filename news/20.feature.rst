@@ -1,1 +1,0 @@
-Introduced lookup by name when searching for python versions, which allows searching for non-standard python releases such as ``anaconda3-5.3.0``.

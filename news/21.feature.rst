@@ -1,3 +1,0 @@
-General improvements:
-  - Improved ``pyenv`` support and architecture lookup support.
-  - Improved overall performance and caching.
