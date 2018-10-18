@@ -151,5 +151,5 @@ def clean_mdchangelog(ctx):
     changelog = root / "CHANGELOG.md"
     content = changelog.read_text()
     content = re.sub(r"\[\\(#\d+)\]\(https://github\.com/sarugaku/[\w\-]+/issues/\d+\)", "\1", content)
-    # changelog.write_text(content)
+    changelog.write_text(content)
     print(content)
