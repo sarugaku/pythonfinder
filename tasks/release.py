@@ -144,3 +144,12 @@ def bump_version(
             ctx.run("git add {0}".format(get_version_file(ctx)))
             log("Committing...")
             ctx.run('git commit -s -m "Bumped version."')
+
+@invoke.task
+def clean_mdchangelog(ctx):
+    root = _get_git_root(ctx)
+    changelog = root / "CHANGELOG.md"
+    content = changelog.read_text()
+    content = re.sub(r"\[\\(#\d+)\]\(https://github\.com/sarugaku/[\w\-]+/issues/\d+\)", "\1", content)
+    # changelog.write_text(content)
+    print(content)
