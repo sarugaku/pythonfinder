@@ -1,3 +1,22 @@
+1.1.3 (2018-10-18)
+==================
+
+Features & Improvements
+-----------------------
+
+- Introduced lookup by name when searching for python versions, which allows searching for non-standard python releases such as ``anaconda3-5.3.0``.  `#20 <https://github.com/sarugaku/pythonfinder/issues/20>`_
+  
+- General improvements:
+    - Improved ``pyenv`` support and architecture lookup support.
+    - Improved overall performance and caching.  `#21 <https://github.com/sarugaku/pythonfinder/issues/21>`_
+  
+
+Bug Fixes
+---------
+
+- Switch to using ``--ignore-unsupported`` by default during lookups.  `#19 <https://github.com/sarugaku/pythonfinder/issues/19>`_
+
+
 1.1.2 (2018-10-12)
 ==================
 
