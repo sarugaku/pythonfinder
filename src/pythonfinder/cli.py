@@ -35,10 +35,14 @@ def cli(ctx, find=False, which=False, findall=False, version=False, ignore_unsup
             click.secho("Found python at the following locations:", fg="green")
             for v in versions:
                 py = v.py_version
-                comes_from = getattr(py, "comes_from", v)
+                comes_from = getattr(py, "comes_from", None)
+                if comes_from is not None:
+                    comes_from_path = getattr(comes_from, "path", v.path)
+                else:
+                    comes_from_path = v.path
                 click.secho(
-                    "{py.name!s}: {py.version!s} ({py.architecture!s}) @ {comes_from.path!s}".format(
-                        py=py, comes_from=comes_from
+                    "{py.name!s}: {py.version!s} ({py.architecture!s}) @ {comes_from!s}".format(
+                        py=py, comes_from=comes_from_path
                     ),
                     fg="yellow",
                 )
