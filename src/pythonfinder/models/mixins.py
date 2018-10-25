@@ -6,6 +6,8 @@ import attr
 import operator
 import six
 
+import itertools
+
 from ..utils import ensure_path, KNOWN_EXTS, unnest
 
 
@@ -19,17 +21,20 @@ class BasePath(object):
         :returns: :class:`~pythonfinder.models.PathEntry` instance.
         """
 
-        valid_names = [name] + [
-            "{0}.{1}".format(name, ext).lower() if ext else "{0}".format(name).lower()
-            for ext in KNOWN_EXTS
+        extensions = (ext.lower() for ext in KNOWN_EXTS if ext is not None)
+        valid_names = [
+            ".".join(
+                (p for p in fn if p)
+            ) for fn in itertools.chain(
+                itertools.product(("myname".lower(),), extensions)
+            )
         ]
         children = self.children
-        found = next(
-            (
-                children[(self.path / child).as_posix()]
+        found = next(iter(
+            child for child in (
+                children.get(self.path.joinpath(child).as_posix(), None)
                 for child in valid_names
-                if (self.path / child).as_posix() in children
-            ),
+            ) if child is not None),
             None,
         )
         return found
@@ -73,7 +78,10 @@ class BasePath(object):
         )
         if not self.is_dir:
             return sub_finder(self)
-        path_filter = filter(None, (sub_finder(p) for p in self.children.values()))
+        path_filter = (
+            match for match in (sub_finder(p) for p in self.children.values())
+            if match is not None
+        )
         version_sort = operator.attrgetter("as_python.version_sort")
         return [c for c in sorted(path_filter, key=version_sort, reverse=True)]
 

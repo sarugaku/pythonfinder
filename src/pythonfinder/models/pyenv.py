@@ -33,6 +33,7 @@ class PyenvFinder(BaseFinder, BasePath):
     #: in versions's default initializer.
     ignore_unsupported = attr.ib(default=True)
     paths = attr.ib(default=attr.Factory(list))
+    version_paths = attr.ib(default=attr.Factory(list))
     roots = attr.ib(default=attr.Factory(defaultdict))
     versions = attr.ib()
     pythons = attr.ib()
@@ -55,27 +56,38 @@ class PyenvFinder(BaseFinder, BasePath):
         py_version = next(iter(version_path.find_all_python_versions()), None)
         return py_version
 
-    @versions.default
-    def get_versions(self):
-        versions = defaultdict()
+    @paths.default
+    def get_paths(self):
         bin_ = sysconfig._INSTALL_SCHEMES[sysconfig._get_default_scheme()]["scripts"]
         for p in self.root.glob("versions/*"):
             if p.parent.name == "envs" or p.name == "envs":
                 continue
-            bin_dir = Path(bin_.format(base=p.as_posix()))
-            version_path = None
+            try:
+                bin_dir = Path(bin_.format(base=p.as_posix()))
+            except Exception:
+                bin_dir = p.joinpath("bin")
+            path = None
             if bin_dir.exists():
-                version_path = PathEntry.create(
+                version_path = PathEntry.create(path=bin_dir.absolute().as_posix(), name=p.name, is_root=True, only_python=True)
+                self.version_paths.appehd(version_path)
+                path = PathEntry.create(
                     path=bin_dir.absolute().as_posix(),
                     only_python=False,
                     name=p.name,
                     is_root=True,
                 )
+                self.paths.append(path)
+
+    @versions.default
+    def get_versions(self):
+        versions = defaultdict()
+        bin_ = sysconfig._INSTALL_SCHEMES[sysconfig._get_default_scheme()]["scripts"]
+        for p in self.version_paths:
             version = None
             try:
                 version = PythonVersion.parse(p.name)
             except ValueError:
-                entry = next(iter(version_path.find_all_python_versions()), None)
+                entry = next(iter(p.find_all_python_versions()), None)
                 if not entry:
                     if self.ignore_unsupported:
                         continue
@@ -99,15 +111,14 @@ class PyenvFinder(BaseFinder, BasePath):
                 version.get("is_devrelease"),
                 version.get("is_debug"),
             )
-            self.roots[p] = version_path
-            versions[version_tuple] = version_path
-            self.paths.append(version_path)
+            self.roots[p.path] = p
+            versions[version_tuple] = p
         return versions
 
     @pythons.default
     def get_pythons(self):
         pythons = defaultdict()
-        for p in self.paths:
+        for p in self.version_paths:
             pythons.update(p.pythons)
         return pythons
 
@@ -156,7 +167,7 @@ class PyenvFinder(BaseFinder, BasePath):
             if py_ver is not None
         )
         # pythons = filter(None, [p.as_python for p in self.pythons.values()])
-        matching_versions = filter(lambda py: version_matcher(py), pythons)
+        matching_versions = (py_ver for py_ver in pythons if version_matcher(py_ver))
         version_sort = operator.attrgetter("version_sort")
         return sorted(matching_versions, key=version_sort, reverse=True)
 
@@ -193,10 +204,19 @@ class PyenvFinder(BaseFinder, BasePath):
             arch=arch,
             name=name,
         )
-        pythons = filter(None, [p.as_python for p in self.pythons.values()])
-        matching_versions = filter(lambda py: version_matcher(py), pythons)
+        as_py = operator.attrgetter("as_python")
+        is_py = operator.attrgetter("is_python")
+        matching_versions = (
+            py for py in (
+                as_py(p) for p in self.pythons.values()
+                if is_py(p) and as_py(p)
+            ) if py is not None and version_matcher(py)
+        )
         version_sort = operator.attrgetter("version_sort")
-        return next(iter(c for c in sorted(matching_versions, key=version_sort, reverse=True)), None)
+        return next(iter((
+            c for c in (matching_versions, key=version_sort, reverse=True)
+            if c is not None
+        )), None)
 
 
 @attr.s

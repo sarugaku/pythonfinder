@@ -89,7 +89,7 @@ class SystemPath(object):
                 elif entry not in self._version_dict[version] and entry.is_python:
                     self._version_dict[version].append(entry)
         for p, entry in self.python_executables.items():
-            version = entry.as_python
+            version = getattr(entry, "as_python", None)
             if not version:
                 continue
             version = version.version_tuple
@@ -157,6 +157,7 @@ class SystemPath(object):
         self.paths.update({p.path: p for p in root_paths})
         self._register_finder("windows", self.windows_finder)
 
+    @cached_property
     def get_path(self, path):
         path = ensure_path(path)
         _path = self.paths.get(path)
@@ -169,6 +170,7 @@ class SystemPath(object):
             self.paths[path.as_posix()] = _path
         return _path
 
+    @cached_property
     def _get_paths(self):
         return (self.get_path(k) for k in self.path_order)
 
@@ -212,13 +214,13 @@ class SystemPath(object):
 
     def get_pythons(self, finder):
         sort_key = operator.attrgetter("as_python.version_sort")
-        return (
+        return [
             k for k in sorted(
                 (p for p in self._filter_paths(finder) if p.is_python),
                 key=sort_key,
                 reverse=True
             ) if k is not None
-        )
+        ]
 
     def find_all_python_versions(
         self,
@@ -265,9 +267,9 @@ class SystemPath(object):
             windows_finder_version = sub_finder(self.windows_finder)
             if windows_finder_version:
                 return windows_finder_version
-        values = list(self.get_pythons(sub_finder))
+        values = self.get_pythons(sub_finder)
         if not values and alternate_sub_finder is not None:
-            values = list(self.get_pythons(alternate_sub_finder))
+            values = self.get_pythons(alternate_sub_finder)
         return values
 
     def find_python_version(
@@ -368,10 +370,10 @@ class SystemPath(object):
         if ignore_unsupported:
             os.environ["PYTHONFINDER_IGNORE_UNSUPPORTED"] = fs_str("1")
         if global_search:
-            paths = os.environ.get("PATH").split(os.pathsep)
+            paths = os.environ.get("PATH").replace('"', "").split(os.pathsep)
         if path:
             paths = [path] + paths
-        _path_objects = [ensure_path(p.strip('"')) for p in paths]
+        _path_objects = [ensure_path(p) for p in paths]
         paths = [p.as_posix() for p in _path_objects]
         path_entries.update(
             {
@@ -397,6 +399,7 @@ class PathEntry(BasePath):
     _children = attr.ib(default=attr.Factory(dict))
     is_root = attr.ib(default=True)
     only_python = attr.ib(default=False)
+    pass_name = attr.ib(default=False)
     name = attr.ib()
     py_version = attr.ib()
     pythons = attr.ib()
@@ -411,9 +414,10 @@ class PathEntry(BasePath):
             children = self.path.iterdir()
         return children
 
-    def _gen_children(self):
-        pass_name = self.name != self.path.name
-        pass_args = {"is_root": False, "only_python": self.only_python}
+    def _gen_children(self, only_python=None):
+        pass_name = self.pass_name or self.name != self.path.name
+        only_python = only_python if only_python is not None else self.only_python
+        pass_args = {"is_root": False, "only_python": only_python}
         if pass_name:
             pass_args["name"] = self.name
 
@@ -426,7 +430,7 @@ class PathEntry(BasePath):
 
     @cached_property
     def children(self):
-        if not self._children:
+        if not self._children or self.only_python is False:
             children = {}
             for child_key, child_val in self._gen_children():
                 children[child_key] = child_val
@@ -455,10 +459,15 @@ class PathEntry(BasePath):
     def get_pythons(self):
         pythons = defaultdict()
         if self.is_dir:
-            for path, entry in self.children.items():
-                _path = ensure_path(entry.path)
-                if entry.is_python:
-                    pythons[_path.as_posix()] = entry
+            if not self._children:
+                for path, entry in self._gen_children(only_python=True):
+                if entry.is_python and entry.as_python:
+                    pythons[ensure_path(entry.path).as_posix()] = entry
+            else:
+                for path, entry in self.children.items():
+                    if entry.is_python:
+                        _path = ensure_path(entry.path)
+                        pythons[_path.as_posix()] = entry
         else:
             if self.is_python:
                 _path = ensure_path(self.path)
@@ -496,7 +505,13 @@ class PathEntry(BasePath):
         if not name:
             guessed_name = True
             name = target.name
-        creation_args = {"path": target, "is_root": is_root, "only_python": only_python, "name": name}
+        creation_args = {
+            "path": target,
+            "is_root": is_root,
+            "only_python": only_python,
+            "name": name,
+            "pass_name": True if not guessed_name else False
+        }
         if pythons:
             creation_args["pythons"] = pythons
         _new = cls(**creation_args)
@@ -504,7 +519,6 @@ class PathEntry(BasePath):
             children = {}
             child_creation_args = {
                 "is_root": False,
-                "py_version": python,
                 "only_python": only_python
             }
             if not guessed_name:
@@ -513,6 +527,7 @@ class PathEntry(BasePath):
                 pth = ensure_path(pth)
                 children[pth.as_posix()] = PathEntry(
                     path=pth,
+                    py_version=python,
                     **child_creation_args
                 )
             _new._children = children

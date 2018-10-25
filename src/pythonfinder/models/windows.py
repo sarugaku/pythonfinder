@@ -57,10 +57,8 @@ class WindowsFinder(BaseFinder):
         arch=None,
         name=None,
     ):
-        return next(
-            (
-                v
-                for v in self.find_all_python_versions(
+        return next(iter(
+            v for v in self.find_all_python_versions(
                     major=major,
                     minor=minor,
                     patch=patch,
@@ -68,9 +66,8 @@ class WindowsFinder(BaseFinder):
                     dev=dev,
                     arch=arch,
                     name=None,
-                )
-            ),
-            None,
+                ) if v is not None
+            ), None
         )
 
     @versions.default
@@ -81,10 +78,16 @@ class WindowsFinder(BaseFinder):
         env_versions = pep514env.findall()
         path = None
         for version_object in env_versions:
-            install_path = getattr(version_object.info, "install_path", None)
+            info = getattr(version_object, "info", None)
+            if info is None:
+                continue
+            install_path = getattr(info, "install_path", None)
             if install_path is None:
                 continue
-            path = ensure_path(install_path.__getattr__(""))
+            path = getattr(install_path, "", None)
+            if not path:
+                continue
+            path = ensure_path(path)
             try:
                 py_version = PythonVersion.from_windows_launcher(version_object)
             except InvalidPythonVersion:
