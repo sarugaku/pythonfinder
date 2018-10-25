@@ -54,7 +54,7 @@ def get_python_version(path):
         raise InvalidPythonVersion("%s is not a valid python path" % path)
     if not c.out:
         raise InvalidPythonVersion("%s is not a valid python path" % path)
-    return c.strip()
+    return c.out.strip()
 
 
 def optional_instance_of(cls):
