@@ -1,3 +1,12 @@
+1.1.5 (2018-10-25)
+==================
+
+Bug Fixes
+---------
+
+- Fixed an issue with parsing python paths.  `#52 <https://github.com/sarugaku/pythonfinder/issues/52>`_
+
+
 1.1.4 (2018-10-25)
 ==================
 
