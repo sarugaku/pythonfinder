@@ -1,1 +1,0 @@
-Fixed a broken call to ``vistir.misc.run`` which returned a ``subprocess.Popen`` object instead of its output.

@@ -1,3 +1,12 @@
+1.1.4 (2018-10-25)
+==================
+
+Bug Fixes
+---------
+
+- Fixed a broken call to ``vistir.misc.run`` which returned a ``subprocess.Popen`` object instead of its output.  `#22 <https://github.com/sarugaku/pythonfinder/issues/22>`_
+
+
 1.1.3 (2018-10-18)
 ==================
 
