@@ -35,12 +35,14 @@ def cli(ctx, find=False, which=False, findall=False, version=False, ignore_unsup
             click.secho("Found python at the following locations:", fg="green")
             for v in versions:
                 py = v.py_version
+                comes_from = getattr(v, "comes_from", v)
                 click.secho(
-                    "{py.name!s}: {py.version!s} ({py.architecture!s}) @ {py.comes_from.path!s}".format(
-                        py=py
+                    "{py.name!s}: {py.version!s} ({py.architecture!s}) @ {comes_from.path!s}".format(
+                        py=py, comes_from=comes_from
                     ),
                     fg="yellow",
                 )
+                sys.exit(0)
         else:
             click.secho(
                 "ERROR: No valid python versions found! Check your path and try again.",
