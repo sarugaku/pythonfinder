@@ -49,7 +49,8 @@ def get_python_version(path):
     """Get python version string using subprocess from a given path."""
     version_cmd = [path, "-c", "import sys; print(sys.version.split()[0])"]
     try:
-        c = vistir.misc.run(version_cmd, block=True, nospin=True, return_object=True)
+        c = vistir.misc.run(version_cmd, block=True, nospin=True, return_object=True,
+                                combine_stderr=False)
     except OSError:
         raise InvalidPythonVersion("%s is not a valid python path" % path)
     if not c.out:
