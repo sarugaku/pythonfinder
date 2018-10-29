@@ -150,6 +150,5 @@ def clean_mdchangelog(ctx):
     root = _get_git_root(ctx)
     changelog = root / "CHANGELOG.md"
     content = changelog.read_text()
-    content = re.sub(r"\[\\(#\d+)\]\(https://github\.com/sarugaku/[\w\-]+/issues/\d+\)", "\1", content)
+    content = re.sub(r"([^\n]+)\n?\s+\[[\\]+(#\d+)\]\(https://github\.com/sarugaku/[\w\-]+/issues/\d+\)", r"\1 \2", content, flags=re.MULTILINE)
     changelog.write_text(content)
-    print(content)
