@@ -1,1 +1,0 @@
-Fixed a bug with searching windows registry entries which sometimes caused errors for uninstalled python instances.

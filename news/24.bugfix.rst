@@ -1,1 +1,0 @@
-Fixed an issue with unnesting paths when finding python versions.

@@ -1,3 +1,20 @@
+1.1.7 (2018-11-04)
+==================
+
+Features & Improvements
+-----------------------
+
+- Pyenv paths will now be ordered respecting global version settings and pyenv shims will be removed from the search path.  `#27 <https://github.com/sarugaku/pythonfinder/issues/27>`_
+  
+
+Bug Fixes
+---------
+
+- Fixed an issue with unnesting paths when finding python versions.  `#24 <https://github.com/sarugaku/pythonfinder/issues/24>`_
+  
+- Fixed a bug with searching windows registry entries which sometimes caused errors for uninstalled python instances.  `#26 <https://github.com/sarugaku/pythonfinder/issues/26>`_
+
+
 1.1.6 (2018-10-26)
 ==================
 
