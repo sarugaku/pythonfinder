@@ -1,1 +1,0 @@
-Fix a bug where pyenv cannot be found when PYENV_ROOT is not set

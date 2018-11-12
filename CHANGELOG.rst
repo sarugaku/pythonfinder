@@ -1,3 +1,16 @@
+1.1.8 (2018-11-12)
+==================
+
+Bug Fixes
+---------
+
+- Fix a bug where pyenv cannot be found when PYENV_ROOT is not set  `#29 <https://github.com/sarugaku/pythonfinder/issues/29>`_
+  
+- Fix a bug where pyenv python location is not properly got by sysconfig._get_default_scheme  `#31 <https://github.com/sarugaku/pythonfinder/issues/31>`_
+  
+- Fix finding pyenv's python versions issue when pyenv root version is not present  `#33 <https://github.com/sarugaku/pythonfinder/issues/33>`_
+
+
 1.1.7 (2018-11-04)
 ==================
 
