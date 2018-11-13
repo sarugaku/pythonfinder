@@ -33,6 +33,11 @@ from ..utils import (
 from .python import PythonVersion
 
 
+ASDF_SHIM_PATH = normalize_path(os.path.join(ASDF_DATA_DIR, "shims"))
+PYENV_SHIM_PATH = normalize_path(os.path.join(PYENV_ROOT, "shims"))
+SHIM_PATHS = [ASDF_SHIM_PATH, PYENV_SHIM_PATH]
+
+
 @attr.s
 class SystemPath(object):
     global_search = attr.ib(default=True)
@@ -428,14 +433,15 @@ class SystemPath(object):
             paths = [path] + paths
         _path_objects = [ensure_path(p.strip('"')) for p in paths]
         paths = [p.as_posix() for p in _path_objects]
-        path_entries.update(
-            {
-                p.as_posix(): PathEntry.create(
-                    path=p.absolute(), is_root=True, only_python=only_python
-                )
-                for p in _path_objects
-            }
-        )
+        if not any(shim in normalize_path(str(p)) for shim in SHIM_PATHS):
+            path_entries.update(
+                {
+                    p.as_posix(): PathEntry.create(
+                        path=p.absolute(), is_root=True, only_python=only_python
+                    )
+                    for p in _path_objects
+                }
+            )
         return cls(
             paths=path_entries,
             path_order=paths,
@@ -476,6 +482,8 @@ class PathEntry(BasePath):
             yield (self.path.as_posix(), copy.deepcopy(self))
         elif self.is_root:
             for child in self._filter_children():
+                if any(shim in normalize_path(str(child)) for shim in SHIM_PATHS):
+                    continue
                 yield (child.as_posix(), PathEntry.create(path=child, **pass_args))
         return
 
@@ -566,6 +574,8 @@ class PathEntry(BasePath):
             if not guessed_name:
                 child_creation_args["name"] = name
             for pth, python in pythons.items():
+                if any(shim in normalize_path(str(pth)) for shim in SHIM_PATHS):
+                    continue
                 pth = ensure_path(pth)
                 children[pth.as_posix()] = PathEntry(
                     py_version=python,
