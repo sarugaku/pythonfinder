@@ -1,0 +1,1 @@
+Added support for ``asdf`` installations via the ``ASDF_DATA_DIR`` environment variable.
