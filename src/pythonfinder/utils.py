@@ -116,8 +116,8 @@ def _filter_none(k, v):
 
 
 def normalize_path(path):
-    return os.path.expandvars(os.path.expanduser(
-        os.path.normpath(os.path.normcase(os.path.abspath(str(path))))
+    return os.path.normpath(os.path.normcase(
+        os.path.abspath(os.path.expandvars(os.path.expanduser(str(path))))
     ))
 
 
@@ -163,7 +163,7 @@ def parse_asdf_version_order(filename=".tool-versions"):
             line for line in contents.splitlines() if line.startswith("python")
         ), None)
         if python_section:
-            python_key, versions = python_section.partition()
+            python_key, _, versions = python_section.partition(" ")
             if versions:
                 return versions.split()
 
