@@ -433,15 +433,15 @@ class SystemPath(object):
             paths = [path] + paths
         _path_objects = [ensure_path(p.strip('"')) for p in paths]
         paths = [p.as_posix() for p in _path_objects]
-        if not any(shim in normalize_path(str(p)) for shim in SHIM_PATHS):
-            path_entries.update(
-                {
-                    p.as_posix(): PathEntry.create(
-                        path=p.absolute(), is_root=True, only_python=only_python
-                    )
-                    for p in _path_objects
-                }
-            )
+        path_entries.update(
+            {
+                p.as_posix(): PathEntry.create(
+                    path=p.absolute(), is_root=True, only_python=only_python
+                )
+                for p in _path_objects
+                if not any(shim in normalize_path(str(p)) for shim in SHIM_PATHS)
+            }
+        )
         return cls(
             paths=path_entries,
             path_order=paths,
