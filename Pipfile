@@ -1,7 +1,7 @@
 [packages]
 
 [dev-packages]
-"flake8" = "*"
+flake8 = "*"
 sphinx-click = "*"
 pytest = "*"
 mock = "*"
@@ -10,10 +10,10 @@ twine = "*"
 pytest-xdist = "*"
 invoke = "*"
 crayons = "*"
-pythonfinder = {path = ".", editable = true}
+pythonfinder = {path = ".",editable = true}
 sphinx-rtd-theme = "*"
 rope = "*"
-black = {version = "*", markers = "python_version>='3.6'"}
+black = {version = "*",markers = "python_version>='3.6'"}
 parver = "*"
 towncrier = "*"
 
