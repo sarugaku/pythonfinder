@@ -179,6 +179,7 @@ class SystemPath(object):
         root_paths = [p for p in self.asdf_finder.roots]
         self._slice_in_paths(asdf_index, root_paths)
         self.paths.update(self.asdf_finder.roots)
+        self._remove_path(os.path.expandvars(os.path.expanduser(ASDF_DATA_DIR, "shims")))
         self._register_finder("asdf", self.asdf_finder)
 
     def _setup_pyenv(self):
@@ -503,6 +504,7 @@ class PathEntry(BasePath):
             except Exception:
                 if not IGNORE_UNSUPPORTED:
                     raise
+                return
             return py_version
         return
 

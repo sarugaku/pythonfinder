@@ -116,7 +116,9 @@ def _filter_none(k, v):
 
 
 def normalize_path(path):
-    return os.path.normpath(os.path.normcase(os.path.abspath(str(path))))
+    return os.path.expandvars(os.path.expanduser(
+        os.path.normpath(os.path.normcase(os.path.abspath(str(path))))
+    ))
 
 
 @lru_cache(maxsize=1024)
