@@ -115,6 +115,7 @@ def _filter_none(k, v):
     return False
 
 
+# TODO: Reimplement in vistir
 def normalize_path(path):
     return os.path.normpath(os.path.normcase(
         os.path.abspath(os.path.expandvars(os.path.expanduser(str(path))))
@@ -131,6 +132,7 @@ def filter_pythons(path):
     return filter(lambda x: path_is_python(x), path.iterdir())
 
 
+# TODO: Port to vistir
 def unnest(item):
     if isinstance(item, Iterable) and not isinstance(item, six.string_types):
         item, target = itertools.tee(item, 2)
@@ -168,5 +170,6 @@ def parse_asdf_version_order(filename=".tool-versions"):
                 return versions.split()
 
 
+# TODO: Reimplement in vistir
 def is_in_path(path, parent):
     return normalize_path(str(path)).startswith(normalize_path(str(parent)))
