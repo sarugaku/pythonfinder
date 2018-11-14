@@ -12,16 +12,16 @@ import six
 
 import vistir
 
-from .environment import PYENV_INSTALLED, PYENV_ROOT, ASDF_INSTALLED, ASDF_DATA_DIR
+from .environment import PYENV_ROOT, ASDF_DATA_DIR
 from .exceptions import InvalidPythonVersion
+
+six.add_move(six.MovedAttribute("Iterable", "collections", "collections.abc"))
+from six.moves import Iterable
 
 try:
     from functools import lru_cache
 except ImportError:
     from backports.functools_lru_cache import lru_cache
-
-six.add_move(six.MovedAttribute("Iterable", "collections", "collections.abc"))
-from six.moves import Iterable
 
 
 PYTHON_IMPLEMENTATIONS = (
@@ -64,10 +64,6 @@ def optional_instance_of(cls):
     return attr.validators.optional(attr.validators.instance_of(cls))
 
 
-def path_and_exists(path):
-    return attr.validators.instance_of(vistir.compat.Path) and path.exists()
-
-
 def path_is_executable(path):
     return os.access(str(path), os.X_OK)
 
@@ -95,7 +91,8 @@ def path_is_python(path):
 
 @lru_cache(maxsize=1024)
 def ensure_path(path):
-    """Given a path (either a string or a Path object), expand variables and return a Path object.
+    """
+    Given a path (either a string or a Path object), expand variables and return a Path object.
 
     :param path: A string or a :class:`~pathlib.Path` object.
     :type path: str or :class:`~pathlib.Path`
@@ -129,7 +126,7 @@ def filter_pythons(path):
         path = vistir.compat.Path(str(path))
     if not path.is_dir():
         return path if path_is_python(path) else None
-    return filter(lambda x: path_is_python(x), path.iterdir())
+    return filter(path_is_python, path.iterdir())
 
 
 # TODO: Port to vistir
