@@ -1,3 +1,13 @@
+1.1.9 (2018-11-13)
+==================
+
+Features & Improvements
+-----------------------
+
+- Added performance enhancements and error handling to python search algorithms.    
+- Added support for ``asdf`` installations via the ``ASDF_DATA_DIR`` environment variable.  `#35 <https://github.com/sarugaku/pythonfinder/issues/35>`_
+
+
 1.1.8 (2018-11-12)
 ==================
 
