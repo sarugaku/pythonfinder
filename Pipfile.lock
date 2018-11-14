@@ -532,10 +532,10 @@
                 "spinner"
             ],
             "hashes": [
-                "sha256:e39bcd071fb9741c8aad03c99fa54f3b4b9c2a839ce2ea824bfc82d22c8c567a",
-                "sha256:ffb520c1cc315ebb51bba9925e5ce5d09377f3f67c2e1a7fd616247aac2db216"
+                "sha256:851bd783f2b85a372e563db741dc689cb9263ce2e067e387facdca0c36b6a6ea",
+                "sha256:b38ffc8ef83f85d81b4efa4cd31ea3bcd37bdb2bc9e8da9f20a40859bc44b57e"
             ],
-            "version": "==0.2.3"
+            "version": "==0.2.4"
         },
         "webencodings": {
             "hashes": [
