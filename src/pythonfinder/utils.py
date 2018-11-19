@@ -163,6 +163,7 @@ def parse_pyenv_version_order(filename="version"):
             contents = fh.read()
         version_order = [v for v in contents.splitlines()]
         return version_order
+    return []
 
 
 def parse_asdf_version_order(filename=".tool-versions"):
@@ -177,6 +178,7 @@ def parse_asdf_version_order(filename=".tool-versions"):
             python_key, _, versions = python_section.partition(" ")
             if versions:
                 return versions.split()
+    return []
 
 
 # TODO: Reimplement in vistir
