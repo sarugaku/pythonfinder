@@ -359,6 +359,10 @@ class PythonVersion(object):
         if version.endswith("-debug"):
             is_debug = True
             version, _, _ = version.rpartition("-")
+        # Hack around the fact that Ubuntu Cosmic ships a "2.7.15+" version.
+        # This is not PEP-440-compliant, but we should better recognize it.
+        if version.endswith("+"):
+            version = version[:-1]
         try:
             version = parse_version(str(version))
         except TypeError:
