@@ -9,8 +9,9 @@ matrix:
 install:
   - "pip install --upgrade pip pipenv"
   - "pipenv install --dev"
+  - "pipenv run pip install --upgrade -e .[tests]"
 script:
-    - "pipenv run pytest -ra tests/"
+    - "pipenv run pytest -v -n auto tests/"
 
 jobs:
   include:
@@ -32,7 +33,7 @@ jobs:
     - stage: coverage
       python: "3.6"
       install:
-        - "pip install --upgrade pip pipenv"
+        - "pip install --upgrade pip pipenv pytest-cov pytest-xdist pytest-timeout pytest"
         - "pipenv install --dev"
       script:
-        - "pipenv run pytest --timeout 300 --cov=vistir --cov-report=term-missing --cov-report=xml --cov-report=html tests"
+        - "pipenv run pytest --timeout 300 --cov=pythonfinder --cov-report=term-missing --cov-report=xml --cov-report=html tests"
