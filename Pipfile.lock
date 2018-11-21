@@ -72,6 +72,14 @@
             ],
             "version": "==2.6.0"
         },
+        "backports.functools-lru-cache": {
+            "hashes": [
+                "sha256:9d98697f088eb1b0fa451391f91afb5e3ebde16bbdb272819fd091151fda4f1a",
+                "sha256:f0b0e4eba956de51238e17573b7087e852dfe9854afd2e9c873f73fc0ca0a6dd"
+            ],
+            "markers": "python_version <= '3.4'",
+            "version": "==1.5"
+        },
         "black": {
             "hashes": [
                 "sha256:817243426042db1d36617910df579a54f1afd659adb96fc5032fcf4b36209739",
@@ -287,11 +295,11 @@
         },
         "parver": {
             "hashes": [
-                "sha256:ac4afff688d19d5e1876bb68d4bccc1a1b6a5cc8bd6a646939a14d366695ba15",
-                "sha256:f025fba8f88a9c776971df6d62b6cf7f37d1108f84c163bda91e157d7d527075"
+                "sha256:b8b2976fd8a73a0515465b2a265fd9b20cc25a6dc88bc1154fd5f60f10dad4db",
+                "sha256:d9ae08a2629105fdb83e4971ae8a04f1de5a3803d1dd928f6e181aeadb398180"
             ],
             "index": "pypi",
-            "version": "==0.1.1"
+            "version": "==0.2.0"
         },
         "pathlib2": {
             "hashes": [
@@ -532,10 +540,10 @@
                 "spinner"
             ],
             "hashes": [
-                "sha256:851bd783f2b85a372e563db741dc689cb9263ce2e067e387facdca0c36b6a6ea",
-                "sha256:b38ffc8ef83f85d81b4efa4cd31ea3bcd37bdb2bc9e8da9f20a40859bc44b57e"
+                "sha256:3a1020fb7be000b268af96641ced9ead844b1f75840c41e20e473647688fc630",
+                "sha256:6d2005ad670f77bd9c9b5415c4e2a4a20dce5b0cf0e0d11598eb463b2e0ebe44"
             ],
-            "version": "==0.2.4"
+            "version": "==0.2.5"
         },
         "webencodings": {
             "hashes": [
