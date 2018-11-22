@@ -1,1 +1,0 @@
-Fixed an issue which prevented parsing single digit python versions as valid.

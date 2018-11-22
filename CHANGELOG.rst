@@ -1,3 +1,16 @@
+1.1.10 (2018-11-22)
+===================
+
+Bug Fixes
+---------
+
+- Fix a bug where version in version order file may not in global version paths  `#37 <https://github.com/sarugaku/pythonfinder/issues/37>`_
+    
+- Added further resilient version parser functionality to python version parser.  `#44 <https://github.com/sarugaku/pythonfinder/issues/44>`_
+    
+- Fixed an issue which prevented parsing single digit python versions as valid.  `#47 <https://github.com/sarugaku/pythonfinder/issues/47>`_
+
+
 1.1.9 (2018-11-13)
 ==================
 

@@ -1,1 +1,0 @@
-Added further resilient version parser functionality to python version parser.
