@@ -46,10 +46,6 @@ Using PythonFinder is easy.  Simply import it and ask for a python:
 
   ::
 
-    >>> from pythonfinder.pythonfinder import PythonFinder
-    >>> PythonFinder.from_line('python3')
-    '/home/techalchemy/.pyenv/versions/3.6.5/python3'
-
     >>> from pythonfinder import Finder
     >>> f = Finder()
     >>> f.find_python_version(3, minor=6)
