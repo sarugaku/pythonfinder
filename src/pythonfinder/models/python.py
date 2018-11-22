@@ -10,11 +10,12 @@ from collections import defaultdict
 
 import attr
 
-from packaging.version import Version
+from packaging.version import Version, LegacyVersion
 from packaging.version import parse as parse_version
 from vistir.compat import Path
 
 from ..environment import SYSTEM_ARCH, PYENV_ROOT, ASDF_DATA_DIR
+from ..exceptions import InvalidPythonVersion
 from .mixins import BaseFinder, BasePath
 from ..utils import (
     _filter_none,
@@ -109,7 +110,7 @@ class PythonFinder(BaseFinder, BasePath):
             version = None
             try:
                 version = PythonVersion.parse(p.name)
-            except ValueError:
+            except (ValueError, InvalidPythonVersion):
                 entry = next(iter(version_path.find_all_python_versions()), None)
                 if not entry:
                     if self.ignore_unsupported:
@@ -246,7 +247,7 @@ class PythonVersion(object):
     is_postrelease = attr.ib(default=False)
     is_devrelease = attr.ib(default=False)
     is_debug = attr.ib(default=False)
-    version = attr.ib(default=None, validator=optional_instance_of(Version))
+    version = attr.ib(default=None)
     architecture = attr.ib(default=None)
     comes_from = attr.ib(default=None)
     executable = attr.ib(default=None)
@@ -355,49 +356,10 @@ class PythonVersion(object):
         :rtype: dict.
         """
 
-        is_debug = False
-        if version.endswith("-debug"):
-            is_debug = True
-            version, _, _ = version.rpartition("-")
-        try:
-            version = parse_version(str(version))
-        except TypeError:
-            try:
-                version_dict = parse_python_version(str(version))
-            except Exception:
-                raise ValueError("Unable to parse version: %s" % version)
-            else:
-                if not version_dict:
-                    raise ValueError("Not a valid python version: %r" % version)
-                major = int(version_dict.get("major"))
-                minor = int(version_dict.get("minor"))
-                patch = version_dict.get("patch")
-                if patch:
-                    patch = int(patch)
-                version = ".".join([v for v in [major, minor, patch] if v is not None])
-                version = parse_version(version)
-        else:
-            if not version or not version.release:
-                raise ValueError("Not a valid python version: %r" % version)
-            if len(version.release) >= 3:
-                major, minor, patch = version.release[:3]
-            elif len(version.release) == 2:
-                major, minor = version.release
-                patch = None
-            else:
-                major = version.release[0]
-                minor = None
-                patch = None
-        return {
-            "major": major,
-            "minor": minor,
-            "patch": patch,
-            "is_prerelease": version.is_prerelease,
-            "is_postrelease": version.is_postrelease,
-            "is_devrelease": version.is_devrelease,
-            "is_debug": is_debug,
-            "version": version,
-        }
+        version_dict = parse_python_version(str(version))
+        if not version_dict:
+            raise ValueError("Not a valid python version: %r" % version)
+        return version_dict
 
     def get_architecture(self):
         if self.architecture:
@@ -407,7 +369,7 @@ class PythonVersion(object):
         return self.architecture
 
     @classmethod
-    def from_path(cls, path, name=None):
+    def from_path(cls, path, name=None, ignore_unsupported=True):
         """Parses a python version from a system path.
 
         Raises:
@@ -416,23 +378,24 @@ class PythonVersion(object):
         :param path: A string or :class:`~pythonfinder.models.path.PathEntry`
         :type path: str or :class:`~pythonfinder.models.path.PathEntry` instance
         :param str name: Name of the python distribution in question
+        :param bool ignore_unsupported: Whether to ignore or error on unsupported paths.
         :return: An instance of a PythonVersion.
         :rtype: :class:`~pythonfinder.models.python.PythonVersion`
         """
 
         from .path import PathEntry
-        from ..environment import IGNORE_UNSUPPORTED
 
         if not isinstance(path, PathEntry):
             path = PathEntry.create(path, is_root=False, only_python=True, name=name)
-        if not path.is_python and not IGNORE_UNSUPPORTED:
-            raise ValueError("Not a valid python path: %s" % path.path)
-            return
+        from ..environment import IGNORE_UNSUPPORTED
+        ignore_unsupported = ignore_unsupported or IGNORE_UNSUPPORTED
+        if not path.is_python:
+            if not (ignore_unsupported or IGNORE_UNSUPPORTED):
+                raise ValueError("Not a valid python path: %s" % path.path)
         py_version = get_python_version(path.path.absolute().as_posix())
         instance_dict = cls.parse(py_version.strip())
-        if not isinstance(instance_dict.get("version"), Version) and not IGNORE_UNSUPPORTED:
+        if not isinstance(instance_dict.get("version"), Version) and not ignore_unsupported:
             raise ValueError("Not a valid python path: %s" % path.path)
-            return
         if not name:
             name = path.name
         instance_dict.update(
