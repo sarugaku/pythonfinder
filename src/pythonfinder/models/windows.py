@@ -12,34 +12,32 @@ from ..utils import ensure_path
 from .mixins import BaseFinder
 from .path import PathEntry
 from .python import PythonVersion, VersionMap
+from ..environment import MYPY_RUNNING
+
+if MYPY_RUNNING:
+    from typing import DefaultDict, Tuple, List, Optional, Union
 
 
 @attr.s
 class WindowsFinder(BaseFinder):
-    paths = attr.ib(default=attr.Factory(list))
-    version_list = attr.ib(default=attr.Factory(list))
-    versions = attr.ib()
-    pythons = attr.ib()
+    paths = attr.ib(default=attr.Factory(list), type=list)
+    version_list = attr.ib(default=attr.Factory(list), type=list)
+    versions = attr.ib()  # type: DefaultDict[Tuple, PathEntry]
+    pythons = attr.ib()  # type: DefaultDict[str, List[PathEntry]]
 
     def find_all_python_versions(
         self,
-        major=None,
-        minor=None,
-        patch=None,
-        pre=None,
-        dev=None,
-        arch=None,
-        name=None,
+        major=None,  # type: Optional[Union[str, int]]
+        minor=None,  # type: Optional[int]
+        patch=None,  # type: Optional[int]
+        pre=None,  # type: Optional[bool]
+        dev=None,  # type: Optional[bool]
+        arch=None,  # type: Optional[str]
+        name=None,  # type: Optional[str]
     ):
+        # type (...) -> List[PathEntry]
         version_matcher = operator.methodcaller(
-            "matches",
-            major=major,
-            minor=minor,
-            patch=patch,
-            pre=pre,
-            dev=dev,
-            arch=arch,
-            name=name,
+            "matches", major, minor, patch, pre, dev, arch, name
         )
         py_filter = filter(
             None, filter(lambda c: version_matcher(c), self.version_list)
@@ -49,33 +47,30 @@ class WindowsFinder(BaseFinder):
 
     def find_python_version(
         self,
-        major=None,
-        minor=None,
-        patch=None,
-        pre=None,
-        dev=None,
-        arch=None,
-        name=None,
+        major=None,  # type: Optional[Union[str, int]]
+        minor=None,  # type: Optional[int]
+        patch=None,  # type: Optional[int]
+        pre=None,  # type: Optional[bool]
+        dev=None,  # type: Optional[bool]
+        arch=None,  # type: Optional[str]
+        name=None,  # type: Optional[str]
     ):
-        return next(
-            (
-                v
-                for v in self.find_all_python_versions(
-                    major=major,
-                    minor=minor,
-                    patch=patch,
-                    pre=pre,
-                    dev=dev,
-                    arch=arch,
-                    name=None,
-                )
-            ),
-            None,
+        # type: (...) -> PathEntry
+        return next(iter(v for v in self.find_all_python_versions(
+            major=major,
+            minor=minor,
+            patch=patch,
+            pre=pre,
+            dev=dev,
+            arch=arch,
+            name=None,
+            )), None
         )
 
     @versions.default
     def get_versions(self):
-        versions = defaultdict(PathEntry)
+        # type: () -> DefaultDict[Tuple, PathEntry]
+        versions = defaultdict(PathEntry)  # type: DefaultDict[Tuple, PathEntry]
         from pythonfinder._vendor.pep514tools import environment as pep514env
 
         env_versions = pep514env.findall()
@@ -105,7 +100,8 @@ class WindowsFinder(BaseFinder):
 
     @pythons.default
     def get_pythons(self):
-        pythons = defaultdict()
+        # type: () -> DefaultDict[str, List[PathEntry]]
+        pythons = defaultdict()  # type: DefaultDict[str, List[PathEntry]]
         for version in self.version_list:
             _path = ensure_path(version.comes_from.path)
             pythons[_path.as_posix()] = version.comes_from
@@ -113,4 +109,5 @@ class WindowsFinder(BaseFinder):
 
     @classmethod
     def create(cls):
+        # type: () -> WindowsFinder
         return cls()

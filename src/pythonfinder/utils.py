@@ -40,7 +40,12 @@ PYTHON_IMPLEMENTATIONS = (
     "python", "ironpython", "jython", "pypy", "anaconda", "miniconda",
     "stackless", "activepython", "micropython"
 )
-RULES_BASE = ["*{0}", "*{0}?", "*{0}?.?", "*{0}?.?m"]
+RE_MATCHER = re.compile(r"(({0})(?:\d?(?:\.\d[cpm]{{0,3}}))?(?:-?[\d\.]+)*)".format(
+    "|".join(PYTHON_IMPLEMENTATIONS)
+))
+RULES_BASE = [
+    "*{0}", "*{0}?", "*{0}?.?", "*{0}?.?m", "{0}?-?.?", "{0}?-?.?.?", "{0}?.?-?.?.?"
+]
 RULES = [rule.format(impl) for impl in PYTHON_IMPLEMENTATIONS for rule in RULES_BASE]
 
 KNOWN_EXTS = {"exe", "py", "fish", "sh", ""}
@@ -178,7 +183,11 @@ def looks_like_python(name):
 
     if not any(name.lower().startswith(py_name) for py_name in PYTHON_IMPLEMENTATIONS):
         return False
-    return any(fnmatch(name, rule) for rule in MATCH_RULES)
+    match = RE_MATCHER.match(name)
+    if match:
+        return True
+    # return any(fnmatch(name, rule) for rule in MATCH_RULES)
+    return False
 
 
 @lru_cache(maxsize=1024)

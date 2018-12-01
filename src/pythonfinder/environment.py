@@ -34,3 +34,9 @@ else:
 
 IGNORE_UNSUPPORTED = bool(os.environ.get("PYTHONFINDER_IGNORE_UNSUPPORTED", False))
 MYPY_RUNNING = os.environ.get("MYPY_RUNNING", is_type_checking())
+SHIM_PATHS = []
+if ASDF_INSTALLED:
+    SHIM_PATHS.append(os.path.join(ASDF_DATA_DIR, "shims"))
+if PYENV_INSTALLED:
+    SHIM_PATHS.append(os.path.join(PYENV_ROOT, "shims"))
+SHIM_PATHS = [os.path.normpath(os.path.normcase(p)) for p in SHIM_PATHS]

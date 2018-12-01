@@ -4,19 +4,30 @@ import os
 import six
 import operator
 from .models import SystemPath
+from .utils import MYPY_RUNNING
 from vistir.compat import lru_cache
 
 
-class Finder(object):
-    def __init__(self, path=None, system=False, global_search=True, ignore_unsupported=True):
-        """
-        Finder A cross-platform Finder for locating python and other executables.
+if MYPY_RUNNING:
+    from typing import Optional, Dict
+    from .models.path import Path
 
-        Searches for python and other specified binaries starting in `path`, if supplied,
-        but searching the bin path of `sys.executable` if `system=True`, and then
-        searching in the `os.environ['PATH']` if `global_search=True`.  When `global_search`
-        is `False`, this search operation is restricted to the allowed locations of
-        `path` and `system`.
+
+class Finder(object):
+
+    """
+    A cross-platform Finder for locating python and other executables.
+
+    Searches for python and other specified binaries starting in `path`, if supplied,
+    but searching the bin path of `sys.executable` if `system=True`, and then
+    searching in the `os.environ['PATH']` if `global_search=True`.  When `global_search`
+    is `False`, this search operation is restricted to the allowed locations of
+    `path` and `system`.
+    """
+
+    def __init__(self, path=None, system=False, global_search=True, ignore_unsupported=True):
+        # type: (Optional[str], bool, bool, bool) -> Finder
+        """Create a new :class:`~pythonfinder.pythonfinder.Finder` instance.
 
         :param path: A bin-directory search location, defaults to None
         :param path: str, optional
@@ -37,15 +48,18 @@ class Finder(object):
         self._windows_finder = None
 
     def __hash__(self):
+        # type: () -> int
         return hash(
             (self.path_prepend, self.system, self.global_search, self.ignore_unsupported)
         )
 
     def __eq__(self, other):
+        # type: (Finder) -> bool
         return self.__hash__() == other.__hash__()
 
     @property
     def system_path(self):
+        # type: () -> SystemPath
         if not self._system_path:
             self._system_path = SystemPath.create(
                 path=self.path_prepend,
@@ -57,6 +71,7 @@ class Finder(object):
 
     @property
     def windows_finder(self):
+        # type: () -> WindowsFinder
         if os.name == "nt" and not self._windows_finder:
             from .models import WindowsFinder
 
@@ -64,12 +79,14 @@ class Finder(object):
         return self._windows_finder
 
     def which(self, exe):
+        # type: (str) -> str
         return self.system_path.which(exe)
 
     @lru_cache(maxsize=1024)
     def find_python_version(
         self, major=None, minor=None, patch=None, pre=None, dev=None, arch=None, name=None
     ):
+        # type: (Optional[str, int], Optional[int], Optional[int], Optional[bool], Optional[bool], Optional[str], Optional[str]) -> Path
         from .models import PythonVersion
 
         if (
@@ -118,6 +135,7 @@ class Finder(object):
     def find_all_python_versions(
         self, major=None, minor=None, patch=None, pre=None, dev=None, arch=None, name=None
     ):
+        # type: (Optional[str, int], Optional[int], Optional[int], Optional[bool], Optional[bool], Optional[str], Optional[str]) -> List[Path]
         version_sort = operator.attrgetter("as_python.version_sort")
         python_version_dict = getattr(self.system_path, "python_version_dict")
         if python_version_dict:

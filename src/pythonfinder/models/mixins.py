@@ -6,12 +6,37 @@ import attr
 import operator
 import six
 
-from ..utils import ensure_path, KNOWN_EXTS, unnest
+from cached_property import cached_property
+from collections import defaultdict
+
+from vistir.compat import Path, fs_str
+
+from ..utils import ensure_path, KNOWN_EXTS, unnest, path_is_known_executable, looks_like_python
+from ..environment import MYPY_RUNNING
+from ..exceptions import InvalidPythonVersion
+
+if MYPY_RUNNING:
+    from .path import PathEntry
+    from .python import PythonVersion
+    from typing import Optional, Union, Any, Dict, List, DefaultDict, Generator, Tuple
+
 
 
 @attr.s
 class BasePath(object):
+    path = attr.ib(default=None)  # type: Path
+    _children = attr.ib(default=attr.Factory(dict))  # type: Dict[str, PathEntry]
+    only_python = attr.ib(default=False)  # type: bool
+    name = attr.ib(type=str)
+    py_version = attr.ib()  # type: PythonVersion
+    _pythons = attr.ib(default=attr.Factory(defaultdict))  # type: DefaultDict[str, PathEntry]
+
+    def __str__(self):
+        # type: () -> str
+        return fs_str("{0}".format(self.path.as_posix()))
+
     def which(self, name):
+        # type: (str) -> PathEntry
         """Search in this path for an executable.
 
         :param executable: The name of an executable to search for.
@@ -34,16 +59,96 @@ class BasePath(object):
         )
         return found
 
+    @property
+    def children(self):
+        # type: () -> Dict[str, PathEntry]
+        return self._children
+
+    @cached_property
+    def as_python(self):
+        # type: () -> PythonVersion
+        py_version = None
+        if self.py_version:
+            return self.py_version
+        if not self.is_dir and self.is_python:
+            try:
+                from .python import PythonVersion
+                py_version = PythonVersion.from_path(path=attr.evolve(self), name=self.name)
+            except (ValueError, InvalidPythonVersion):
+                py_version = None
+        return py_version
+
+    @name.default
+    def get_name(self):
+        # type: () -> str
+        return self.path.name
+
+    @cached_property
+    def is_dir(self):
+        # type: () -> bool
+        try:
+            ret_val = self.path.is_dir()
+        except OSError:
+            ret_val = False
+        return ret_val
+
+    @cached_property
+    def is_executable(self):
+        # type: () -> bool
+        return path_is_known_executable(self.path)
+
+    @cached_property
+    def is_python(self):
+        # type: () -> bool
+        return self.is_executable and (
+            looks_like_python(self.path.name)
+        )
+
+    @py_version.default
+    def get_py_version(self):
+        # type: () -> PythonVersion
+        from ..environment import IGNORE_UNSUPPORTED
+        if self.is_dir:
+            return None
+        if self.is_python:
+            py_version = None
+            from .python import PythonVersion
+            try:
+                py_version = PythonVersion.from_path(path=self, name=self.name)
+            except (InvalidPythonVersion, ValueError):
+                py_version = None
+            except Exception:
+                if not IGNORE_UNSUPPORTED:
+                    raise
+            return py_version
+        return
+
+    @property
+    def pythons(self):
+        # type: () -> DefaultDict[str, PathEntry]
+        if not self._pythons:
+            if self.is_dir:
+                for path, entry in self.children.items():
+                    _path = ensure_path(entry.path)
+                    if entry.is_python:
+                        self._pythons[_path.as_posix()] = entry
+            else:
+                if self.is_python:
+                    _path = ensure_path(self.path)
+                    self._pythons[_path.as_posix()] = self
+        return self._pythons
+
     def find_all_python_versions(
         self,
-        major=None,
-        minor=None,
-        patch=None,
-        pre=None,
-        dev=None,
-        arch=None,
-        name=None,
+        major=None,  # type: Optional[Union[str, int]]
+        minor=None,  # type: Optional[int]
+        patch=None,  # type: Optional[int]
+        pre=None,  # type: Optional[bool]
+        dev=None,  # type: Optional[bool]
+        arch=None,  # type: Optional[str]
+        name=None,  # type: Optional[str]
     ):
+        # type: (...) -> List[PathEntry]
         """Search for a specific python version on the path. Return all copies
 
         :param major: Major python version to search for.
@@ -62,14 +167,7 @@ class BasePath(object):
             "find_all_python_versions" if self.is_dir else "find_python_version"
         )
         sub_finder = operator.methodcaller(
-            call_method,
-            major=major,
-            minor=minor,
-            patch=patch,
-            pre=pre,
-            dev=dev,
-            arch=arch,
-            name=name,
+            call_method, major, minor, patch, pre, dev, arch, name
         )
         if not self.is_dir:
             return sub_finder(self)
@@ -79,14 +177,15 @@ class BasePath(object):
 
     def find_python_version(
         self,
-        major=None,
-        minor=None,
-        patch=None,
-        pre=None,
-        dev=None,
-        arch=None,
-        name=None,
+        major=None,  # type: Optional[Union[str, int]]
+        minor=None,  # type: Optional[int]
+        patch=None,  # type: Optional[int]
+        pre=None,  # type: Optional[bool]
+        dev=None,  # type: Optional[bool]
+        arch=None,  # type: Optional[str]
+        name=None,  # type: Optional[str]
     ):
+        # type: (...) -> PathEntry
         """Search or self for the specified Python version and return the first match.
 
         :param major: Major version number.
@@ -101,55 +200,51 @@ class BasePath(object):
         """
 
         version_matcher = operator.methodcaller(
-            "matches",
-            major=major,
-            minor=minor,
-            patch=patch,
-            pre=pre,
-            dev=dev,
-            arch=arch,
-            name=name,
+            "matches", major, minor, patch, pre, dev, arch, name
         )
         is_py = operator.attrgetter("is_python")
         py_version = operator.attrgetter("as_python")
         if not self.is_dir:
             if self.is_python and self.as_python and version_matcher(self.py_version):
-                return attr.evolve(self)
+                return attr.evolve(self)  # type: ignore
             return
         finder = (
             (child, child.as_python)
             for child in unnest(self.pythons.values())
-            if child.as_python
+            if child is not None and child.as_python is not None
         )
-        py_filter = filter(
-            None, filter(lambda child: version_matcher(child[1]), finder)
+        py_filter = (
+            [entry, py_version.version_sort] for entry, py_version in finder
+            if (py_version is not None and version_matcher(py_version))
         )
-        version_sort = operator.attrgetter("version_sort")
-        return next(
-            (
-                c[0]
-                for c in sorted(
-                    py_filter, key=lambda child: child[1].version_sort, reverse=True
-                )
-            ),
-            None,
+        return next(iter(
+            entry for entry in
+            sorted(py_filter, key=operator.itemgetter(1), reverse=True)), None
         )
 
 
 @six.add_metaclass(abc.ABCMeta)
 class BaseFinder(object):
+    def __init__(self):
+        self.pythons = defaultdict(list)  # type: DefaultDict[str, List[PathEntry]]
+        self.versions = defaultdict(list)  # type: Dict[Tuple, PathEntry]
+
     def get_versions(self):
+        # type: () -> None
         """Return the available versions from the finder"""
         raise NotImplementedError
 
     @classmethod
     def create(cls):
+        # type: () -> None
         raise NotImplementedError
 
     @property
     def version_paths(self):
+        # type: () -> Any
         return self.versions.values()
 
     @property
     def expanded_paths(self):
+        # type: () -> Any
         return (p.paths.values() for p in self.version_paths)
