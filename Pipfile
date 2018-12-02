@@ -16,7 +16,7 @@ rope = "*"
 black = {version = "*", markers = "python_version>='3.6'"}
 parver = "*"
 towncrier = "*"
-mypy = "*"
+mypy = {version = "*", markers = "python_version>='3.4'"}
 lxml = "*"
 
 [scripts]
