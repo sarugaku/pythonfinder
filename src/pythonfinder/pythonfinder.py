@@ -12,7 +12,7 @@ from vistir.compat import lru_cache
 
 from .environment import MYPY_RUNNING
 from .exceptions import InvalidPythonVersion
-from .models import SystemPath
+from .models import path
 from .utils import Iterable
 
 
@@ -53,7 +53,7 @@ class Finder(object):
         self.global_search = global_search  # type: bool
         self.system = system  # type: bool
         self.ignore_unsupported = ignore_unsupported  # type: bool
-        self._system_path = None  # type: Optional[SystemPath]
+        self._system_path = None  # type: Optional[path.SystemPath]
         self._windows_finder = None  # type: Optional[WindowsFinder]
 
     def __hash__(self):
@@ -66,16 +66,39 @@ class Finder(object):
         # type: (Any) -> bool
         return self.__hash__() == other.__hash__()
 
+    def create_system_path(self):
+        # type: () -> path.SystemPath
+        return path.SystemPath.create(
+            path=self.path_prepend, system=self.system, global_search=self.global_search,
+            ignore_unsupported=self.ignore_unsupported
+        )
+
+    def reload_system_path(self):
+        # type: () -> None
+        """
+        Rebuilds the base system path and all of the contained finders within it.
+
+        This will re-apply any changes to the environment or any version changes on the system.
+        """
+
+        old_finders = None  # type: Optional[List[str]]
+        if self._system_path is not None:
+            old_finders = self._system_path.finders[::-1]
+        six.moves.reload_module(path)
+        self._system_path = self.create_system_path()
+        if old_finders is not None:
+            for finder in old_finders:
+                self._system_path.reload_finder(finder)
+        # Invalidate any cached_property values to avoid dropping them through after reload
+        for key in ["python_executables", "version_dict", "executables", "path_entries"]:
+            if key in self._system_path.__dict__:
+                del self._system_path.__dict__[key]
+
     @property
     def system_path(self):
-        # type: () -> SystemPath
-        if not self._system_path:
-            self._system_path = SystemPath.create(
-                path=self.path_prepend,
-                system=self.system,
-                global_search=self.global_search,
-                ignore_unsupported=self.ignore_unsupported,
-            )
+        # type: () -> path.SystemPath
+        if self._system_path is None:
+            self._system_path = self.create_system_path()
         return self._system_path
 
     @property
@@ -147,7 +170,8 @@ class Finder(object):
                 minor = int(version_dict["minor"])
             if version_dict.get("patch") is not None:
                 patch = int(version_dict["patch"])
-            major = version_dict.get("major", major)
+            if version_dict.get("major") is not None:
+                major = int(version_dict["major"])
             _pre = version_dict.get("is_prerelease", pre)
             pre = bool(_pre) if _pre is not None else pre
             _dev = version_dict.get("is_devrelease", dev)

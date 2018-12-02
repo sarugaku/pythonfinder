@@ -56,6 +56,8 @@ class PythonFinder(BaseFinder, BasePath):
     roots = attr.ib(default=attr.Factory(defaultdict), type=defaultdict)
     #: List of paths discovered during search
     paths = attr.ib(type=list)
+    #: shim directory
+    shim_dir = attr.ib(default="shims", type=str)
     #: Versions discovered in the specified paths
     _versions = attr.ib(default=attr.Factory(defaultdict), type=defaultdict)
     _pythons = attr.ib(default=attr.Factory(defaultdict), type=defaultdict)
@@ -85,6 +87,7 @@ class PythonFinder(BaseFinder, BasePath):
             if not (p.parent.name == "envs" or p.name == "envs")
         ]
         versions = {v.name: v for v in version_paths}
+        version_order = []  # type: List[Path]
         if self.is_pyenv:
             version_order = [versions[v] for v in parse_pyenv_version_order() if v in versions]
         elif self.is_asdf:
@@ -489,19 +492,19 @@ class PythonVersion(object):
             path = PathEntry.create(path, is_root=False, only_python=True, name=name)
         from ..environment import IGNORE_UNSUPPORTED
         ignore_unsupported = ignore_unsupported or IGNORE_UNSUPPORTED
+        path_name = getattr(path, "name", path.path.name)  # str
         if not path.is_python:
             if not (ignore_unsupported or IGNORE_UNSUPPORTED):
                 raise ValueError("Not a valid python path: %s" % path.path)
         try:
-            name = getattr(path, "name", path.path.name)
-            instance_dict = cls.parse(name)
+            instance_dict = cls.parse(path_name)
         except Exception:
             py_version = get_python_version(path.path.absolute().as_posix())
             instance_dict = cls.parse(py_version.strip())
         if not isinstance(instance_dict.get("version"), Version) and not ignore_unsupported:
             raise ValueError("Not a valid python path: %s" % path)
-        if not name:
-            name = path.name
+        if name is None:
+            name = path_name
         instance_dict.update(
             {"comes_from": path, "name": name, "executable": path.path.as_posix()}
         )

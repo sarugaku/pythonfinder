@@ -5,6 +5,7 @@ import click
 import click.testing
 
 import itertools
+import random
 
 import os
 import sys
@@ -101,15 +102,19 @@ def setup_pythons(tmpdir):
             asdf_bin = os.path.join(asdf_dir, "installs", "python", python, "bin")
             vistir.path.mkdir_p(pyenv_bin)
             vistir.path.mkdir_p(asdf_bin)
-            for exe in ["python", python]:
+            python_version = random.choice(["python3.7m", "python3.6m", "python2.7"])
+            for exe in ["python", python_version, python]:
                 os.link(sys.executable, os.path.join(pyenv_bin, exe))
                 os.link(sys.executable, os.path.join(asdf_bin, exe))
-            os.link(os.path.join(pyenv_bin, python), os.path.join(pyenv_shim_dir, python))
-            os.link(os.path.join(asdf_bin, python), os.path.join(asdf_shim_dir, python))
+            os.symlink(os.path.join(pyenv_bin, python), os.path.join(pyenv_shim_dir, python))
+            os.symlink(os.path.join(asdf_bin, python), os.path.join(asdf_shim_dir, python))
         os.environ["PYENV_ROOT"] = pyenv_dir
         os.environ["ASDF_DIR"] = asdf_dir
         os.environ["ASDF_DATA_DIR"] = asdf_dir
-        yield runner
+        try:
+            yield
+        finally:
+            return
 
 
 @pytest.fixture

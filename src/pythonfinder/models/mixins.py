@@ -241,7 +241,8 @@ class BasePath(object):
         # )
         # return [c for c in sorted(path_filter, key=version_sort, reverse=True)]
         version_sort = operator.attrgetter("as_python.version_sort")
-        paths = sorted(list(unnested), key=version_sort, reverse=True)
+        unnested = [p for p in unnested if p is not None and p.as_python is not None]
+        paths = sorted(unnested, key=version_sort, reverse=True)
         return list(paths)
 
     def find_python_version(
