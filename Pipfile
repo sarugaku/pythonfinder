@@ -10,12 +10,14 @@ twine = "*"
 pytest-xdist = "*"
 invoke = "*"
 crayons = "*"
-pythonfinder = {path = ".",editable = true}
+pythonfinder = {path = ".", editable = true}
 sphinx-rtd-theme = "*"
 rope = "*"
-black = {version = "*",markers = "python_version>='3.6'"}
+black = {version = "*", markers = "python_version>='3.6'"}
 parver = "*"
 towncrier = "*"
+mypy = "*"
+lxml = "*"
 
 [scripts]
 black = "python -m black src/pythonfinder"
