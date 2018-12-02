@@ -15,15 +15,16 @@ from .python import PythonVersion, VersionMap
 from ..environment import MYPY_RUNNING
 
 if MYPY_RUNNING:
-    from typing import DefaultDict, Tuple, List, Optional, Union
+    from typing import DefaultDict, Tuple, List, Optional, Union, TypeVar, Type, Any
+    BaseFinderType = TypeVar('BaseFinderType')
 
 
 @attr.s
 class WindowsFinder(BaseFinder):
     paths = attr.ib(default=attr.Factory(list), type=list)
     version_list = attr.ib(default=attr.Factory(list), type=list)
-    versions = attr.ib()  # type: DefaultDict[Tuple, PathEntry]
-    pythons = attr.ib()  # type: DefaultDict[str, List[PathEntry]]
+    _versions = attr.ib()  # type: DefaultDict[Tuple, PathEntry]
+    _pythons = attr.ib()  # type: DefaultDict[str, PathEntry]
 
     def find_all_python_versions(
         self,
@@ -37,7 +38,7 @@ class WindowsFinder(BaseFinder):
     ):
         # type (...) -> List[PathEntry]
         version_matcher = operator.methodcaller(
-            "matches", major, minor, patch, pre, dev, arch, name
+            "matches", major, minor, patch, pre, dev, arch, python_version=name
         )
         py_filter = filter(
             None, filter(lambda c: version_matcher(c), self.version_list)
@@ -55,7 +56,7 @@ class WindowsFinder(BaseFinder):
         arch=None,  # type: Optional[str]
         name=None,  # type: Optional[str]
     ):
-        # type: (...) -> PathEntry
+        # type: (...) -> Optional[PathEntry]
         return next(iter(v for v in self.find_all_python_versions(
             major=major,
             minor=minor,
@@ -67,7 +68,7 @@ class WindowsFinder(BaseFinder):
             )), None
         )
 
-    @versions.default
+    @_versions.default
     def get_versions(self):
         # type: () -> DefaultDict[Tuple, PathEntry]
         versions = defaultdict(PathEntry)  # type: DefaultDict[Tuple, PathEntry]
@@ -87,27 +88,48 @@ class WindowsFinder(BaseFinder):
                 py_version = PythonVersion.from_windows_launcher(version_object)
             except InvalidPythonVersion:
                 continue
+            if py_version is None:
+                continue
             self.version_list.append(py_version)
+            python_path = py_version.comes_from.path if py_version.comes_from else py_version.executable
+            python_kwargs = {python_path: py_version} if python_path is not None else {}
             base_dir = PathEntry.create(
                 path,
                 is_root=True,
                 only_python=True,
-                pythons={py_version.comes_from.path: py_version},
+                pythons=python_kwargs,
             )
             versions[py_version.version_tuple[:5]] = base_dir
             self.paths.append(base_dir)
         return versions
 
-    @pythons.default
+    @property
+    def versions(self):
+        # type: () -> DefaultDict[Tuple, PathEntry]
+        if not self._versions:
+            self._versions = self.get_versions()
+        return self._versions
+
+    @_pythons.default
     def get_pythons(self):
-        # type: () -> DefaultDict[str, List[PathEntry]]
-        pythons = defaultdict()  # type: DefaultDict[str, List[PathEntry]]
+        # type: () -> DefaultDict[str, PathEntry]
+        pythons = defaultdict()  # type: DefaultDict[str, PathEntry]
         for version in self.version_list:
             _path = ensure_path(version.comes_from.path)
             pythons[_path.as_posix()] = version.comes_from
         return pythons
 
+    @property
+    def pythons(self):
+        # type: () -> DefaultDict[str, PathEntry]
+        return self._pythons
+
+    @pythons.setter
+    def pythons(self, value):
+        # type: (DefaultDict[str, PathEntry]) -> None
+        self._pythons = value
+
     @classmethod
-    def create(cls):
-        # type: () -> WindowsFinder
+    def create(cls, *args, **kwargs):
+        # type: (Type[BaseFinderType], Any, Any) -> BaseFinderType
         return cls()

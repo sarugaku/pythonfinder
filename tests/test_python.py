@@ -53,3 +53,24 @@ def test_python_version_output_variants(
     monkeypatch.setattr("vistir.misc.run", mock_version)
     parsed = pythonfinder.models.python.PythonVersion.from_path(path)
     assert isinstance(parsed.version, Version)
+
+
+def test_shims_are_removed(setup_pythons):
+    from pythonfinder import Finder
+    f = Finder(global_search=True, system=False, ignore_unsupported=True)
+    python_versions = f.find_all_python_versions()
+    anaconda = f.find_python_version("anaconda3-5.3.0")
+    assert anaconda is not None, python_versions
+    assert "shims" not in f.which("anaconda3-5.3.0")
+
+
+def test_shims_are_kept(setup_pythons):
+    del os.environ["PYENV_ROOT"]
+    del os.environ["ASDF_DATA_DIR"]
+    del os.environ["ASDF_DIR"]
+    from pythonfinder import Finder
+    f = Finder(global_search=True, system=False, ignore_unsupported=True)
+    python_versions = f.find_all_python_versions()
+    anaconda = f.find_python_version("anaconda3-5.3.0")
+    assert anaconda is not None, python_versions
+    assert "shims" in f.which("anaconda3-5.3.0")

@@ -10,6 +10,7 @@ import sys
 from collections import defaultdict
 
 import attr
+import six
 
 from packaging.version import LegacyVersion, Version
 from packaging.version import parse as parse_version
@@ -21,7 +22,7 @@ from ..exceptions import InvalidPythonVersion
 from ..utils import (
     _filter_none, ensure_path, get_python_version, is_in_path,
     optional_instance_of, parse_asdf_version_order, parse_pyenv_version_order,
-    parse_python_version, unnest
+    parse_python_version, unnest, expand_paths, RE_MATCHER
 )
 from .mixins import BaseFinder, BasePath
 
@@ -29,10 +30,13 @@ from .mixins import BaseFinder, BasePath
 if MYPY_RUNNING:
     from packaging.version import Version
     from typing import (
-        DefaultDict, Optional, Callable, Generator, Any, Union, Tuple, List, Dict
+        DefaultDict, Optional, Callable, Generator, Any, Union, Tuple, List, Dict, Type,
+        TypeVar, Iterator
     )
     from .path import PathEntry
     from .._vendor.pep514tools.environment import Environment
+
+    BaseFinderType = TypeVar("BaseFinderType")
 
 
 logger = logging.getLogger(__name__)
@@ -44,18 +48,17 @@ class PythonFinder(BaseFinder, BasePath):
     # should come before versions, because its value is used in versions's default initializer.
     #: Whether to ignore any paths which raise exceptions and are not actually python
     ignore_unsupported = attr.ib(default=True, type=bool)
-    #: The function to use to sort version order when returning an ordered verion set
-    sort_function = attr.ib(default=None)  # type: Callable
-    #: List of paths discovered during search
-    paths = attr.ib(default=attr.Factory(list), type=list)
-    #: The root locations used for discovery
-    roots = attr.ib(default=attr.Factory(defaultdict), type=defaultdict)
     #: Glob path for python versions off of the root directory
     version_glob_path = attr.ib(default="versions/*", type=str)
+    #: The function to use to sort version order when returning an ordered verion set
+    sort_function = attr.ib(default=None)  # type: Callable
+    #: The root locations used for discovery
+    roots = attr.ib(default=attr.Factory(defaultdict), type=defaultdict)
+    #: List of paths discovered during search
+    paths = attr.ib(type=list)
     #: Versions discovered in the specified paths
-    versions = attr.ib(type=dict)
-    #: Corresponding python instances located
-    pythons = attr.ib()  # type: DefaultDict[str, PathEntry]
+    _versions = attr.ib(default=attr.Factory(defaultdict), type=defaultdict)
+    _pythons = attr.ib(default=attr.Factory(defaultdict), type=defaultdict)
 
     @property
     def expanded_paths(self):
@@ -94,80 +97,112 @@ class PythonFinder(BaseFinder, BasePath):
             version_order = version_paths
         return version_order
 
+    def get_bin_dir(self, base):
+        # type: (Union[Path, str]) -> Path
+        if isinstance(base, six.string_types):
+            base = Path(base)
+        return base / "bin"
+
     @classmethod
-    def version_from_bin_dir(cls, base_dir, name=None):
-        # type: (Path, Optional[str]) -> PathEntry
+    def version_from_bin_dir(cls, entry):
+        # type: (PathEntry) -> Optional[PathEntry]
         from .path import PathEntry
         py_version = None
-        version_path = PathEntry.create(
-            path=base_dir.absolute().as_posix(),
-            only_python=True,
-            name=base_dir.parent.name,
-        )
-        py_version = next(iter(version_path.find_all_python_versions()), None)
+        py_version = next(iter(entry.find_all_python_versions()), None)
         return py_version
 
-    @versions.default
-    def get_versions(self):
-        # type: () -> DefaultDict[Tuple, PathEntry]
+    def _iter_version_bases(self):
+        # type: () -> Iterator[Tuple[Path, PathEntry]]
         from .path import PathEntry
-        versions = defaultdict()  # type: DefaultDict[Tuple, PathEntry]
-        bin_ = "{base}/bin"
         for p in self.get_version_order():
-            bin_dir = Path(bin_.format(base=p.as_posix()))
-            version_path = None
-            if bin_dir.exists():
-                version_path = PathEntry.create(
-                    path=bin_dir.absolute().as_posix(),
-                    only_python=False,
-                    name=p.name,
-                    is_root=True,
+            bin_dir = self.get_bin_dir(p)
+            if bin_dir.exists() and bin_dir.is_dir():
+                entry = PathEntry.create(
+                    path=bin_dir.absolute().as_posix(), only_python=False, name=p.name,
+                    is_root=True
                 )
+                self.roots[p] = entry
+                yield (p, entry)
+
+    def _iter_versions(self):
+        # type: () -> Iterator[Tuple[Path, PathEntry, Tuple]]
+        for base_path, entry in self._iter_version_bases():
             version = None
+            version_entry = None
             try:
-                version = PythonVersion.parse(p.name)
+                version = PythonVersion.parse(entry.name)
             except (ValueError, InvalidPythonVersion):
-                if version_path is not None:
-                    entry = next(iter(version_path.find_all_python_versions()), None)
-                if entry is None:
-                    if self.ignore_unsupported:
-                        continue
-                    raise
-                else:
-                    version = entry.py_version.as_dict()
+                version_entry = next(iter(entry.find_all_python_versions()), None)
+                if version is None:
+                    if not self.ignore_unsupported:
+                        raise
+                    continue
+                if version_entry is not None:
+                    version = version_entry.py_version.as_dict()
             except Exception:
                 if not self.ignore_unsupported:
                     raise
-                logger.warning(
-                    "Unsupported Python version %r, ignoring...", p.name, exc_info=True
+                logger.warning("Unsupported Python version %r, ignoring...",
+                               base_path.name, exc_info=True)
+                continue
+            if version is not None:
+                version_tuple = (
+                    version.get("major"),
+                    version.get("minor"),
+                    version.get("patch"),
+                    version.get("is_prerelease"),
+                    version.get("is_devrelease"),
+                    version.get("is_debug"),
                 )
-                continue
-            if not version:
-                continue
-            version_tuple = (
-                version.get("major"),
-                version.get("minor"),
-                version.get("patch"),
-                version.get("is_prerelease"),
-                version.get("is_devrelease"),
-                version.get("is_debug"),
-            )
-            self.roots[p] = version_path
-            versions[version_tuple] = version_path
-            self.paths.append(version_path)
-        return versions
+                yield (base_path, entry, version_tuple)
 
-    @pythons.default
+    @property
+    def versions(self):
+        # type: () -> DefaultDict[Tuple, PathEntry]
+        if not self._versions:
+            for base_path, entry, version_tuple in self._iter_versions():
+                self._versions[version_tuple] = entry
+        return self._versions
+
+    def _iter_pythons(self):
+        # type: () -> Iterator
+        for path, entry, version_tuple in self._iter_versions():
+            if path.as_posix() in self._pythons:
+                yield self._pythons[path.as_posix()]
+            elif version_tuple not in self.versions:
+                for python in entry.find_all_python_versions():
+                    yield python
+            else:
+                yield self.versions[version_tuple]
+
+    @paths.default
+    def get_paths(self):
+        _paths = [base for _, base in self._iter_version_bases()]
+        return _paths
+
+    @property
+    def pythons(self):
+        # type: () -> DefaultDict[str, PathEntry]
+        if not self._pythons:
+            from .path import PathEntry
+            self._pythons = defaultdict(PathEntry)  # type: DefaultDict[str, PathEntry]
+            for python in self._iter_pythons():
+                python_path = python.path.as_posix()  # type: ignore
+                self._pythons[python_path] = python
+        return self._pythons
+
+    @pythons.setter
+    def pythons(self, value):
+        # type: (DefaultDict[str, PathEntry]) -> None
+        self._pythons = value
+
     def get_pythons(self):
-        # type: () -> DefaultDict[str, List[PathEntry]]
-        pythons = defaultdict()  # type: DefaultDict[str, List[PathEntry]]
-        for p in self.paths:
-            pythons.update(p.pythons)
-        return pythons
+        # type: () -> DefaultDict[str, PathEntry]
+        return self.pythons
 
     @classmethod
-    def create(cls, root, sort_function, version_glob_path=None, ignore_unsupported=True):
-        # type: (str, Callable, Optional[str], bool) -> PythonFinder
+    def create(cls, root, sort_function, version_glob_path=None, ignore_unsupported=True):  # type: ignore
+        # type: (Type[PythonFinder], str, Callable, Optional[str], bool) -> PythonFinder
         root = ensure_path(root)
         if not version_glob_path:
             version_glob_path = "versions/*"
@@ -184,7 +219,7 @@ class PythonFinder(BaseFinder, BasePath):
         arch=None,  # type: Optional[str]
         name=None,  # type: Optional[str]
     ):
-        # type (...) -> List[PathEntry]
+        # type: (...) -> List[PathEntry]
         """Search for a specific python version on the path. Return all copies
 
         :param major: Major python version to search for.
@@ -199,18 +234,40 @@ class PythonFinder(BaseFinder, BasePath):
         :rtype: List[:class:`~pythonfinder.models.PathEntry`]
         """
 
-        version_matcher = operator.methodcaller(
-            "matches", major, minor, patch, pre, dev, arch, name
+    #     version_matcher = operator.methodcaller(
+    #         "matches", major, minor, patch, pre, dev, arch, python_name=name
+    #     )
+    #     py = operator.attrgetter("as_python")
+    #     pythons = (
+    #         py_ver for py_ver in (py(p) for p in self._pythons.values() if p is not None)
+    #         if py_ver is not None
+    #     )
+    #     # pythons = filter(None, [p.as_python for p in self.pythons.values()])
+    #     matching_versions = filter(lambda py: version_matcher(py), pythons)
+    #     version_sort = operator.attrgetter("version_sort")
+    #     return sorted(matching_versions, key=version_sort, reverse=True)
+
+        call_method = (
+            "find_all_python_versions" if self.is_dir else "find_python_version"
         )
-        py = operator.attrgetter("as_python")
-        pythons = (
-            py_ver for py_ver in (py(p) for p in self.pythons.values() if p is not None)
-            if py_ver is not None
+        sub_finder = operator.methodcaller(
+            call_method, major, minor, patch, pre, dev, arch, name
         )
-        # pythons = filter(None, [p.as_python for p in self.pythons.values()])
-        matching_versions = filter(lambda py: version_matcher(py), pythons)
-        version_sort = operator.attrgetter("version_sort")
-        return sorted(matching_versions, key=version_sort, reverse=True)
+        if not any([major, minor, patch, name]):
+            pythons = [
+                next(iter(py for py in base.find_all_python_versions()), None)
+                for _, base in self._iter_version_bases()
+            ]
+        else:
+            pythons = [
+                sub_finder(path) for path in self.paths
+            ]
+        version_sort = operator.attrgetter("as_python.version_sort")
+        paths = [
+            p for p in sorted(list(pythons), key=version_sort, reverse=True)
+            if p is not None
+        ]
+        return paths
 
     def find_python_version(
         self,
@@ -222,7 +279,7 @@ class PythonFinder(BaseFinder, BasePath):
         arch=None,  # type: Optional[str]
         name=None,  # type: Optional[str]
     ):
-        # type: (...) -> PathEntry
+        # type: (...) -> Optional[PathEntry]
         """Search or self for the specified Python version and return the first match.
 
         :param major: Major version number.
@@ -237,12 +294,30 @@ class PythonFinder(BaseFinder, BasePath):
         """
 
         version_matcher = operator.methodcaller(
-            "matches", major, minor, patch, pre, dev, arch, name
+            "matches", major, minor, patch, pre, dev, arch, python_name=name
         )
-        pythons = filter(None, [p.as_python for p in self.pythons.values()])
-        matching_versions = filter(lambda py: version_matcher(py), pythons)
-        version_sort = operator.attrgetter("version_sort")
-        return next(iter(c for c in sorted(matching_versions, key=version_sort, reverse=True)), None)
+        is_py = operator.attrgetter("is_python")
+        py_version = operator.attrgetter("as_python")
+        call_method = (
+            "find_python_version"
+        )
+        sub_finder = operator.methodcaller(
+            call_method, major, minor, patch, pre, dev, arch, name
+        )
+        version_sort = operator.attrgetter("as_python.version_sort")
+        unnested = [
+            sub_finder(path) for path in self.roots
+        ]
+        paths = sorted(list(unnested), key=version_sort, reverse=True)
+        return next(iter(p for p in paths if p is not None), None)
+
+    #     version_matcher = operator.methodcaller(
+    #         "matches", major, minor, patch, pre, dev, arch, python_version=name
+    #     )
+    #     pythons = filter(None, [p.as_python for p in self._pythons.values()])
+    #     matching_versions = filter(lambda py: version_matcher(py), pythons)
+    #     version_sort = operator.attrgetter("version_sort")
+    #     return next(iter(c for c in sorted(matching_versions, key=version_sort, reverse=True)))
 
 
 @attr.s(slots=True)
@@ -308,7 +383,7 @@ class PythonVersion(object):
         dev=False,  # type: bool
         arch=None,  # type: Optional[str]
         debug=False,  # type: bool
-        name=None,  # type: Optional[str]
+        python_name=None,  # type: Optional[str]
     ):
         # type: (...) -> bool
         result = False
@@ -325,9 +400,9 @@ class PythonVersion(object):
             and (arch is None or own_arch == arch)
             and (debug is None or self.is_debug == debug)
             and (
-                name is None
-                or (name and self.name)
-                and (self.name == name or self.name.startswith(name))
+                python_name is None
+                or (python_name and self.name)
+                and (self.name == python_name or self.name.startswith(python_name))
             )
         ):
             result = True
@@ -394,7 +469,7 @@ class PythonVersion(object):
 
     @classmethod
     def from_path(cls, path, name=None, ignore_unsupported=True):
-        # type: (str, Optional[str], bool) -> PythonVersion
+        # type: (Union[str, PathEntry], Optional[str], bool) -> PythonVersion
         """Parses a python version from a system path.
 
         Raises:
@@ -417,14 +492,18 @@ class PythonVersion(object):
         if not path.is_python:
             if not (ignore_unsupported or IGNORE_UNSUPPORTED):
                 raise ValueError("Not a valid python path: %s" % path.path)
-        py_version = get_python_version(path.path.absolute().as_posix())
-        instance_dict = cls.parse(py_version.strip())
+        try:
+            name = getattr(path, "name", path.path.name)
+            instance_dict = cls.parse(name)
+        except Exception:
+            py_version = get_python_version(path.path.absolute().as_posix())
+            instance_dict = cls.parse(py_version.strip())
         if not isinstance(instance_dict.get("version"), Version) and not ignore_unsupported:
             raise ValueError("Not a valid python path: %s" % path)
         if not name:
             name = path.name
         instance_dict.update(
-            {"comes_from": path, "name": name, "executable": path.as_posix()}
+            {"comes_from": path, "name": name, "executable": path.path.as_posix()}
         )
         return cls(**instance_dict)  # type: ignore
 
@@ -487,17 +566,18 @@ class VersionMap(object):
                 self.versions[version.version_tuple].append(entry)
 
     def merge(self, target):
-        # type: (...) -> None
+        # type: (VersionMap) -> None
         for version, entries in target.versions.items():
             if version not in self.versions:
                 self.versions[version] = entries
             else:
                 current_entries = {
-                    getattr(p, "path", p.executable) for p in
-                    self.versions.get(version)  # type: ignore
+                    p.path for p in
+                    self.versions[version]  # type: ignore
+                    if version in self.versions
                 }
                 new_entries = {p.path for p in entries}
                 new_entries -= current_entries
-                self.versions[version].append(
+                self.versions[version].extend(
                     [e for e in entries if e.path in new_entries]
                 )

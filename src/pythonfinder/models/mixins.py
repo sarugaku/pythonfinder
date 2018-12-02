@@ -2,24 +2,38 @@
 from __future__ import absolute_import, unicode_literals
 
 import abc
-import attr
 import operator
-import six
-
-from cached_property import cached_property
 from collections import defaultdict
 
-from vistir.compat import Path, fs_str
+import attr
+import six
+from cached_property import cached_property
 
-from ..utils import ensure_path, KNOWN_EXTS, unnest, path_is_known_executable, looks_like_python
+from vistir.compat import Path, fs_str
+import itertools
 from ..environment import MYPY_RUNNING
 from ..exceptions import InvalidPythonVersion
+from ..utils import (KNOWN_EXTS, ensure_path, looks_like_python, expand_paths,
+                     path_is_known_executable, unnest, Sequence)
 
 if MYPY_RUNNING:
     from .path import PathEntry
     from .python import PythonVersion
-    from typing import Optional, Union, Any, Dict, List, DefaultDict, Generator, Tuple
+    from typing import (
+        Optional,
+        Union,
+        Any,
+        Dict,
+        Iterator,
+        List,
+        DefaultDict,
+        Generator,
+        Tuple,
+        TypeVar,
+        Type,
+    )
 
+    BaseFinderType = TypeVar("BaseFinderType")
 
 
 @attr.s
@@ -28,7 +42,7 @@ class BasePath(object):
     _children = attr.ib(default=attr.Factory(dict))  # type: Dict[str, PathEntry]
     only_python = attr.ib(default=False)  # type: bool
     name = attr.ib(type=str)
-    py_version = attr.ib()  # type: PythonVersion
+    _py_version = attr.ib(default=None)  # type: Optional[PythonVersion]
     _pythons = attr.ib(default=attr.Factory(defaultdict))  # type: DefaultDict[str, PathEntry]
 
     def __str__(self):
@@ -36,7 +50,7 @@ class BasePath(object):
         return fs_str("{0}".format(self.path.as_posix()))
 
     def which(self, name):
-        # type: (str) -> PathEntry
+        # type: (str) -> Optional[PathEntry]
         """Search in this path for an executable.
 
         :param executable: The name of an executable to search for.
@@ -62,6 +76,8 @@ class BasePath(object):
     @property
     def children(self):
         # type: () -> Dict[str, PathEntry]
+        if not self.is_dir:
+            return {}
         return self._children
 
     @cached_property
@@ -73,19 +89,28 @@ class BasePath(object):
         if not self.is_dir and self.is_python:
             try:
                 from .python import PythonVersion
-                py_version = PythonVersion.from_path(path=attr.evolve(self), name=self.name)
+
+                py_version = PythonVersion.from_path(  # type: ignore
+                    path=self, name=self.name
+                )
             except (ValueError, InvalidPythonVersion):
-                py_version = None
-        return py_version
+                pass
+        if py_version is None:
+            pass
+        return py_version  # type: ignore
 
     @name.default
     def get_name(self):
-        # type: () -> str
-        return self.path.name
+        # type: () -> Optional[str]
+        if self.path:
+            return self.path.name
+        return None
 
     @cached_property
     def is_dir(self):
         # type: () -> bool
+        if not self.path:
+            return False
         try:
             ret_val = self.path.is_dir()
         except OSError:
@@ -95,48 +120,78 @@ class BasePath(object):
     @cached_property
     def is_executable(self):
         # type: () -> bool
+        if not self.path:
+            return False
         return path_is_known_executable(self.path)
 
     @cached_property
     def is_python(self):
         # type: () -> bool
-        return self.is_executable and (
-            looks_like_python(self.path.name)
-        )
+        if not self.path:
+            return False
+        return self.is_executable and (looks_like_python(self.path.name))
 
-    @py_version.default
     def get_py_version(self):
-        # type: () -> PythonVersion
+        # type: () -> Optional[PythonVersion]
         from ..environment import IGNORE_UNSUPPORTED
+
         if self.is_dir:
             return None
         if self.is_python:
             py_version = None
             from .python import PythonVersion
+
             try:
-                py_version = PythonVersion.from_path(path=self, name=self.name)
+                py_version = PythonVersion.from_path(  # type: ignore
+                    path=self, name=self.name
+                )
             except (InvalidPythonVersion, ValueError):
                 py_version = None
             except Exception:
                 if not IGNORE_UNSUPPORTED:
                     raise
             return py_version
-        return
+        return None
+
+    @cached_property
+    def py_version(self):
+        # type: () -> Optional[PythonVersion]
+        if not self._py_version:
+            py_version = self.get_py_version()
+            self._py_version = py_version
+        else:
+            py_version = self._py_version
+        return py_version
+
+    def _iter_pythons(self):
+        # type: () -> Iterator
+        if self.is_dir:
+            for path, entry in self.children.items():
+                if entry is None:
+                    continue
+                elif entry.is_dir:
+                    for python in entry._iter_pythons():
+                        yield python
+                elif entry.is_python and entry.as_python is not None:
+                    yield entry
+        elif self.is_python and self.as_python is not None:
+            yield self  # type: ignore
 
     @property
     def pythons(self):
-        # type: () -> DefaultDict[str, PathEntry]
+        # type: () -> DefaultDict[Union[str, Path], PathEntry]
         if not self._pythons:
-            if self.is_dir:
-                for path, entry in self.children.items():
-                    _path = ensure_path(entry.path)
-                    if entry.is_python:
-                        self._pythons[_path.as_posix()] = entry
-            else:
-                if self.is_python:
-                    _path = ensure_path(self.path)
-                    self._pythons[_path.as_posix()] = self
+            from .path import PathEntry
+            self._pythons = defaultdict(PathEntry)
+            for python in self._iter_pythons():
+                python_path = python.path.as_posix()  # type: ignore
+                self._pythons[python_path] = python
         return self._pythons
+
+    def __iter__(self):
+        # type: () -> Iterator
+        for entry in self.children.values():
+            yield entry
 
     def find_all_python_versions(
         self,
@@ -171,9 +226,23 @@ class BasePath(object):
         )
         if not self.is_dir:
             return sub_finder(self)
-        path_filter = filter(None, (sub_finder(p) for p in self.children.values()))
+        unnested = [
+            sub_finder(path) for path in expand_paths(self)
+        ]
+        # paths = [
+        #     p for p in unnested if
+        #     (p is not None and not p.is_dir and p.is_python and p.as_python is not None)
+        # ]
+        # path_filter = (
+        #     py for py in unnest(
+        #         sub_finder(p) for p in self.children.values() if p is not None
+        #     )
+        #     if py is not None and py.as_python is not None
+        # )
+        # return [c for c in sorted(path_filter, key=version_sort, reverse=True)]
         version_sort = operator.attrgetter("as_python.version_sort")
-        return [c for c in sorted(path_filter, key=version_sort, reverse=True)]
+        paths = sorted(list(unnested), key=version_sort, reverse=True)
+        return list(paths)
 
     def find_python_version(
         self,
@@ -185,7 +254,7 @@ class BasePath(object):
         arch=None,  # type: Optional[str]
         name=None,  # type: Optional[str]
     ):
-        # type: (...) -> PathEntry
+        # type: (...) -> Optional[PathEntry]
         """Search or self for the specified Python version and return the first match.
 
         :param major: Major version number.
@@ -200,51 +269,73 @@ class BasePath(object):
         """
 
         version_matcher = operator.methodcaller(
-            "matches", major, minor, patch, pre, dev, arch, name
+            "matches", major, minor, patch, pre, dev, arch, python_name=name
         )
         is_py = operator.attrgetter("is_python")
         py_version = operator.attrgetter("as_python")
         if not self.is_dir:
             if self.is_python and self.as_python and version_matcher(self.py_version):
-                return attr.evolve(self)  # type: ignore
-            return
-        finder = (
-            (child, child.as_python)
-            for child in unnest(self.pythons.values())
-            if child is not None and child.as_python is not None
+                return self  # type: ignore
+            pass
+        # paths = [finder(path) for path in self.pythons.values() if path is not None]
+        # unnested = [unnest(path) for path in paths if path is not None and path.is_dir]
+
+        matching_pythons = [
+            [entry, entry.as_python.version_sort]
+            for entry in self._iter_pythons()
+            if (entry is not None and entry.as_python is not None and
+                version_matcher(entry.py_version))
+        ]
+        # finder = (
+        #     (child, child.as_python)
+        #     for child in self.pythons.values()
+        #     if child is not None and child.as_python is not None
+        # )
+        results = sorted(matching_pythons,
+            key=operator.itemgetter(1),
+            reverse=True,
         )
-        py_filter = (
-            [entry, py_version.version_sort] for entry, py_version in finder
-            if (py_version is not None and version_matcher(py_version))
-        )
-        return next(iter(
-            entry for entry in
-            sorted(py_filter, key=operator.itemgetter(1), reverse=True)), None
-        )
+        return next(iter(r[0] for r in results if r is not None), None)
 
 
 @six.add_metaclass(abc.ABCMeta)
 class BaseFinder(object):
     def __init__(self):
-        self.pythons = defaultdict(list)  # type: DefaultDict[str, List[PathEntry]]
-        self.versions = defaultdict(list)  # type: Dict[Tuple, PathEntry]
+        #: Maps executable paths to PathEntries
+        from .path import PathEntry
+
+        self._pythons = defaultdict(PathEntry)  # type: DefaultDict[str, PathEntry]
+        self._versions = defaultdict(PathEntry)  # type: Dict[Tuple, PathEntry]
 
     def get_versions(self):
-        # type: () -> None
+        # type: () -> DefaultDict[Tuple, PathEntry]
         """Return the available versions from the finder"""
         raise NotImplementedError
 
     @classmethod
-    def create(cls):
-        # type: () -> None
+    def create(cls,  # type: Type[BaseFinderType]
+        *args,  # type: Any
+        **kwargs  # type: Any
+    ):
+        # type: (...) -> BaseFinderType
         raise NotImplementedError
 
     @property
     def version_paths(self):
         # type: () -> Any
-        return self.versions.values()
+        return self._versions.values()
 
     @property
     def expanded_paths(self):
         # type: () -> Any
         return (p.paths.values() for p in self.version_paths)
+
+    @property
+    def pythons(self):
+        # type: () -> DefaultDict[str, PathEntry]
+        return self._pythons
+
+    @pythons.setter
+    def pythons(self, value):
+        # type: (DefaultDict[str, PathEntry]) -> None
+        self._pythons = value

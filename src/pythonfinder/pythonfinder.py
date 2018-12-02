@@ -1,16 +1,25 @@
 # -*- coding=utf-8 -*-
-from __future__ import print_function, absolute_import
-import os
-import six
+from __future__ import absolute_import, print_function
+
 import operator
-from .models import SystemPath
-from .utils import MYPY_RUNNING
+import os
+
+import six
+
+from click import secho
+
 from vistir.compat import lru_cache
+
+from .environment import MYPY_RUNNING
+from .exceptions import InvalidPythonVersion
+from .models import SystemPath
+from .utils import Iterable
 
 
 if MYPY_RUNNING:
-    from typing import Optional, Dict
-    from .models.path import Path
+    from typing import Optional, Dict, Any, Optional, Union, List, Iterator
+    from .models.path import Path, PathEntry
+    from .models.windows import WindowsFinder
 
 
 class Finder(object):
@@ -26,7 +35,7 @@ class Finder(object):
     """
 
     def __init__(self, path=None, system=False, global_search=True, ignore_unsupported=True):
-        # type: (Optional[str], bool, bool, bool) -> Finder
+        # type: (Optional[str], bool, bool, bool) -> None
         """Create a new :class:`~pythonfinder.pythonfinder.Finder` instance.
 
         :param path: A bin-directory search location, defaults to None
@@ -40,12 +49,12 @@ class Finder(object):
         :returns: a :class:`~pythonfinder.pythonfinder.Finder` object.
         """
 
-        self.path_prepend = path
-        self.global_search = global_search
-        self.system = system
-        self.ignore_unsupported = ignore_unsupported
-        self._system_path = None
-        self._windows_finder = None
+        self.path_prepend = path  # type: Optional[str]
+        self.global_search = global_search  # type: bool
+        self.system = system  # type: bool
+        self.ignore_unsupported = ignore_unsupported  # type: bool
+        self._system_path = None  # type: Optional[SystemPath]
+        self._windows_finder = None  # type: Optional[WindowsFinder]
 
     def __hash__(self):
         # type: () -> int
@@ -54,7 +63,7 @@ class Finder(object):
         )
 
     def __eq__(self, other):
-        # type: (Finder) -> bool
+        # type: (Any) -> bool
         return self.__hash__() == other.__hash__()
 
     @property
@@ -71,7 +80,7 @@ class Finder(object):
 
     @property
     def windows_finder(self):
-        # type: () -> WindowsFinder
+        # type: () -> Optional[WindowsFinder]
         if os.name == "nt" and not self._windows_finder:
             from .models import WindowsFinder
 
@@ -79,15 +88,22 @@ class Finder(object):
         return self._windows_finder
 
     def which(self, exe):
-        # type: (str) -> str
+        # type: (str) -> Optional[PathEntry]
         return self.system_path.which(exe)
 
     @lru_cache(maxsize=1024)
     def find_python_version(
         self, major=None, minor=None, patch=None, pre=None, dev=None, arch=None, name=None
     ):
-        # type: (Optional[str, int], Optional[int], Optional[int], Optional[bool], Optional[bool], Optional[str], Optional[str]) -> Path
+        # type: (Optional[Union[str, int]], Optional[int], Optional[int], Optional[bool], Optional[bool], Optional[str], Optional[str]) -> PathEntry
         from .models import PythonVersion
+        minor = int(minor) if minor is not None else minor
+        patch = int(patch) if patch is not None else patch
+
+        version_dict = {
+            "minor": minor,
+            "patch": patch
+        }  # type: Dict[str, Union[str, int, Any]]
 
         if (
             isinstance(major, six.string_types)
@@ -96,7 +112,7 @@ class Finder(object):
             and dev is None
             and patch is None
         ):
-            if arch is None and "-" in major:
+            if arch is None and "-" in major and major[0].isdigit():
                 orig_string = "{0!s}".format(major)
                 major, _, arch = major.rpartition("-")
                 if arch.startswith("x"):
@@ -108,25 +124,42 @@ class Finder(object):
                     arch = None
                 else:
                     arch = "{0}bit".format(arch)
-            try:
-                version_dict = PythonVersion.parse(major)
-            except ValueError:
-                if name is None:
-                    name = "{0!s}".format(major)
-                    major = None
-                version_dict = {}
+                try:
+                    version_dict = PythonVersion.parse(major)
+                except (ValueError, InvalidPythonVersion):
+                    if name is None:
+                        name = "{0!s}".format(major)
+                        major = None
+                    version_dict = {}
+            elif major[0].isalpha():
+                name = "%s" % major
+                major = None
+            else:
+                version_dict = {
+                    "major": major,
+                    "minor": minor,
+                    "patch": patch,
+                    "pre": pre,
+                    "dev": dev,
+                    "arch": arch
+                }
+            if version_dict.get("minor") is not None:
+                minor = int(version_dict["minor"])
+            if version_dict.get("patch") is not None:
+                patch = int(version_dict["patch"])
             major = version_dict.get("major", major)
-            minor = version_dict.get("minor", minor)
-            patch = version_dict.get("patch", patch)
-            pre = version_dict.get("is_prerelease", pre) if pre is None else pre
-            dev = version_dict.get("is_devrelease", dev) if dev is None else dev
-            arch = version_dict.get("architecture", arch) if arch is None else arch
-        if os.name == "nt":
+            _pre = version_dict.get("is_prerelease", pre)
+            pre = bool(_pre) if _pre is not None else pre
+            _dev = version_dict.get("is_devrelease", dev)
+            dev = bool(_dev) if _dev is not None else dev
+            arch = version_dict.get("architecture", None) if arch is None else arch  # type: ignore
+        if os.name == "nt" and self.windows_finder is not None:
             match = self.windows_finder.find_python_version(
                 major=major, minor=minor, patch=patch, pre=pre, dev=dev, arch=arch, name=name
             )
             if match:
                 return match
+        secho("Using name: %s" % name, fg="white")
         return self.system_path.find_python_version(
             major=major, minor=minor, patch=patch, pre=pre, dev=dev, arch=arch, name=name
         )
@@ -135,29 +168,26 @@ class Finder(object):
     def find_all_python_versions(
         self, major=None, minor=None, patch=None, pre=None, dev=None, arch=None, name=None
     ):
-        # type: (Optional[str, int], Optional[int], Optional[int], Optional[bool], Optional[bool], Optional[str], Optional[str]) -> List[Path]
+        # type: (Optional[Union[str, int]], Optional[int], Optional[int], Optional[bool], Optional[bool], Optional[str], Optional[str]) -> List[PathEntry]
         version_sort = operator.attrgetter("as_python.version_sort")
         python_version_dict = getattr(self.system_path, "python_version_dict")
         if python_version_dict:
-            paths = filter(
-                None,
-                [
+            paths = (
                     path
                     for version in python_version_dict.values()
                     for path in version
-                    if path.as_python
-                ],
+                    if path is not None and path.as_python
             )
-            paths = sorted(paths, key=version_sort, reverse=True)
-            return paths
+            path_list = sorted(paths, key=version_sort, reverse=True)
+            return path_list
         versions = self.system_path.find_all_python_versions(
             major=major, minor=minor, patch=patch, pre=pre, dev=dev, arch=arch, name=name
         )
-        if not isinstance(versions, list):
-            versions = [versions]
-        paths = sorted(versions, key=version_sort, reverse=True)
-        path_map = {}
-        for path in paths:
+        if not isinstance(versions, Iterable):
+            versions = [versions,]
+        path_list = sorted(versions, key=version_sort, reverse=True)
+        path_map = {}  # type: Dict[str, PathEntry]
+        for path in path_list:
             try:
                 resolved_path = path.path.resolve()
             except OSError:
