@@ -29,6 +29,7 @@ upload = "inv release.upload-dists"
 tag = "inv release.tag-version"
 docs = "sphinx-apidoc --ext-autodoc --ext-viewcode --ext-intersphinx -o docs/ -A 'Dan Ryan <dan@danryan.co>' -R 1.0.0 -V 1.0 -e -M -F src/pythonfinder"
 mdchangelog = "pandoc CHANGELOG.rst -f rst -t markdown -o CHANGELOG.md"
+mypy = "mypy src/pythonfinder"
 
 [pipenv]
 allow_prereleases = true
