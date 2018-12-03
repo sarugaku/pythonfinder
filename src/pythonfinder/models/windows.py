@@ -16,7 +16,7 @@ from ..environment import MYPY_RUNNING
 
 if MYPY_RUNNING:
     from typing import DefaultDict, Tuple, List, Optional, Union, TypeVar, Type, Any
-    BaseFinderType = TypeVar('BaseFinderType')
+    FinderType = TypeVar('FinderType')
 
 
 @attr.s
@@ -131,5 +131,5 @@ class WindowsFinder(BaseFinder):
 
     @classmethod
     def create(cls, *args, **kwargs):
-        # type: (Type[BaseFinderType], Any, Any) -> BaseFinderType
+        # type: (Type[FinderType], Any, Any) -> FinderType
         return cls()

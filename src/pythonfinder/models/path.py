@@ -44,15 +44,18 @@ if MYPY_RUNNING:
         Optional, Dict, DefaultDict, Iterator, List, Union, Tuple, Generator, Callable,
         Type, Any, TypeVar
     )
+    from .mixins import BaseFinder
     from .python import PythonFinder
     from .windows import WindowsFinder
-    FinderType = TypeVar('FinderType')
+    FinderType = TypeVar('FinderType', BaseFinder, PythonFinder, WindowsFinder)
+    ChildType = Union[PythonFinder, PathEntry]
+    PathType = Union[PythonFinder, PathEntry]
 
 
 @attr.s
 class SystemPath(object):
     global_search = attr.ib(default=True)
-    paths = attr.ib(default=attr.Factory(defaultdict))  # type: DefaultDict[str, Union[PathEntry, FinderType]]
+    paths = attr.ib(default=attr.Factory(defaultdict))  # type: DefaultDict[str, Union[PythonFinder, PathEntry]]
     _executables = attr.ib(default=attr.Factory(list))  # type: List[PathEntry]
     _python_executables = attr.ib(default=attr.Factory(dict))  # type: Dict[str, PathEntry]
     path_order = attr.ib(default=attr.Factory(list))  # type: List[str]
@@ -303,7 +306,7 @@ class SystemPath(object):
         self._register_finder("windows", self.windows_finder)
 
     def get_path(self, path):
-        # type: (Union[str, Path]) -> Union[PathEntry, FinderType]
+        # type: (Union[str, Path]) -> PathType
         if path is None:
             raise TypeError("A path must be provided in order to generate a path entry.")
         path = ensure_path(path)
@@ -523,7 +526,7 @@ class SystemPath(object):
         :rtype: :class:`pythonfinder.models.SystemPath`
         """
 
-        path_entries = defaultdict(PathEntry)  # type: DefaultDict[str, PathEntry]
+        path_entries = defaultdict(PathEntry)  # type: DefaultDict[str, Union[PythonFinder, PathEntry]]
         paths = []  # type: List[str]
         if ignore_unsupported:
             os.environ["PYTHONFINDER_IGNORE_UNSUPPORTED"] = fs_str("1")

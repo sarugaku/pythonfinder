@@ -17,7 +17,7 @@ from .utils import Iterable, filter_pythons
 
 
 if environment.MYPY_RUNNING:
-    from typing import Optional, Dict, Any, Optional, Union, List, Iterator
+    from typing import Optional, Dict, Any, Union, List, Iterator
     from .models.path import Path, PathEntry
     from .models.windows import WindowsFinder
     from .models.path import SystemPath
@@ -82,7 +82,8 @@ class Finder(object):
         This will re-apply any changes to the environment or any version changes on the system.
         """
 
-        self._system_path.clear_caches()
+        if self._system_path is not None:
+            self._system_path.clear_caches()
         self._system_path = None
         six.moves.reload_module(path)
         self._system_path = self.create_system_path()

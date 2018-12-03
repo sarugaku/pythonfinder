@@ -9,11 +9,10 @@ import attr
 import six
 from cached_property import cached_property
 
-from vistir.compat import Path, fs_str
-import itertools
+from vistir.compat import fs_str
 from ..environment import MYPY_RUNNING
 from ..exceptions import InvalidPythonVersion
-from ..utils import (KNOWN_EXTS, ensure_path, looks_like_python, expand_paths,
+from ..utils import (KNOWN_EXTS, looks_like_python, expand_paths,
                      path_is_known_executable, unnest, Sequence)
 
 if MYPY_RUNNING:
@@ -32,6 +31,7 @@ if MYPY_RUNNING:
         TypeVar,
         Type,
     )
+    from vistir.compat import Path
 
     BaseFinderType = TypeVar("BaseFinderType")
 
@@ -176,7 +176,7 @@ class BasePath(object):
     def _iter_pythons(self):
         # type: () -> Iterator
         if self.is_dir:
-            for path, entry in self.children.items():
+            for entry in self.children.values():
                 if entry is None:
                     continue
                 elif entry.is_dir:
@@ -279,12 +279,9 @@ class BasePath(object):
         version_matcher = operator.methodcaller(
             "matches", major, minor, patch, pre, dev, arch, python_name=name
         )
-        is_py = operator.attrgetter("is_python")
-        py_version = operator.attrgetter("as_python")
         if not self.is_dir:
             if self.is_python and self.as_python and version_matcher(self.py_version):
                 return self  # type: ignore
-            pass
 
         matching_pythons = [
             [entry, entry.as_python.version_sort]

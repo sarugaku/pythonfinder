@@ -294,7 +294,8 @@ def parse_asdf_version_order(filename=".tool-versions"):
             line for line in contents.splitlines() if line.startswith("python")
         ), None)
         if python_section:
-            python_key, _, versions = python_section.partition(" ")
+            # python_key, _, versions
+            _, _, versions = python_section.partition(" ")
             if versions:
                 return versions.split()
     return []
@@ -331,7 +332,7 @@ def expand_paths(path, only_python=True):
                 for sub_path in itertools.chain.from_iterable(
                     expand_paths(p, only_python=only_python)
                 ):
-                    yield p
+                    yield sub_path
     else:
         if path is not None and path.is_python and path.as_python is not None:
             yield path
