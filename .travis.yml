@@ -11,7 +11,7 @@ install:
   - "pipenv install --dev"
   - "pipenv run pip install --upgrade -e .[tests]"
 script:
-    - "pipenv run pytest -ra auto tests/"
+  - "pipenv run pytest -ra tests/"
 
 jobs:
   include:
