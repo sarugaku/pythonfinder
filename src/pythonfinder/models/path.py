@@ -241,7 +241,7 @@ class SystemPath(object):
             # TODO: This is called 'reload', should we load a new finder for the first
             # time here? lets just skip that for now to avoid unallowed finders
             pass
-        if finder_name == "pyenv" and not PYENV_INSTALLED or finder_name == "asdf" and not ASDF_INSTALLED:
+        if (finder_name == "pyenv" and not PYENV_INSTALLED) or (finder_name == "asdf" and not ASDF_INSTALLED):
             # Don't allow loading of finders that aren't explicitly 'installed' as it were
             pass
         setattr(self, finder_attr, None)

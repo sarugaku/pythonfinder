@@ -237,19 +237,6 @@ class PythonFinder(BaseFinder, BasePath):
         :rtype: List[:class:`~pythonfinder.models.PathEntry`]
         """
 
-    #     version_matcher = operator.methodcaller(
-    #         "matches", major, minor, patch, pre, dev, arch, python_name=name
-    #     )
-    #     py = operator.attrgetter("as_python")
-    #     pythons = (
-    #         py_ver for py_ver in (py(p) for p in self._pythons.values() if p is not None)
-    #         if py_ver is not None
-    #     )
-    #     # pythons = filter(None, [p.as_python for p in self.pythons.values()])
-    #     matching_versions = filter(lambda py: version_matcher(py), pythons)
-    #     version_sort = operator.attrgetter("version_sort")
-    #     return sorted(matching_versions, key=version_sort, reverse=True)
-
         call_method = (
             "find_all_python_versions" if self.is_dir else "find_python_version"
         )
@@ -313,14 +300,6 @@ class PythonFinder(BaseFinder, BasePath):
         ]
         paths = sorted(list(unnested), key=version_sort, reverse=True)
         return next(iter(p for p in paths if p is not None), None)
-
-    #     version_matcher = operator.methodcaller(
-    #         "matches", major, minor, patch, pre, dev, arch, python_version=name
-    #     )
-    #     pythons = filter(None, [p.as_python for p in self._pythons.values()])
-    #     matching_versions = filter(lambda py: version_matcher(py), pythons)
-    #     version_sort = operator.attrgetter("version_sort")
-    #     return next(iter(c for c in sorted(matching_versions, key=version_sort, reverse=True)))
 
 
 @attr.s(slots=True)

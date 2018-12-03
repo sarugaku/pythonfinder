@@ -92,6 +92,9 @@ def test_shims_are_removed(monkeypatch, setup_pythons):
         f = Finder(global_search=True, system=False, ignore_unsupported=True)
         f.reload_system_path()
         python_versions = f.find_all_python_versions()
+        python_version_names = set([v.path for v in python_versions if pythonfinder.utils.is_in_path(str(v.path), os.environ["PYENV_ROOT"])])
+        # Make sure we have an entry for every python version installed
+        assert not set([v.parent.parent.name for v in python_version_names]) ^ set(list(setup_pythons.keys()))
         anaconda = f.find_python_version("anaconda3-5.3.0")
         assert anaconda is not None, os.listdir(os.path.join(pyenv_dir, "versions", "anaconda3-5.3.0", "bin"))
         assert "shims" not in anaconda.path.as_posix()

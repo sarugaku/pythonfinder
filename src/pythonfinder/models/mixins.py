@@ -229,17 +229,6 @@ class BasePath(object):
         unnested = [
             sub_finder(path) for path in expand_paths(self)
         ]
-        # paths = [
-        #     p for p in unnested if
-        #     (p is not None and not p.is_dir and p.is_python and p.as_python is not None)
-        # ]
-        # path_filter = (
-        #     py for py in unnest(
-        #         sub_finder(p) for p in self.children.values() if p is not None
-        #     )
-        #     if py is not None and py.as_python is not None
-        # )
-        # return [c for c in sorted(path_filter, key=version_sort, reverse=True)]
         version_sort = operator.attrgetter("as_python.version_sort")
         unnested = [p for p in unnested if p is not None and p.as_python is not None]
         paths = sorted(unnested, key=version_sort, reverse=True)
@@ -278,8 +267,6 @@ class BasePath(object):
             if self.is_python and self.as_python and version_matcher(self.py_version):
                 return self  # type: ignore
             pass
-        # paths = [finder(path) for path in self.pythons.values() if path is not None]
-        # unnested = [unnest(path) for path in paths if path is not None and path.is_dir]
 
         matching_pythons = [
             [entry, entry.as_python.version_sort]
@@ -287,11 +274,6 @@ class BasePath(object):
             if (entry is not None and entry.as_python is not None and
                 version_matcher(entry.py_version))
         ]
-        # finder = (
-        #     (child, child.as_python)
-        #     for child in self.pythons.values()
-        #     if child is not None and child.as_python is not None
-        # )
         results = sorted(matching_pythons,
             key=operator.itemgetter(1),
             reverse=True,
