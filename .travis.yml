@@ -9,9 +9,9 @@ matrix:
 install:
   - "pip install --upgrade pytest-cov pytest-timeout pytest pip pipenv --upgrade-strategy=eager"
   - "pipenv install --dev"
-  - "pipenv run pip install --upgrade -e .[tests]"
+  - "pipenv run pip install --upgrade -e .[tests] pytest pytest-timeout pytest-cov --upgrade-strategy=eager"
 script:
-    - "pipenv run pytest -v -n auto tests/"
+    - "pipenv run pytest -ra tests/"
 
 jobs:
   include:
