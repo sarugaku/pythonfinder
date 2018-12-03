@@ -10,16 +10,17 @@ from click import secho
 
 from vistir.compat import lru_cache
 
-from .environment import MYPY_RUNNING
+from . import environment
 from .exceptions import InvalidPythonVersion
 from .models import path
-from .utils import Iterable
+from .utils import Iterable, filter_pythons
 
 
-if MYPY_RUNNING:
+if environment.MYPY_RUNNING:
     from typing import Optional, Dict, Any, Optional, Union, List, Iterator
     from .models.path import Path, PathEntry
     from .models.windows import WindowsFinder
+    from .models.path import SystemPath
 
 
 class Finder(object):
@@ -53,7 +54,7 @@ class Finder(object):
         self.global_search = global_search  # type: bool
         self.system = system  # type: bool
         self.ignore_unsupported = ignore_unsupported  # type: bool
-        self._system_path = None  # type: Optional[path.SystemPath]
+        self._system_path = None  # type: Optional[SystemPath]
         self._windows_finder = None  # type: Optional[WindowsFinder]
 
     def __hash__(self):
@@ -67,7 +68,7 @@ class Finder(object):
         return self.__hash__() == other.__hash__()
 
     def create_system_path(self):
-        # type: () -> path.SystemPath
+        # type: () -> SystemPath
         return path.SystemPath.create(
             path=self.path_prepend, system=self.system, global_search=self.global_search,
             ignore_unsupported=self.ignore_unsupported
@@ -81,22 +82,23 @@ class Finder(object):
         This will re-apply any changes to the environment or any version changes on the system.
         """
 
-        old_finders = None  # type: Optional[List[str]]
-        if self._system_path is not None:
-            old_finders = self._system_path.finders[::-1]
+        self._system_path.clear_caches()
+        self._system_path = None
         six.moves.reload_module(path)
         self._system_path = self.create_system_path()
-        if old_finders is not None:
-            for finder in old_finders:
-                self._system_path.reload_finder(finder)
-        # Invalidate any cached_property values to avoid dropping them through after reload
-        for key in ["python_executables", "version_dict", "executables", "path_entries"]:
-            if key in self._system_path.__dict__:
-                del self._system_path.__dict__[key]
+
+    def rehash(self):
+        # type: () -> None
+        if not self._system_path:
+            self._system_path = self.create_system_path()
+        self.find_all_python_versions.cache_clear()
+        self.find_python_version.cache_clear()
+        self.reload_system_path()
+        filter_pythons.cache_clear()
 
     @property
     def system_path(self):
-        # type: () -> path.SystemPath
+        # type: () -> SystemPath
         if self._system_path is None:
             self._system_path = self.create_system_path()
         return self._system_path

@@ -63,15 +63,25 @@ class BasePath(object):
             for ext in KNOWN_EXTS
         ]
         children = self.children
-        found = next(
-            (
-                children[(self.path / child).as_posix()]
-                for child in valid_names
-                if (self.path / child).as_posix() in children
-            ),
-            None,
-        )
+        found = None
+        if self.path is not None:
+            found = next(
+                (
+                    children[(self.path / child).as_posix()]
+                    for child in valid_names
+                    if (self.path / child).as_posix() in children
+                ),
+                None,
+            )
         return found
+
+    def __del__(self):
+        for key in ["as_python", "is_dir", "is_python", "is_executable", "py_version"]:
+            if key in self.__dict__:
+                del self.__dict__[key]
+        self._children = {}
+        for key in self._pythons.keys():
+            del self._pythons[key]
 
     @property
     def children(self):
@@ -192,6 +202,14 @@ class BasePath(object):
         # type: () -> Iterator
         for entry in self.children.values():
             yield entry
+
+    def __next__(self):
+        # type: () -> Generator
+        return next(iter(self))
+
+    def next(self):
+        # type: () -> Generator
+        return self.__next__()
 
     def find_all_python_versions(
         self,

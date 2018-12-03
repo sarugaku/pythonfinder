@@ -62,6 +62,13 @@ class PythonFinder(BaseFinder, BasePath):
     _versions = attr.ib(default=attr.Factory(defaultdict), type=defaultdict)
     _pythons = attr.ib(default=attr.Factory(defaultdict), type=defaultdict)
 
+    def __del__(self):
+        # type: () -> None
+        self._versions = defaultdict()
+        self._pythons = defaultdict()
+        self.roots = defaultdict()
+        self.paths = []
+
     @property
     def expanded_paths(self):
         # type: () -> Generator
@@ -121,7 +128,7 @@ class PythonFinder(BaseFinder, BasePath):
             bin_dir = self.get_bin_dir(p)
             if bin_dir.exists() and bin_dir.is_dir():
                 entry = PathEntry.create(
-                    path=bin_dir.absolute().as_posix(), only_python=False, name=p.name,
+                    path=bin_dir.absolute(), only_python=False, name=p.name,
                     is_root=True
                 )
                 self.roots[p] = entry
@@ -180,6 +187,7 @@ class PythonFinder(BaseFinder, BasePath):
 
     @paths.default
     def get_paths(self):
+        # type: () -> List[PathEntry]
         _paths = [base for _, base in self._iter_version_bases()]
         return _paths
 
@@ -209,7 +217,7 @@ class PythonFinder(BaseFinder, BasePath):
         root = ensure_path(root)
         if not version_glob_path:
             version_glob_path = "versions/*"
-        return cls(root=root, ignore_unsupported=ignore_unsupported,
+        return cls(root=root, path=root, ignore_unsupported=ignore_unsupported,
                    sort_function=sort_function, version_glob_path=version_glob_path)
 
     def find_all_python_versions(
@@ -252,6 +260,7 @@ class PythonFinder(BaseFinder, BasePath):
             pythons = [
                 sub_finder(path) for path in self.paths
             ]
+        pythons = [p for p in pythons if p and p.is_python and p.as_python is not None]
         version_sort = operator.attrgetter("as_python.version_sort")
         paths = [
             p for p in sorted(list(pythons), key=version_sort, reverse=True)
@@ -288,18 +297,30 @@ class PythonFinder(BaseFinder, BasePath):
         )
         is_py = operator.attrgetter("is_python")
         py_version = operator.attrgetter("as_python")
-        call_method = (
-            "find_python_version"
-        )
         sub_finder = operator.methodcaller(
-            call_method, major, minor, patch, pre, dev, arch, name
+            "find_python_version", major, minor, patch, pre, dev, arch, name
         )
         version_sort = operator.attrgetter("as_python.version_sort")
+        unnested = [sub_finder(self.roots[path]) for path in self.roots]
         unnested = [
-            sub_finder(path) for path in self.roots
+            p for p in unnested
+            if p is not None and p.is_python and p.as_python is not None
         ]
         paths = sorted(list(unnested), key=version_sort, reverse=True)
         return next(iter(p for p in paths if p is not None), None)
+
+    def which(self, name):
+        # type: (str) -> Optional[PathEntry]
+        """Search in this path for an executable.
+
+        :param executable: The name of an executable to search for.
+        :type executable: str
+        :returns: :class:`~pythonfinder.models.PathEntry` instance.
+        """
+
+        matches = (p.which(name) for p in self.paths)
+        non_empty_match = next(iter(m for m in matches if m is not None), None)
+        return non_empty_match
 
 
 @attr.s(slots=True)

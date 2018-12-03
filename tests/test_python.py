@@ -63,40 +63,60 @@ def test_shims_are_kept(monkeypatch, setup_pythons):
         asdf_dir = pythonfinder.utils.normalize_path("./.asdf")
         m.delenv("PYENV_ROOT")
         m.delenv("ASDF_DATA_DIR")
+        six.moves.reload_module(pythonfinder.environment)
+        six.moves.reload_module(pythonfinder.models.path)
         m.setattr(pythonfinder.environment, "PYENV_INSTALLED", False)
         m.setattr(pythonfinder.environment, "ASDF_INSTALLED", False)
         m.setattr(pythonfinder.environment, "PYENV_ROOT", pyenv_dir)
         m.setattr(pythonfinder.environment, "ASDF_DATA_DIR", asdf_dir)
         m.setattr(pythonfinder.environment, "SHIM_PATHS", pythonfinder.environment.get_shim_paths())
-        six.moves.reload_module(pythonfinder.pythonfinder)
-        from pythonfinder import Finder
-        f = Finder(global_search=True, system=False, ignore_unsupported=True)
-        f.reload_system_path()
+        if "VIRTUAL_ENV" in os.environ:
+            os_path = os.environ["PATH"].split(os.pathsep)
+            env_path = next(iter([p for p in os_path if pythonfinder.utils.is_in_path(p, os.environ["VIRTUAL_ENV"])]), None)
+            if env_path is not None:
+                os_path.remove(env_path)
+                os.environ["PATH"] = os.pathsep.join(os_path)
+            del os.environ["VIRTUAL_ENV"]
+        f = pythonfinder.pythonfinder.Finder(global_search=True, system=False, ignore_unsupported=True)
+        f.rehash()
+        assert pythonfinder.environment.get_shim_paths() == []
+        assert os.path.join(pyenv_dir, "shims") in os.environ["PATH"]
+        assert not f.system_path.finders
+        assert os.path.join(pyenv_dir, "shims") in f.system_path.path_order
         python_versions = f.find_all_python_versions()
         anaconda = f.find_python_version("anaconda3-5.3.0")
         assert anaconda is not None
-        assert "shims" in anaconda.path.as_posix()
+        assert "shims" in anaconda.path.as_posix(), [f.system_path.path_order, f.system_path.pyenv_finder.roots]
         assert "shims" in f.which("anaconda3-5.3.0").path.as_posix()
 
 def test_shims_are_removed(monkeypatch, setup_pythons):
     with monkeypatch.context() as m:
         pyenv_dir = pythonfinder.utils.normalize_path("./.pyenv")
         asdf_dir = pythonfinder.utils.normalize_path("./.asdf")
-        m.setattr(pythonfinder.environment, "PYENV_ROOT", pyenv_dir)
-        m.setattr(pythonfinder.environment, "ASDF_DATA_DIR", asdf_dir)
-        m.setattr(pythonfinder.environment, "PYENV_INSTALLED", True)
-        m.setattr(pythonfinder.environment, "ASDF_INSTALLED", True)
+        six.moves.reload_module(pythonfinder.environment)
+        six.moves.reload_module(pythonfinder.models.path)
+        if "VIRTUAL_ENV" in os.environ:
+            os_path = os.environ["PATH"].split(os.pathsep)
+            env_path = next(iter([p for p in os_path if pythonfinder.utils.is_in_path(p, os.environ["VIRTUAL_ENV"])]), None)
+            if env_path is not None:
+                os_path.remove(env_path)
+                os.environ["PATH"] = os.pathsep.join(os_path)
+            del os.environ["VIRTUAL_ENV"]
         m.setattr(pythonfinder.environment, "SHIM_PATHS", pythonfinder.environment.get_shim_paths())
-        six.moves.reload_module(pythonfinder)
-        from pythonfinder import Finder
-        f = Finder(global_search=True, system=False, ignore_unsupported=True)
-        f.reload_system_path()
+        f = pythonfinder.pythonfinder.Finder(global_search=True, system=False, ignore_unsupported=True)
+        f.rehash()
+        assert "pyenv" in f.system_path.finders
         python_versions = f.find_all_python_versions()
+        assert os.environ["PYENV_ROOT"] == os.path.abspath(os.path.join(os.curdir, ".pyenv"))
+        assert os.environ["PYENV_ROOT"] == pythonfinder.environment.PYENV_ROOT
+        assert pythonfinder.environment.PYENV_INSTALLED
+        assert f.system_path.pyenv_finder is not None
+        # assert len(python_versions) == 0
         python_version_names = set([v.path for v in python_versions if pythonfinder.utils.is_in_path(str(v.path), os.environ["PYENV_ROOT"])])
         # Make sure we have an entry for every python version installed
-        assert not set([v.parent.parent.name for v in python_version_names]) ^ set(list(setup_pythons.keys()))
+        assert not set([v.parent.parent.name for v in python_version_names]) ^ set(list(setup_pythons.keys())), python_versions
         anaconda = f.find_python_version("anaconda3-5.3.0")
         assert anaconda is not None, os.listdir(os.path.join(pyenv_dir, "versions", "anaconda3-5.3.0", "bin"))
         assert "shims" not in anaconda.path.as_posix()
         which_anaconda = f.which("anaconda3-5.3.0")
-        assert "shims" not in f.which("anaconda3-5.3.0").path.as_posix()
+        assert "shims" not in which_anaconda.path.as_posix()

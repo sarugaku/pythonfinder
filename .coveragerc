@@ -1,7 +1,7 @@
 [run]
 branch = True
-parallel = True
 source = src/pythonfinder/
+omit = src/pythonfinder/_vendor/*
 
 [report]
 # Regexes for lines to exclude from consideration
