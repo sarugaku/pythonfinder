@@ -56,7 +56,7 @@ exclude_patterns = ['_build/']
 project = 'PythonFinder'
 copyright = '2018, Dan Ryan <dan@danryan.co>'
 author = 'Dan Ryan <dan@danryan.co>'
-
+autosummary_generate = True
 
 # -- General configuration ---------------------------------------------------
 
@@ -72,7 +72,9 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.todo',
     'sphinx.ext.intersphinx',
-    'sphinx.ext.autosummary'
+    'sphinx.ext.autosummary',
+    'sphinx_autodoc_typehints',
+    'sphinx_click.ext'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -110,8 +112,8 @@ pygments_style = 'sphinx'
 html_theme = "sphinx_rtd_theme"
 
 extlinks = {
-    'issue': ('https://github.com/techalchemy/pythonfinder/issues/%s', '#'),
-    'pull': ('https://github.com/techalchemy/pythonfinder/pull/%s', 'PR #'),
+    'issue': ('https://github.com/sarugaku/pythonfinder/issues/%s', '#'),
+    'pull': ('https://github.com/sarugaku/pythonfinder/pull/%s', 'PR #'),
 }
 html_theme_options = {
     'display_version': True,

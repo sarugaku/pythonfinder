@@ -28,11 +28,11 @@ class Finder(object):
     """
     A cross-platform Finder for locating python and other executables.
 
-    Searches for python and other specified binaries starting in `path`, if supplied,
-    but searching the bin path of `sys.executable` if `system=True`, and then
-    searching in the `os.environ['PATH']` if `global_search=True`.  When `global_search`
-    is `False`, this search operation is restricted to the allowed locations of
-    `path` and `system`.
+    Searches for python and other specified binaries starting in *path*, if supplied,
+    but searching the bin path of ``sys.executable`` if *system* is ``True``, and then
+    searching in the ``os.environ['PATH']`` if *global_search* is ``True``.  When *global_search*
+    is ``False``, this search operation is restricted to the allowed locations of
+    *path* and *system*.
     """
 
     def __init__(self, path=None, system=False, global_search=True, ignore_unsupported=True):
@@ -41,7 +41,7 @@ class Finder(object):
 
         :param path: A bin-directory search location, defaults to None
         :param path: str, optional
-        :param system: Whether to include the bin-dir of `sys.executable`, defaults to False
+        :param system: Whether to include the bin-dir of ``sys.executable``, defaults to False
         :param system: bool, optional
         :param global_search: Whether to search the global path from os.environ, defaults to True
         :param global_search: bool, optional
@@ -122,6 +122,20 @@ class Finder(object):
         self, major=None, minor=None, patch=None, pre=None, dev=None, arch=None, name=None
     ):
         # type: (Optional[Union[str, int]], Optional[int], Optional[int], Optional[bool], Optional[bool], Optional[str], Optional[str]) -> PathEntry
+        """
+        Find the python version which corresponds most closely to the version requested.
+
+        :param Union[str, int] major: The major version to look for, or the full version, or the name of the target version.
+        :param Optional[int] minor: The minor version. If provided, disables string-based lookups from the major version field.
+        :param Optional[int] patch: The patch version.
+        :param Optional[bool] pre: If provided, specifies whether to search pre-releases.
+        :param Optional[bool] dev: If provided, whether to search dev-releases.
+        :param Optional[str] arch: If provided, which architecture to search.
+        :param Optional[str] name: *Name* of the target python, e.g. ``anaconda3-5.3.0``
+        :return: A new *PathEntry* pointer at a matching python version, if one can be located.
+        :rtype: :class:`pythonfinder.models.path.PathEntry`
+        """
+
         from .models import PythonVersion
         minor = int(minor) if minor is not None else minor
         patch = int(patch) if patch is not None else patch

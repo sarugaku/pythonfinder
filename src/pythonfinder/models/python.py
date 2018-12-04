@@ -441,7 +441,7 @@ class PythonVersion(object):
         }
 
     def update_metadata(self, metadata):
-        # type: (Dict[Union[str, int, Version]]) -> None
+        # type: (Dict[str, Union[str, int, Version]]) -> None
         """
         Update the metadata on the current :class:`pythonfinder.models.python.PythonVersion`
 
