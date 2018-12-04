@@ -14,7 +14,7 @@ import six
 
 from packaging.version import Version, parse as parse_version
 
-from vistir.compat import Path
+from vistir.compat import Path, lru_cache
 
 from ..environment import ASDF_DATA_DIR, MYPY_RUNNING, PYENV_ROOT, SYSTEM_ARCH
 from ..exceptions import InvalidPythonVersion
@@ -328,6 +328,20 @@ class PythonVersion(object):
     executable = attr.ib(default=None)  # type: Optional[str]
     name = attr.ib(default=None, type=str)
 
+    def __getattribute__(self, key):
+        result = super(PythonVersion, self).__getattribute__(key)
+        if key in ["minor", "patch"] and result is None:
+            executable = None  # type: Optional[str]
+            if self.executable:
+                executable = self.executable
+            elif self.comes_from:
+                executable = self.comes_from.path.as_posix()
+            if executable is not None:
+                instance_dict = self.parse_executable(executable)
+                self.update_metadata(instance_dict)
+                result = instance_dict.get(key)
+        return result
+
     @property
     def version_sort(self):
         # type: () -> Tuple[Optional[int], Optional[int], int, int]
@@ -426,7 +440,26 @@ class PythonVersion(object):
             "version": self.version,
         }
 
+    def update_metadata(self, metadata):
+        # type: (Dict[Union[str, int, Version]]) -> None
+        """
+        Update the metadata on the current :class:`pythonfinder.models.python.PythonVersion`
+
+        Given a parsed version dictionary from :func:`pythonfinder.utils.parse_python_version`,
+        update the instance variables of the current version instance to reflect the newly
+        supplied values.
+        """
+
+        for key in metadata:
+            try:
+                current_value = getattr(self, key)
+            except AttributeError:
+                continue
+            else:
+                setattr(self, key, metadata[key])
+
     @classmethod
+    @lru_cache(maxsize=1024)
     def parse(cls, version):
         # type: (str) -> Dict[str, Union[str, int, Version]]
         """Parse a valid version string into a dictionary
@@ -434,11 +467,11 @@ class PythonVersion(object):
         Raises:
             ValueError -- Unable to parse version string
             ValueError -- Not a valid python version
+            TypeError -- NoneType or unparseable type passed in
 
-        :param version: A valid version string
-        :type version: str
+        :param str version: A valid version string
         :return: A dictionary with metadata about the specified python version.
-        :rtype: dict.
+        :rtype: dict
         """
 
         if version is None:
@@ -498,6 +531,8 @@ class PythonVersion(object):
 
         if not isinstance(instance_dict.get("version"), Version) and not ignore_unsupported:
             raise ValueError("Not a valid python path: %s" % path)
+        if instance_dict.get("patch") is None:
+            instance_dict = cls.parse_executable(path.path.absolute().as_posix())
         if name is None:
             name = path_name
         instance_dict.update(
@@ -506,6 +541,7 @@ class PythonVersion(object):
         return cls(**instance_dict)  # type: ignore
 
     @classmethod
+    @lru_cache(maxsize=1024)
     def parse_executable(cls, path):
         # type: (str) -> Dict[str, Optional[Union[str, int, Version]]]
         result_dict = {}  # type: Dict[str, Optional[Union[str, int, Version]]]
