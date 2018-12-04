@@ -18,7 +18,7 @@ parver = "*"
 towncrier = "*"
 mypy = {version = "*", markers = "python_version>='3.4'"}
 mypy_extensions = "*"
-typed-ast = {version = "*", markers = "python_version>='2.7'"}
+typed-ast = {version = "*", markers = "python_version>='3.3'"}
 lxml = "*"
 
 [scripts]
