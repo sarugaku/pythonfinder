@@ -10,15 +10,15 @@ twine = "*"
 pytest-xdist = "*"
 invoke = "*"
 crayons = "*"
-pythonfinder = {path = ".",editable = true}
+pythonfinder = {path = ".", editable = true}
 sphinx-rtd-theme = "*"
 rope = "*"
-black = {version = "*",markers = "python_version>='3.6'"}
+black = {version = "*", markers = "python_version>='3.6'"}
 parver = "*"
 towncrier = "*"
-mypy = {version = "*",markers = "python_version>='3.4'"}
+mypy = {version = "*", markers = "python_version>='3.4'"}
 mypy_extensions = "*"
-typed-ast = {version = "*",markers = "python_version>='3.3'"}
+typed-ast = {version = "*", markers = "python_version>='3.3'"}
 lxml = "*"
 sphinx-autodoc-types = "*"
 
