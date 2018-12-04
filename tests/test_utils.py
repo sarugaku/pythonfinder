@@ -19,7 +19,7 @@ def _get_python_versions():
             comes_from_path = getattr(comes_from, "path", v.path)
         else:
             comes_from_path = v.path
-    return list(pythons)
+    return sorted(list(pythons))
 
 
 PYTHON_VERSIONS = _get_python_versions()
