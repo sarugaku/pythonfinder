@@ -10,12 +10,16 @@ twine = "*"
 pytest-xdist = "*"
 invoke = "*"
 crayons = "*"
-pythonfinder = {path = ".",editable = true}
+pythonfinder = {path = ".", editable = true}
 sphinx-rtd-theme = "*"
 rope = "*"
-black = {version = "*",markers = "python_version>='3.6'"}
+black = {version = "*", markers = "python_version>='3.6'"}
 parver = "*"
 towncrier = "*"
+mypy = {version = "*", markers = "python_version>='3.4'"}
+mypy_extensions = "*"
+typed-ast = {version = "*", markers = "python_version>='3.3'"}
+lxml = "*"
 
 [scripts]
 black = "python -m black src/pythonfinder"
@@ -27,6 +31,7 @@ upload = "inv release.upload-dists"
 tag = "inv release.tag-version"
 docs = "sphinx-apidoc --ext-autodoc --ext-viewcode --ext-intersphinx -o docs/ -A 'Dan Ryan <dan@danryan.co>' -R 1.0.0 -V 1.0 -e -M -F src/pythonfinder"
 mdchangelog = "pandoc CHANGELOG.rst -f rst -t markdown -o CHANGELOG.md"
+mypy = "mypy src/pythonfinder"
 
 [pipenv]
 allow_prereleases = true
