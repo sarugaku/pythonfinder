@@ -9,7 +9,7 @@ matrix:
 install:
   - "pip install --upgrade pip pipenv pytest pytest-cov pytest-timeout --upgrade-strategy=eager"
   - "pipenv install --dev"
-  - "pipenv run pip install --upgrade -e .[tests]"
+  - "pipenv run pip install --upgrade -e .[tests] pytest pytest-timeout pytest-cov --upgrade-strategy=eager"
 script:
   - "pipenv run pytest -ra tests/"
 
@@ -26,14 +26,14 @@ jobs:
     - stage: packaging
       python: "3.6"
       install:
-        - "pip install --upgrade twine readme_renderer[md]"
+        - "pip install --upgrade setuptools twine readme_renderer[md]"
       script:
         - "python setup.py sdist"
         - "twine check dist/*"
     - stage: coverage
       python: "3.6"
       install:
-        - "pip install --upgrade pip pipenv pytest pytest-cov pytest-timeout --upgrade-strategy=eager"
+        - "pip install --upgrade pip pipenv pytest-cov pytest-timeout pytest"
         - "pipenv install --dev"
       script:
         - "pipenv run pytest --timeout 300 --cov=pythonfinder --cov-report=term-missing --cov-report=xml --cov-report=html tests"

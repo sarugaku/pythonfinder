@@ -1,0 +1,1 @@
+Added typehints and refactored mixins, updated shims to only attempt to remove themselves if they detect their respectve installations (fixes Hynek's issue).
