@@ -13,29 +13,20 @@ import attr
 import six
 
 from cached_property import cached_property
-
 from vistir.compat import Path, fs_str
 
-from .mixins import BasePath, BaseFinder
 from ..environment import (
-    PYENV_INSTALLED, PYENV_ROOT, ASDF_INSTALLED, ASDF_DATA_DIR, MYPY_RUNNING, SHIM_PATHS
+    ASDF_DATA_DIR, ASDF_INSTALLED, MYPY_RUNNING, PYENV_INSTALLED, PYENV_ROOT,
+    SHIM_PATHS
 )
 from ..exceptions import InvalidPythonVersion
 from ..utils import (
-    ensure_path,
-    filter_pythons,
-    looks_like_python,
-    optional_instance_of,
-    path_is_known_executable,
-    unnest,
-    normalize_path,
-    parse_pyenv_version_order,
-    parse_asdf_version_order,
-    Iterable,
-    Sequence,
-    expand_paths,
-    is_in_path
+    Iterable, Sequence, ensure_path, expand_paths, filter_pythons, is_in_path,
+    looks_like_python, normalize_path, optional_instance_of,
+    parse_asdf_version_order, parse_pyenv_version_order,
+    path_is_known_executable, unnest
 )
+from .mixins import BaseFinder, BasePath
 from .python import PythonVersion
 
 

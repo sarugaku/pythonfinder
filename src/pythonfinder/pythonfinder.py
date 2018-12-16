@@ -7,7 +7,6 @@ import os
 import six
 
 from click import secho
-
 from vistir.compat import lru_cache
 
 from . import environment

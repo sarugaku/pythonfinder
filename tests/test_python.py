@@ -1,11 +1,13 @@
 # -*- coding=utf-8 -*-
 
-import pythonfinder
-import pytest
 import os
+
+import pytest
 import six
 
 from packaging.version import Version
+
+import pythonfinder
 
 
 def test_python_versions(monkeypatch, special_character_python):

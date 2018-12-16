@@ -1,12 +1,16 @@
 # -*- coding=utf-8 -*-
 
-import pytest
 import os
 
-os.environ["ANSI_COLORS_DISABLED"] = "1"
+import pytest
 import vistir
+
 import pythonfinder.utils
+
 from pythonfinder import Finder
+
+
+os.environ["ANSI_COLORS_DISABLED"] = "1"
 
 
 def _get_python_versions():

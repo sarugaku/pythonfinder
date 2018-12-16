@@ -1,19 +1,17 @@
 # -*- coding=utf-8 -*-
 from __future__ import absolute_import, print_function
 
-import click
-import click.testing
-
 import itertools
-import random
-
 import os
+import random
 import sys
 
+import click
+import click.testing
 import pytest
+import vistir
 
 import pythonfinder
-import vistir
 
 
 # def pytest_generate_tests(metafunc):
@@ -30,8 +28,6 @@ import vistir
 # def python(request):
 #     return request.params
 
-import click
-import click.testing
 
 
 STACKLESS = [

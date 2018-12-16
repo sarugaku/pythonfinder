@@ -1,4 +1,4 @@
-from __future__ import print_function, absolute_import
+from __future__ import absolute_import, print_function
 
 __version__ = '1.1.11.dev0'
 
