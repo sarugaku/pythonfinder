@@ -2,12 +2,15 @@
 # -*- coding: utf-8 -*-
 import re
 import sys
+
 from pathlib import Path
 
 import invoke
+
 from parver import Version
 
 from .vendoring import drop_dir, remove_all
+
 
 TASK_NAME = "RELEASE"
 

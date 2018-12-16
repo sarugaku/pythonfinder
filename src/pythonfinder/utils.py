@@ -1,22 +1,22 @@
 # -*- coding=utf-8 -*-
 from __future__ import absolute_import, print_function
 
+import io
 import itertools
 import os
+import re
 
 from fnmatch import fnmatch
 
 import attr
-import io
-import re
 import six
-
 import vistir
 
 from packaging.version import LegacyVersion, Version
 
-from .environment import PYENV_ROOT, ASDF_DATA_DIR, MYPY_RUNNING
+from .environment import MYPY_RUNNING, PYENV_ROOT
 from .exceptions import InvalidPythonVersion
+
 
 six.add_move(six.MovedAttribute("Iterable", "collections", "collections.abc"))  # type: ignore  # noqa
 six.add_move(six.MovedAttribute("Sequence", "collections", "collections.abc"))  # type: ignore  # noqa

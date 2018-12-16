@@ -3,17 +3,22 @@ from __future__ import absolute_import, unicode_literals
 
 import abc
 import operator
+
 from collections import defaultdict
 
 import attr
 import six
-from cached_property import cached_property
 
+from cached_property import cached_property
 from vistir.compat import fs_str
+
 from ..environment import MYPY_RUNNING
 from ..exceptions import InvalidPythonVersion
-from ..utils import (KNOWN_EXTS, looks_like_python, expand_paths,
-                     path_is_known_executable, unnest, Sequence)
+from ..utils import (
+    KNOWN_EXTS, Sequence, expand_paths, looks_like_python,
+    path_is_known_executable
+)
+
 
 if MYPY_RUNNING:
     from .path import PathEntry

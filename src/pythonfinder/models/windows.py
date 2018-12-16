@@ -7,12 +7,13 @@ from collections import defaultdict
 
 import attr
 
+from ..environment import MYPY_RUNNING
 from ..exceptions import InvalidPythonVersion
 from ..utils import ensure_path
 from .mixins import BaseFinder
 from .path import PathEntry
 from .python import PythonVersion, VersionMap
-from ..environment import MYPY_RUNNING
+
 
 if MYPY_RUNNING:
     from typing import DefaultDict, Tuple, List, Optional, Union, TypeVar, Type, Any

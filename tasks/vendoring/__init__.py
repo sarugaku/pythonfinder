@@ -1,12 +1,14 @@
 # -*- coding=utf-8 -*-
-""""Vendoring script, python 3.5 needed"""
 # Taken from pip also
-from pathlib import Path
+""""Vendoring script, python 3.5 needed"""
 import os
 import re
 import shutil
 
+from pathlib import Path
+
 import invoke
+
 
 TASK_NAME = 'update'
 

@@ -12,16 +12,15 @@ from collections import defaultdict
 import attr
 import six
 
-from packaging.version import Version, parse as parse_version
-
+from packaging.version import Version
 from vistir.compat import Path, lru_cache
 
 from ..environment import ASDF_DATA_DIR, MYPY_RUNNING, PYENV_ROOT, SYSTEM_ARCH
 from ..exceptions import InvalidPythonVersion
 from ..utils import (
-    _filter_none, ensure_path, get_python_version, is_in_path,
-    optional_instance_of, parse_asdf_version_order, parse_pyenv_version_order,
-    parse_python_version, unnest, RE_MATCHER, looks_like_python
+    RE_MATCHER, _filter_none, ensure_path, get_python_version, is_in_path,
+    looks_like_python, optional_instance_of, parse_asdf_version_order,
+    parse_pyenv_version_order, parse_python_version, unnest
 )
 from .mixins import BaseFinder, BasePath
 
