@@ -13,7 +13,6 @@ import attr
 import six
 
 from packaging.version import Version
-from packaging.version import parse as parse_version
 from vistir.compat import Path, lru_cache
 
 from ..environment import ASDF_DATA_DIR, MYPY_RUNNING, PYENV_ROOT, SYSTEM_ARCH

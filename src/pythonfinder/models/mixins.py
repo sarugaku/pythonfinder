@@ -16,7 +16,7 @@ from ..environment import MYPY_RUNNING
 from ..exceptions import InvalidPythonVersion
 from ..utils import (
     KNOWN_EXTS, Sequence, expand_paths, looks_like_python,
-    path_is_known_executable, unnest
+    path_is_known_executable
 )
 
 

@@ -14,7 +14,7 @@ import vistir
 
 from packaging.version import LegacyVersion, Version
 
-from .environment import ASDF_DATA_DIR, MYPY_RUNNING, PYENV_ROOT
+from .environment import MYPY_RUNNING, PYENV_ROOT
 from .exceptions import InvalidPythonVersion
 
 
