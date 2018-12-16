@@ -1,26 +1,30 @@
 [packages]
 
 [dev-packages]
-flake8 = "*"
-sphinx-click = "*"
-pytest = "*"
-mock = "*"
-sphinx = "*"
-twine = "*"
-pytest-xdist = "*"
+pythonfinder = {path = ".", editable = true}
 invoke = "*"
 crayons = "*"
-pythonfinder = {path = ".", editable = true}
-sphinx-rtd-theme = "*"
-rope = "*"
-black = {version = "*", markers = "python_version>='3.6'"}
 parver = "*"
 towncrier = "*"
+mock = "*"
+pytest = "*"
+pytest-cov = "*"
+pytest-timeout = "*"
+pytest-xdist = "*"
+sphinx = "*"
+sphinx-click = "*"
+sphinx-rtd-theme = "*"
+sphinx-autodoc-types = "*"
+readme_renderer = {version = "*", extras = ["md"]}
+twine = "*"
+flake8 = "*"
+black = {version = "*", markers = "python_version>='3.6'"}
+isort = "*"
+rope = "*"
 mypy = {version = "*", markers = "python_version>='3.4'"}
 mypy_extensions = "*"
 typed-ast = {version = "*", markers = "python_version>='3.3'"}
 lxml = "*"
-sphinx-autodoc-types = "*"
 
 [scripts]
 black = "python -m black src/pythonfinder"
