@@ -295,7 +295,7 @@ class BasePath(object):
                 version_matcher(entry.py_version))
         ]
         results = sorted(matching_pythons,
-            key=operator.itemgetter(1),
+            key=operator.itemgetter(1, 0),
             reverse=True,
         )
         return next(iter(r[0] for r in results if r is not None), None)
