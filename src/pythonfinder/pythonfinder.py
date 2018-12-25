@@ -136,8 +136,8 @@ class Finder(object):
         """
 
         from .models import PythonVersion
-        minor = int(minor) if minor is not None else minor
-        patch = int(patch) if patch is not None else patch
+        minor = int(float(minor)) if minor is not None else minor
+        patch = int(float(patch)) if patch is not None else patch
 
         version_dict = {
             "minor": minor,
@@ -158,7 +158,7 @@ class Finder(object):
                     arch = arch.lstrip("x")
                 if arch.lower().endswith("bit"):
                     arch = arch.lower().replace("bit", "")
-                if not (arch.isdigit() and (int(arch) & int(arch) - 1) == 0):
+                if not (arch.isdigit() and (int(float(arch)) & int(float(arch)) - 1) == 0):
                     major = orig_string
                     arch = None
                 else:
@@ -183,11 +183,11 @@ class Finder(object):
                     "arch": arch
                 }
             if version_dict.get("minor") is not None:
-                minor = int(version_dict["minor"])
+                minor = int(float(version_dict["minor"]))
             if version_dict.get("patch") is not None:
-                patch = int(version_dict["patch"])
+                patch = int(float(version_dict["patch"]))
             if version_dict.get("major") is not None:
-                major = int(version_dict["major"])
+                major = int(float(version_dict["major"]))
             _pre = version_dict.get("is_prerelease", pre)
             pre = bool(_pre) if _pre is not None else pre
             _dev = version_dict.get("is_devrelease", dev)
