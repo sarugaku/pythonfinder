@@ -344,7 +344,8 @@ class PythonVersion(object):
     @property
     def version_sort(self):
         # type: () -> Tuple[Optional[int], Optional[int], int, int]
-        """version_sort tuple for sorting against other instances of the same class.
+        """
+        A tuple for sorting against other instances of the same class.
 
         Returns a tuple of the python version but includes a point for non-dev,
         and a point for non-prerelease versions.  So released versions will have 2 points
@@ -365,7 +366,8 @@ class PythonVersion(object):
     @property
     def version_tuple(self):
         # type: () -> Tuple[int, Optional[int], Optional[int], bool, bool, bool]
-        """Provides a version tuple for using as a dictionary key.
+        """
+        Provides a version tuple for using as a dictionary key.
 
         :return: A tuple describing the python version meetadata contained.
         :rtype: tuple
@@ -461,7 +463,8 @@ class PythonVersion(object):
     @lru_cache(maxsize=1024)
     def parse(cls, version):
         # type: (str) -> Dict[str, Union[str, int, Version]]
-        """Parse a valid version string into a dictionary
+        """
+        Parse a valid version string into a dictionary
 
         Raises:
             ValueError -- Unable to parse version string
@@ -497,7 +500,8 @@ class PythonVersion(object):
     @classmethod
     def from_path(cls, path, name=None, ignore_unsupported=True):
         # type: (Union[str, PathEntry], Optional[str], bool) -> PythonVersion
-        """Parses a python version from a system path.
+        """
+        Parses a python version from a system path.
 
         Raises:
             ValueError -- Not a valid python path
