@@ -316,7 +316,7 @@ class PythonFinder(BaseFinder, BasePath):
 class PythonVersion(object):
     major = attr.ib(default=0, type=int)
     minor = attr.ib(default=None)  # type: Optional[int]
-    patch = attr.ib(default=0)  # type: Optional[int]
+    patch = attr.ib(default=None)  # type: Optional[int]
     is_prerelease = attr.ib(default=False, type=bool)
     is_postrelease = attr.ib(default=False, type=bool)
     is_devrelease = attr.ib(default=False, type=bool)
@@ -336,8 +336,16 @@ class PythonVersion(object):
             elif self.comes_from:
                 executable = self.comes_from.path.as_posix()
             if executable is not None:
+                if not isinstance(executable, six.string_types):
+                    executable = executable.as_posix()
                 instance_dict = self.parse_executable(executable)
-                self.update_metadata(instance_dict)
+                for k in instance_dict.keys():
+                    try:
+                        super(PythonVersion, self).__getattribute__(k)
+                    except AttributeError:
+                        continue
+                    else:
+                        setattr(self, k, instance_dict[k])
                 result = instance_dict.get(key)
         return result
 
@@ -551,6 +559,8 @@ class PythonVersion(object):
         result_version = None  # type: Optional[str]
         if path is None:
             raise TypeError("Must pass a valid path to parse.")
+        if not isinstance(path, six.string_types):
+            path = path.as_posix()
         try:
             result_version = get_python_version(path)
         except Exception:
@@ -591,7 +601,6 @@ class PythonVersion(object):
         )
         py_version = cls.create(**creation_dict)
         comes_from = PathEntry.create(exe_path, only_python=True, name=name)
-        comes_from.py_version = copy.deepcopy(py_version)
         py_version.comes_from = comes_from
         py_version.name = comes_from.name
         return py_version

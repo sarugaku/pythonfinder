@@ -39,13 +39,13 @@ class WindowsFinder(BaseFinder):
     ):
         # type (...) -> List[PathEntry]
         version_matcher = operator.methodcaller(
-            "matches", major, minor, patch, pre, dev, arch, python_version=name
+            "matches", major, minor, patch, pre, dev, arch, python_name=name
         )
-        py_filter = filter(
-            None, filter(lambda c: version_matcher(c), self.version_list)
-        )
+        pythons = [
+            py for py in self.version_list if version_matcher(py)
+        ]
         version_sort = operator.attrgetter("version_sort")
-        return [c.comes_from for c in sorted(py_filter, key=version_sort, reverse=True)]
+        return [c.comes_from for c in sorted(pythons, key=version_sort, reverse=True)]
 
     def find_python_version(
         self,
@@ -65,7 +65,7 @@ class WindowsFinder(BaseFinder):
             pre=pre,
             dev=dev,
             arch=arch,
-            name=None,
+            name=name,
             )), None
         )
 
