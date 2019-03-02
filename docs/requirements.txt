@@ -1,4 +1,4 @@
 sphinx
 sphinx-click
 sphinx_rtd_theme
-sphinx-autodoc-types
+sphinx-autodoc-typehints
