@@ -1,3 +1,26 @@
+1.2.0 (2019-03-02)
+==================
+
+Features & Improvements
+-----------------------
+
+- Dramatically improved performance and stability.  `#51 <https://github.com/sarugaku/pythonfinder/issues/51>`_
+    
+- Added typehints and refactored mixins, updated shims to only attempt to remove themselves if they detect their respectve installations (fixes Hynek's issue).  `#52 <https://github.com/sarugaku/pythonfinder/issues/52>`_
+    
+
+Bug Fixes
+---------
+
+- Add resilient parsing to look only for ``major.minor(.patch)?`` as a fallback parser and allow more graceful continuation if a path is not a real path to python.  `#40 <https://github.com/sarugaku/pythonfinder/issues/40>`_
+    
+- Added typehints and refactored mixins, updated shims to only attempt to remove themselves if they detect their respectve installations (fixes Hynek's issue).  `#52 <https://github.com/sarugaku/pythonfinder/issues/52>`_
+    
+- Fixed a bug which prevented parsing of numeric versions as inputs to pythonfinder.  `#59 <https://github.com/sarugaku/pythonfinder/issues/59>`_
+    
+- Windows path discovery now works correctly and does not attempt to assign cached properties.  `#61 <https://github.com/sarugaku/pythonfinder/issues/61>`_
+
+
 1.1.10 (2018-11-22)
 ===================
 

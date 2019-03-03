@@ -1,1 +1,0 @@
-Windows path discovery now works correctly and does not attempt to assign cached properties.
