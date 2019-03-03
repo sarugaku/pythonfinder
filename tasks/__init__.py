@@ -47,7 +47,7 @@ def _write_version(v):
     with INIT_PY.open() as f:
         for line in f:
             if line.startswith("__version__ = "):
-                line = f"__version__ = {repr(str(v))}\n"
+                line = f"__version__ = {repr(str(v))}\n".replace("'", '"')
             lines.append(line)
     with INIT_PY.open("w", newline="\n") as f:
         f.write("".join(lines))
