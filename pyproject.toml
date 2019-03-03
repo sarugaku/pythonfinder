@@ -24,7 +24,7 @@ exclude = '''
 [tool.towncrier]
 package = "pythonfinder"
 package_dir = "src"
-newsfile = "CHANGELOG.rst"
+filename = "CHANGELOG.rst"
 issue_format = "`#{issue} <https://github.com/sarugaku/pythonfinder/issues/{issue}>`_"
 directory = "news/"
 title_format = "{version} ({project_date})"
