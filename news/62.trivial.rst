@@ -1,0 +1,1 @@
+Fixed non-unicode string with special character in ``setup.py``.
