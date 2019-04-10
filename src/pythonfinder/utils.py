@@ -87,7 +87,11 @@ for rule in RULES:
 def get_python_version(path):
     # type: (str) -> str
     """Get python version string using subprocess from a given path."""
-    version_cmd = [path, "-c", "import sys; print(sys.version.split()[0])"]
+    version_cmd = [
+        path,
+        "-c",
+        "import sys; print('.'.join([str(i) for i in sys.version_info[:3]]))",
+    ]
     try:
         c = vistir.misc.run(
             version_cmd,
