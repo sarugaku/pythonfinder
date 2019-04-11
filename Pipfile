@@ -3,7 +3,6 @@
 [dev-packages]
 pythonfinder = {path = ".", editable = true, extras = ["tests", "dev", "typing"]}
 mock = "*"
-sphinx-click = "*"
 
 [scripts]
 black = "python -m black src/pythonfinder"
