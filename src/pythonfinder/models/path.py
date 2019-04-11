@@ -110,6 +110,7 @@ class SystemPath(object):
         self.pyenv_finder = None
         self.asdf_finder = None
         self.paths = defaultdict(PathEntry)
+        self.__finders = {}
 
     @property
     def finders(self):
