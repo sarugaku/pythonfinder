@@ -95,6 +95,8 @@ class Finder(object):
             self._system_path = self.create_system_path()
         self.find_all_python_versions.cache_clear()
         self.find_python_version.cache_clear()
+        if self._windows_finder is not None:
+            self._windows_finder = None
         self.reload_system_path()
         filter_pythons.cache_clear()
 

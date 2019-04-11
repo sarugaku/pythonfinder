@@ -2,13 +2,8 @@
 
 [dev-packages]
 pythonfinder = {path = ".", editable = true, extras = ["tests", "dev", "typing"]}
-crayons = "*"
-towncrier = "*"
 mock = "*"
-sphinx = "*"
 sphinx-click = "*"
-sphinx-rtd-theme = "*"
-sphinx-autodoc-types = "*"
 
 [scripts]
 black = "python -m black src/pythonfinder"

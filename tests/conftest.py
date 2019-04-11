@@ -5,6 +5,7 @@ import itertools
 import os
 import random
 import sys
+from collections import namedtuple
 
 import click
 import click.testing
@@ -13,6 +14,7 @@ import vistir
 
 import pythonfinder
 
+pythoninfo = namedtuple("PythonVersion", ["version", "path", "arch"])
 
 # def pytest_generate_tests(metafunc):
 #     idlist = []
@@ -27,7 +29,6 @@ import pythonfinder
 # @pytest.fixture(params=PYTHON_VERSIONS)
 # def python(request):
 #     return request.params
-
 
 
 STACKLESS = [
@@ -154,11 +155,7 @@ def setup_pythons(tmpdir):
         if sys.platform == "win32":
             home_drive, home_path = os.path.splitdrive(home_dir)
             os.environ.update(
-                {
-                    "USERPROFILE": home_dir,
-                    "HOMEDRIVE": home_drive,
-                    "HOMEPATH": home_path,
-                }
+                {"USERPROFILE": home_dir, "HOMEDRIVE": home_drive, "HOMEPATH": home_path}
             )
             for env_var, sub_path in (
                 ("APPDATA", "AppData/Roaming"),
@@ -214,12 +211,20 @@ def setup_pythons(tmpdir):
             for exe in ["python", python_version, python]:
                 os.link(sys.executable, os.path.join(pyenv_bin, exe))
                 os.link(sys.executable, os.path.join(asdf_bin, exe))
-            os.symlink(
-                os.path.join(pyenv_bin, python), os.path.join(pyenv_shim_dir, python)
-            )
-            os.symlink(
-                os.path.join(asdf_bin, python), os.path.join(asdf_shim_dir, python)
-            )
+            if os.name == "nt":
+                os.link(
+                    os.path.join(pyenv_bin, python), os.path.join(pyenv_shim_dir, python)
+                )
+                os.link(
+                    os.path.join(asdf_bin, python), os.path.join(asdf_shim_dir, python)
+                )
+            else:
+                os.symlink(
+                    os.path.join(pyenv_bin, python), os.path.join(pyenv_shim_dir, python)
+                )
+                os.symlink(
+                    os.path.join(asdf_bin, python), os.path.join(asdf_shim_dir, python)
+                )
         os.environ["PYENV_ROOT"] = pyenv_dir
         os.environ["ASDF_DIR"] = asdf_dir
         os.environ["ASDF_DATA_DIR"] = asdf_dir
@@ -247,3 +252,62 @@ def special_character_python(tmpdir):
 def setup_env():
     with vistir.contextmanagers.temp_environ():
         os.environ["ANSI_COLORS_DISABLED"] = str("1")
+
+
+@pytest.fixture()
+def expected_python_versions():
+    if os.name != "nt":
+        return _build_python_tuples()
+    return get_windows_python_versions()
+
+
+def _build_python_tuples():
+    finder = pythonfinder.Finder(
+        global_search=True, system=False, ignore_unsupported=True
+    )
+    finder_versions = finder.find_all_python_versions()
+    versions = []
+    for v in finder_versions:
+        if not v.is_python:
+            continue
+        version = v.as_python
+        if not version:
+            continue
+        arch = (
+            version.architecture
+            if version.architecture
+            else pythonfinder.environment.SYSTEM_ARCH
+        )
+        arch = arch.replace("bit", "")
+        path = vistir.path.normalize_path(v.path)
+        version = str(version.version)
+        versions.append(pythoninfo(version, path, arch))
+    return versions
+
+
+@pytest.fixture(scope="session")
+def all_python_versions():
+    return _build_python_tuples()
+
+
+def get_windows_python_versions():
+    c = vistir.misc.run(
+        "py -0p",
+        block=True,
+        nospin=True,
+        return_object=True,
+        combine_stderr=False,
+        write_to_stdout=False,
+    )
+    versions = []
+    for line in c.out.splitlines():
+        line = line.strip()
+        if line and not "Installed Pythons found" in line:
+            version, path = line.split("\t")
+            version = version.strip().lstrip("-")
+            path = vistir.path.normalize_path(path.strip().strip('"'))
+            arch = None
+            if "-" in version:
+                version, _, arch = version.partition("-")
+            versions.append(pythoninfo(version, path, arch))
+    return versions

@@ -1,16 +1,17 @@
 # -*- coding=utf-8 -*-
 
 import os
+from collections import namedtuple
 
 import pytest
 import vistir
 
 import pythonfinder.utils
-
 from pythonfinder import Finder
 
-
 os.environ["ANSI_COLORS_DISABLED"] = "1"
+
+pythoninfo = namedtuple("PythonVersion", ["version", "path", "arch"])
 
 
 def _get_python_versions():
@@ -30,19 +31,23 @@ PYTHON_VERSIONS = _get_python_versions()
 
 
 versions = [
-    (pythonfinder.utils.get_python_version(python.path.as_posix()), python.as_python.version)
+    (
+        pythonfinder.utils.get_python_version(python.path.as_posix()),
+        python.as_python.version,
+    )
     for python in PYTHON_VERSIONS
 ]
 
 version_dicts = [
-    (pythonfinder.utils.parse_python_version(str(python.as_python.version)), python.as_python.as_dict())
+    (
+        pythonfinder.utils.parse_python_version(str(python.as_python.version)),
+        python.as_python.as_dict(),
+    )
     for python in PYTHON_VERSIONS
 ]
 
-test_paths = [
-    (python.path.as_posix(), True)
-    for python in PYTHON_VERSIONS
-]
+test_paths = [(python.path.as_posix(), True) for python in PYTHON_VERSIONS]
+
 
 @pytest.mark.parse
 @pytest.mark.parametrize("python, expected", versions)
