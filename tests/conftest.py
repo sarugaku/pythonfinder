@@ -144,13 +144,46 @@ PYTHON = [
 
 
 @pytest.fixture
-def setup_pythons(tmpdir):
+def pathlib_tmpdir(request, tmpdir):
+    yield vistir.compat.Path(str(tmpdir))
+    try:
+        tmpdir.remove(ignore_errors=True)
+    except Exception:
+        pass
+
+
+def _create_tracked_dir():
+    tmp_location = os.environ.get("TEMP", os.environ.get("TMP"))
+    temp_args = {"prefix": "pipenv-", "suffix": "-test"}
+    if tmp_location is not None:
+        temp_args["dir"] = tmp_location
+    temp_path = create_tracked_tempdir(**temp_args)
+    return temp_path
+
+
+@pytest.fixture
+def vistir_tmpdir():
+    temp_path = _create_tracked_dir()
+    yield vistir.compat.Path(temp_path)
+
+
+@pytest.fixture(name="create_tmpdir")
+def vistir_tmpdir_factory():
+    def create_tmpdir():
+        return vistir.compat.Path(_create_tracked_dir())
+
+    yield create_tmpdir
+
+
+@pytest.fixture
+def setup_pythons(create_tmpdir):
     runner = click.testing.CliRunner()
-    vistir.path.set_write_bit(tmpdir.strpath)
-    fake_root_path = tmpdir.join("root")
+    root = create_tmpdir()
+    vistir.path.set_write_bit(root.as_posix())
+    fake_root_path = root.joinpath("root")
     fake_root_path.mkdir()
-    fake_root = fake_root_path.strpath
-    with vistir.contextmanagers.temp_environ():
+    fake_root = fake_root_path.as_posix()
+    with vistir.contextmanagers.temp_environ(), vistir.contextmanagers.cd(fake_root):
         home_dir = pythonfinder.utils.normalize_path(os.curdir)
         # This is pip's isolation approach, swipe it for now for time savings
         if sys.platform == "win32":
@@ -191,7 +224,7 @@ def setup_pythons(tmpdir):
         env_path = os.pathsep.join([pyenv_shim_dir, asdf_shim_dir, os.defpath])
         os.environ["PATH"] = env_path
         all_versions = {}
-        vistir.path.set_write_bit(tmpdir.strpath)
+        vistir.path.set_write_bit(root.as_posix())
         pyenv_python_dir = os.path.join(pyenv_dir, "versions")
         asdf_python_dir = os.path.join(asdf_dir, "installs", "python")
         for python in itertools.chain(
