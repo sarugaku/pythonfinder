@@ -146,10 +146,11 @@ PYTHON = [
 @pytest.fixture
 def setup_pythons(tmpdir):
     runner = click.testing.CliRunner()
+    vistir.path.set_write_bit(tmpdir.strpath)
     fake_root_path = tmpdir.join("root")
     fake_root_path.mkdir()
     fake_root = fake_root_path.strpath
-    with runner.isolated_filesystem(), vistir.contextmanagers.temp_environ():
+    with vistir.contextmanagers.temp_environ():
         home_dir = pythonfinder.utils.normalize_path(os.curdir)
         # This is pip's isolation approach, swipe it for now for time savings
         if sys.platform == "win32":
@@ -190,6 +191,7 @@ def setup_pythons(tmpdir):
         env_path = os.pathsep.join([pyenv_shim_dir, asdf_shim_dir, os.defpath])
         os.environ["PATH"] = env_path
         all_versions = {}
+        vistir.path.set_write_bit(tmpdir.strpath)
         for python in itertools.chain(
             STACKLESS,
             PYPY,
