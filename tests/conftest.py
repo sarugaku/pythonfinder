@@ -192,6 +192,8 @@ def setup_pythons(tmpdir):
         os.environ["PATH"] = env_path
         all_versions = {}
         vistir.path.set_write_bit(tmpdir.strpath)
+        pyenv_python_dir = os.path.join(pyenv_dir, "versions")
+        asdf_python_dir = os.path.join(asdf_dir, "installs", "python")
         for python in itertools.chain(
             STACKLESS,
             PYPY,
@@ -204,29 +206,24 @@ def setup_pythons(tmpdir):
             ACTIVEPYTHON,
             PYTHON,
         ):
-            pyenv_bin = os.path.join(pyenv_dir, "versions", python, "bin")
-            asdf_bin = os.path.join(asdf_dir, "installs", "python", python, "bin")
-            vistir.path.mkdir_p(pyenv_bin)
-            vistir.path.mkdir_p(asdf_bin)
-            python_version = random.choice(["python3.7m", "python3.6m", "python2.7"])
-            all_versions[python] = os.path.join(pyenv_bin, python_version)
-            for exe in ["python", python_version, python]:
-                os.link(sys.executable, os.path.join(pyenv_bin, exe))
-                os.link(sys.executable, os.path.join(asdf_bin, exe))
-            if os.name == "nt":
-                os.link(
-                    os.path.join(pyenv_bin, python), os.path.join(pyenv_shim_dir, python)
-                )
-                os.link(
-                    os.path.join(asdf_bin, python), os.path.join(asdf_shim_dir, python)
-                )
-            else:
-                os.symlink(
-                    os.path.join(pyenv_bin, python), os.path.join(pyenv_shim_dir, python)
-                )
-                os.symlink(
-                    os.path.join(asdf_bin, python), os.path.join(asdf_shim_dir, python)
-                )
+            for base_plugin_dir, shim_dir in (
+                (pyenv_python_dir, pyenv_shim_dir),
+                (asdf_python_dir, asdf_shim_dir),
+            ):
+                bin_dir = os.path.join(base_plugin_dir, python, "bin")
+                vistir.path.mkdir_p(bin_dir)
+                vistir.path.set_write_bit(bin_dir)
+                vistir.path.set_write_bit(base_plugin_dir)
+                python_version = random.choice(["python3.7m", "python3.6m", "python2.7"])
+                all_versions[python] = os.path.join(bin_dir, python_version)
+                for exe in ["python", python_version, python]:
+                    os.link(sys.executable, os.path.join(bin_dir, exe))
+                    if os.name == "nt":
+                        vistir.compat.Path(shim_dir).joinpath(python).touch()
+                    else:
+                        os.symlink(
+                            os.path.join(bin_dir, python), os.path.join(shim_dir, python)
+                        )
         os.environ["PYENV_ROOT"] = pyenv_dir
         os.environ["ASDF_DIR"] = asdf_dir
         os.environ["ASDF_DATA_DIR"] = asdf_dir

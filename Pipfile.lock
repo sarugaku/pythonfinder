@@ -573,6 +573,7 @@
             "hashes": [
                 "sha256:bb2b15283de865a0b1502beb54b010148238580e189bb7925be9561ebd824484"
             ],
+            "markers": "python_version >= '3.3'",
             "version": "==2.3rc3"
         },
         "ninja": {
