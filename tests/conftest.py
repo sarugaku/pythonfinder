@@ -32,34 +32,28 @@ pythoninfo = namedtuple("PythonVersion", ["version", "path", "arch"])
 
 
 STACKLESS = [
-    "stackless-{0}".format(v)
-    for v in (
-        [
-            "dev",
-            "2.7-dev",
-            "2.7.2",
-            "2.7.3",
-            "2.7.4",
-            "2.7.5",
-            "2.7.6",
-            "2.7.7",
-            "2.7.8",
-            "2.7.9",
-            "2.7.10",
-            "2.7.11",
-            "2.7.12",
-            "2.7.14",
-            "3.2.2",
-            "3.2.5",
-            "3.3.5",
-            "3.3.7",
-            "3.4-dev",
-            "3.4.1",
-            "3.4.2",
-            "3.4.7",
-            "3.5.4",
-        ]
-    )
+    "stackless-2.7-dev",
+    "stackless-2.7.2",
+    "stackless-2.7.3",
+    "stackless-2.7.4",
+    "stackless-2.7.5",
+    "stackless-2.7.6",
+    "stackless-2.7.7",
+    "stackless-2.7.8",
+    "stackless-2.7.9",
+    "stackless-2.7.10",
+    "stackless-2.7.11",
+    "stackless-2.7.12",
+    "stackless-2.7.14",
+    "stackless-3.2.2",
+    "stackless-3.2.5",
+    "stackless-3.3.5",
+    "stackless-3.3.7",
+    "stackless-3.4-dev",
+    "stackless-3.4.1",
+    "stackless-3.4.2",
+    "stackless-3.4.7",
+    "stackless-3.5.4",
 ]
 PYPY = [
     "pypy3-2.3.1",
@@ -157,7 +151,7 @@ def _create_tracked_dir():
     temp_args = {"prefix": "pipenv-", "suffix": "-test"}
     if tmp_location is not None:
         temp_args["dir"] = tmp_location
-    temp_path = create_tracked_tempdir(**temp_args)
+    temp_path = vistir.path.create_tracked_tempdir(**temp_args)
     return temp_path
 
 
@@ -251,12 +245,12 @@ def setup_pythons(create_tmpdir):
                 all_versions[python] = os.path.join(bin_dir, python_version)
                 for exe in ["python", python_version, python]:
                     os.link(sys.executable, os.path.join(bin_dir, exe))
-                    if os.name == "nt":
-                        vistir.compat.Path(shim_dir).joinpath(python).touch()
-                    else:
-                        os.symlink(
-                            os.path.join(bin_dir, python), os.path.join(shim_dir, python)
-                        )
+                if os.name == "nt":
+                    vistir.compat.Path(shim_dir).joinpath(python).touch()
+                else:
+                    os.symlink(
+                        os.path.join(bin_dir, python), os.path.join(shim_dir, python)
+                    )
         os.environ["PYENV_ROOT"] = pyenv_dir
         os.environ["ASDF_DIR"] = asdf_dir
         os.environ["ASDF_DATA_DIR"] = asdf_dir

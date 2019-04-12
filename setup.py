@@ -23,41 +23,7 @@ def find_version(*file_paths):
     raise RuntimeError("Unable to find version string.")
 
 
-if sys.argv[-1] == "publish":
-    os.system("python setup.py sdist bdist_wheel upload")
-    sys.exit()
-
 long_description = read("README.rst")
-
-
-class UploadCommand(Command):
-    """Support setup.py publish."""
-
-    description = "Build and publish the package."
-    user_options = []
-
-    @staticmethod
-    def status(s):
-        """Prints things in bold."""
-        print("\033[1m{0}\033[0m".format(s))
-
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        self.status("Building Source distribution…")
-        os.system("{0} setup.py sdist".format(sys.executable))
-        self.status(u"Uploading the package to PyPi via Twine…")
-        os.system("twine upload dist/*")
-        self.status(u"Pushing git tags…")
-        os.system(
-            "git tag v{0}".format(find_version("src", "pythonfinder", "__init__.py"))
-        )
-        os.system("git push --tags")
-        sys.exit()
 
 
 setup(
