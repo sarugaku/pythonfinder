@@ -84,8 +84,8 @@ class Finder(object):
         """
 
         if self._system_path is not None:
-            self._system_path.clear_caches()
-        self._system_path = None
+            self._system_path = self._system_path.clear_caches()
+            self._system_path = None
         six.moves.reload_module(pyfinder_path)
         self._system_path = self.create_system_path()
 
@@ -97,8 +97,9 @@ class Finder(object):
         self.find_python_version.cache_clear()
         if self._windows_finder is not None:
             self._windows_finder = None
-        self.reload_system_path()
         filter_pythons.cache_clear()
+        self.reload_system_path()
+        return self
 
     @property
     def system_path(self):

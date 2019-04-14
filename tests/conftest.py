@@ -147,10 +147,8 @@ def pathlib_tmpdir(request, tmpdir):
 
 
 def _create_tracked_dir():
-    tmp_location = os.environ.get("TEMP", os.environ.get("TMP"))
-    temp_args = {"prefix": "pipenv-", "suffix": "-test"}
-    if tmp_location is not None:
-        temp_args["dir"] = tmp_location
+    temp_args = {"prefix": "pythonfinder-", "suffix": "-test"}
+    temp_args["dir"] = os.path.dirname(os.getcwd())
     temp_path = vistir.path.create_tracked_tempdir(**temp_args)
     return temp_path
 
@@ -172,13 +170,11 @@ def vistir_tmpdir_factory():
 @pytest.fixture
 def setup_pythons(create_tmpdir):
     runner = click.testing.CliRunner()
-    root = create_tmpdir()
-    vistir.path.set_write_bit(root.as_posix())
-    fake_root_path = root.joinpath("root")
-    fake_root_path.mkdir()
+    fake_root_path = create_tmpdir()
     fake_root = fake_root_path.as_posix()
+    vistir.path.set_write_bit(fake_root)
     with vistir.contextmanagers.temp_environ(), vistir.contextmanagers.cd(fake_root):
-        home_dir = pythonfinder.utils.normalize_path(os.curdir)
+        home_dir = pythonfinder.utils.normalize_path(os.getcwd())
         # This is pip's isolation approach, swipe it for now for time savings
         if sys.platform == "win32":
             home_drive, home_path = os.path.splitdrive(home_dir)
@@ -218,7 +214,7 @@ def setup_pythons(create_tmpdir):
         env_path = os.pathsep.join([pyenv_shim_dir, asdf_shim_dir, os.defpath])
         os.environ["PATH"] = env_path
         all_versions = {}
-        vistir.path.set_write_bit(root.as_posix())
+        vistir.path.set_write_bit(fake_root)
         pyenv_python_dir = os.path.join(pyenv_dir, "versions")
         asdf_python_dir = os.path.join(asdf_dir, "installs", "python")
         for python in itertools.chain(
