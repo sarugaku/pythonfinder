@@ -1,7 +1,6 @@
 # -*- coding=utf-8 -*-
 from __future__ import absolute_import, print_function
 
-import itertools
 import os
 import random
 import sys
@@ -10,9 +9,12 @@ from collections import namedtuple
 import click
 import click.testing
 import pytest
+import six
 import vistir
 
 import pythonfinder
+
+from .testutils import normalized_match, yield_versions
 
 pythoninfo = namedtuple("PythonVersion", ["version", "path", "arch"])
 
@@ -31,110 +33,7 @@ pythoninfo = namedtuple("PythonVersion", ["version", "path", "arch"])
 #     return request.params
 
 
-STACKLESS = [
-    "stackless-2.7-dev",
-    "stackless-2.7.2",
-    "stackless-2.7.3",
-    "stackless-2.7.4",
-    "stackless-2.7.5",
-    "stackless-2.7.6",
-    "stackless-2.7.7",
-    "stackless-2.7.8",
-    "stackless-2.7.9",
-    "stackless-2.7.10",
-    "stackless-2.7.11",
-    "stackless-2.7.12",
-    "stackless-2.7.14",
-    "stackless-3.2.2",
-    "stackless-3.2.5",
-    "stackless-3.3.5",
-    "stackless-3.3.7",
-    "stackless-3.4-dev",
-    "stackless-3.4.1",
-    "stackless-3.4.2",
-    "stackless-3.4.7",
-    "stackless-3.5.4",
-]
-PYPY = [
-    "pypy3-2.3.1",
-    "pypy3-2.4.0-src",
-    "pypy3-2.4.0",
-    "pypy2-5.6.0",
-    "pypy2.7-5.10.0",
-    "pypy2.7-6.0.0",
-    "pypy-5.3.1",
-    "pypy3.5-5.10.1",
-    "pypy3.5-6.0.0-src",
-    "pypy3.5-6.0.0",
-]
-PYSTON = ["pyston-0.5.1", "pyston-0.6.0", "pyston-0.6.1"]
-MINICONDA = [
-    "miniconda-2.2.2",
-    "miniconda-3.0.0",
-    "miniconda-3.0.4",
-    "miniconda-3.0.5",
-    "miniconda-3.3.0",
-    "miniconda-3.4.2",
-    "miniconda3-3.18.3",
-    "miniconda3-3.19.0",
-    "miniconda3-4.0.5",
-    "miniconda3-4.1.11",
-    "miniconda3-4.3.27",
-    "miniconda3-4.3.30",
-]
-MICROPYTHON = ["micropython-1.9.3", "micropython-1.9.4"]
-JYTHON = [
-    "jython-2.5-dev",
-    "jython-2.5.1",
-    "jython-2.5.2",
-    "jython-2.5.3",
-    "jython-2.5.4-rc1",
-    "jython-2.7.0",
-    "jython-2.7.1",
-]
-ANACONDA = [
-    "anaconda2-2.4.1",
-    "anaconda2-2.5.0",
-    "anaconda2-4.0.0",
-    "anaconda2-4.1.0",
-    "anaconda2-4.1.1",
-    "anaconda2-4.2.0",
-    "anaconda2-4.3.0",
-    "anaconda2-4.3.1",
-    "anaconda2-4.4.0",
-    "anaconda3-4.1.1",
-    "anaconda3-4.2.0",
-    "anaconda3-4.3.0",
-    "anaconda3-4.3.1",
-    "anaconda3-4.4.0",
-    "anaconda3-5.0.0",
-    "anaconda3-5.0.1",
-    "anaconda3-5.1.0",
-    "anaconda3-5.2.0",
-    "anaconda3-5.3.0",
-]
-IRONPYTHON = [
-    "ironpython-dev",
-    "ironpython-2.7.4",
-    "ironpython-2.7.5",
-    "ironpython-2.7.6.3",
-    "ironpython-2.7.7",
-]
-ACTIVEPYTHON = ["activepython-2.7.14", "activepython-3.5.4", "activepython-3.6.0"]
-PYTHON = [
-    "2.7.11",
-    "2.7.12",
-    "2.7.13",
-    "2.7.14",
-    "2.7.14rc1",
-    "2.7.15",
-    "3.6.6",
-    "3.6.7",
-    "3.7.0",
-    "3.7-dev",
-    "3.7.1",
-    "3.8-dev",
-]
+# Having these versions correct isn't as important as having them approximately right
 
 
 @pytest.fixture
@@ -168,13 +67,62 @@ def vistir_tmpdir_factory():
 
 
 @pytest.fixture
-def setup_pythons(create_tmpdir):
+def no_virtual_env():
+    with vistir.contextmanagers.temp_environ():
+        if "VIRTUAL_ENV" in os.environ["PATH"]:
+            orig_path = os.environ["PATH"].split(os.pathsep)
+            venv = vistir.path.normalize_path(os.environ["VIRTUAL_ENV"])
+            match = next(iter(p for p in orig_path if normalized_match(p, venv)), None)
+            if match:
+                orig_path.remove(match)
+            del os.environ["VIRTUAL_ENV"]
+            os.environ["PATH"] = os.pathsep.join(orig_path)
+        yield
+
+
+@pytest.fixture
+def no_pyenv_root_envvar(monkeypatch):
+    """This captures a bug hynek ran into where he had no `PYENV_ROOT`.
+
+    When `PYENV_ROOT` is unset we still need to find pythons in the appropriate location
+    """
+
+    with monkeypatch.context() as m:
+        if "PYENV_ROOT" in os.environ:
+            m.delenv("PYENV_ROOT")
+        if "ASDF_DATA_DIR" in os.environ:
+            m.delenv("ASDF_DATA_DIR")
+        six.moves.reload_module(pythonfinder.environment)
+        six.moves.reload_module(pythonfinder.models.path)
+        m.setattr(pythonfinder.environment, "PYENV_INSTALLED", False)
+        m.setattr(pythonfinder.environment, "ASDF_INSTALLED", False)
+        m.setattr(
+            pythonfinder.environment, "PYENV_ROOT", vistir.path.normalize_path("./pyenv")
+        )
+        m.setattr(
+            pythonfinder.environment,
+            "ASDF_DATA_DIR",
+            vistir.path.normalize_path("./asdf"),
+        )
+        m.setattr(
+            pythonfinder.environment,
+            "SHIM_PATHS",
+            pythonfinder.environment.get_shim_paths(),
+        )
+        yield
+
+
+@pytest.fixture
+def isolated_envdir(create_tmpdir):
     runner = click.testing.CliRunner()
     fake_root_path = create_tmpdir()
     fake_root = fake_root_path.as_posix()
     vistir.path.set_write_bit(fake_root)
     with vistir.contextmanagers.temp_environ(), vistir.contextmanagers.cd(fake_root):
-        home_dir = pythonfinder.utils.normalize_path(os.getcwd())
+        home_dir_path = fake_root_path.joinpath("home/pythonfinder")
+        home_dir_path.mkdir(parents=True)
+        home_dir = vistir.path.normalize_path(home_dir_path.as_posix())
+        os.chdir(home_dir)
         # This is pip's isolation approach, swipe it for now for time savings
         if sys.platform == "win32":
             home_drive, home_path = os.path.splitdrive(home_dir)
@@ -205,55 +153,74 @@ def setup_pythons(create_tmpdir):
                     os.path.join(fake_root, "usr", "share"),
                 ]
             )
-        pyenv_dir = os.path.join(home_dir, ".pyenv")
-        asdf_dir = os.path.join(home_dir, ".asdf")
-        pyenv_shim_dir = os.path.join(pyenv_dir, "shims")
-        asdf_shim_dir = os.path.join(asdf_dir, "shims")
-        vistir.path.mkdir_p(pyenv_shim_dir)
-        vistir.path.mkdir_p(asdf_shim_dir)
-        env_path = os.pathsep.join([pyenv_shim_dir, asdf_shim_dir, os.defpath])
-        os.environ["PATH"] = env_path
-        all_versions = {}
-        vistir.path.set_write_bit(fake_root)
-        pyenv_python_dir = os.path.join(pyenv_dir, "versions")
-        asdf_python_dir = os.path.join(asdf_dir, "installs", "python")
-        for python in itertools.chain(
-            STACKLESS,
-            PYPY,
-            PYSTON,
-            MINICONDA,
-            MICROPYTHON,
-            JYTHON,
-            ANACONDA,
-            IRONPYTHON,
-            ACTIVEPYTHON,
-            PYTHON,
-        ):
-            for base_plugin_dir, shim_dir in (
-                (pyenv_python_dir, pyenv_shim_dir),
-                (asdf_python_dir, asdf_shim_dir),
-            ):
-                bin_dir = os.path.join(base_plugin_dir, python, "bin")
-                vistir.path.mkdir_p(bin_dir)
-                vistir.path.set_write_bit(bin_dir)
-                vistir.path.set_write_bit(base_plugin_dir)
-                python_version = random.choice(["python3.7m", "python3.6m", "python2.7"])
-                all_versions[python] = os.path.join(bin_dir, python_version)
-                for exe in ["python", python_version, python]:
-                    os.link(sys.executable, os.path.join(bin_dir, exe))
-                if os.name == "nt":
-                    vistir.compat.Path(shim_dir).joinpath(python).touch()
-                else:
-                    os.symlink(
-                        os.path.join(bin_dir, python), os.path.join(shim_dir, python)
-                    )
-        os.environ["PYENV_ROOT"] = pyenv_dir
-        os.environ["ASDF_DIR"] = asdf_dir
-        os.environ["ASDF_DATA_DIR"] = asdf_dir
-        try:
-            yield all_versions
-        finally:
-            pass
+        os.environ["PATH"] = os.defpath
+        yield home_dir_path
+
+
+def build_python_versions(path, link_to=None):
+    all_versions = {}
+    for python_name, python_version in yield_versions():
+        python_dir = path / python_name
+        bin_dir = python_dir / "bin"
+        bin_dir.mkdir(parents=True)
+        vistir.path.set_write_bit(bin_dir.as_posix())
+        executable_names = [
+            python_name,
+            "python",
+            "python{0}".format(python_version[0]),
+            "python{0}".format(python_version[:3]),
+        ]
+        for executable in executable_names:
+            exe_file = bin_dir.joinpath(executable)
+            os.link(sys.executable, str(exe_file))
+        all_versions[python_name] = bin_dir / executable_names[3]
+        if link_to:
+            target = link_to.joinpath(python_name)
+            other_target = link_to.joinpath(executable_names[3])
+            if os.name == "nt":
+                os.link(exe_file.as_posix(), target.as_posix())
+                os.link(exe_file.as_posix(), other_target.as_posix())
+            else:
+                target.symlink_to(exe_file.as_posix())
+                target.symlink_to(other_target.as_posix())
+    return all_versions
+
+
+def setup_pyenv(home_dir):
+    pyenv_dir = home_dir / ".pyenv"
+    pyenv_shim_dir = pyenv_dir / "shims"
+    pyenv_shim_dir.mkdir(parents=True)
+    env_path = os.pathsep.join(
+        [pyenv_shim_dir.as_posix(), os.environ.get("PATH", os.defpath)]
+    )
+    os.environ["PATH"] = env_path
+    pyenv_python_dir = pyenv_dir / "versions"
+    all_versions = build_python_versions(pyenv_python_dir, link_to=pyenv_shim_dir)
+    os.environ["PYENV_ROOT"] = pyenv_dir.as_posix()
+    return all_versions
+
+
+def setup_asdf(home_dir):
+    asdf_dir = home_dir / ".asdf"
+    asdf_shim_dir = asdf_dir / "shims"
+    asdf_shim_dir.mkdir(parents=True)
+    env_path = os.pathsep.join(
+        [asdf_shim_dir.as_posix(), os.environ.get("PATH", os.defpath)]
+    )
+    os.environ["PATH"] = env_path
+    asdf_python_dir = asdf_dir / "installs/python"
+    all_versions = build_python_versions(asdf_python_dir, link_to=asdf_shim_dir)
+    os.environ["ASDF_DIR"] = asdf_dir.as_posix()
+    os.environ["ASDF_DATA_DIR"] = asdf_dir.as_posix()
+    return all_versions
+
+
+@pytest.fixture
+def setup_pythons(isolated_envdir):
+    asdf_dict = setup_asdf(isolated_envdir)
+    pyenv_dict = setup_pyenv(isolated_envdir)
+    version_dicts = {"pyenv": pyenv_dict, "asdf": asdf_dict}
+    return version_dicts
 
 
 @pytest.fixture

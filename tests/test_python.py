@@ -1,12 +1,17 @@
 # -*- coding=utf-8 -*-
+from __future__ import absolute_import, print_function
 
 import os
+import sys
 
 import pytest
 import six
+import vistir
 from packaging.version import Version
 
 import pythonfinder
+
+from .testutils import is_in_ospath, print_python_versions
 
 
 def test_python_versions(monkeypatch, special_character_python):
@@ -71,49 +76,58 @@ def test_python_version_output_variants(monkeypatch, path, version_output, versi
         assert isinstance(parsed.version, Version)
 
 
-def test_shims_are_kept(monkeypatch, setup_pythons):
+def test_shims_are_kept(monkeypatch, no_pyenv_root_envvar, setup_pythons, no_virtual_env):
     with monkeypatch.context() as m:
-        pyenv_dir = pythonfinder.utils.normalize_path("./.pyenv")
-        asdf_dir = pythonfinder.utils.normalize_path("./.asdf")
-        m.delenv("PYENV_ROOT")
-        m.delenv("ASDF_DATA_DIR")
-        six.moves.reload_module(pythonfinder.environment)
-        six.moves.reload_module(pythonfinder.models.path)
-        m.setattr(pythonfinder.environment, "PYENV_INSTALLED", False)
-        m.setattr(pythonfinder.environment, "ASDF_INSTALLED", False)
-        m.setattr(pythonfinder.environment, "PYENV_ROOT", pyenv_dir)
-        m.setattr(pythonfinder.environment, "ASDF_DATA_DIR", asdf_dir)
-        m.setattr(
-            pythonfinder.environment,
-            "SHIM_PATHS",
-            pythonfinder.environment.get_shim_paths(),
-        )
-        if "VIRTUAL_ENV" in os.environ:
-            os_path = os.environ["PATH"].split(os.pathsep)
-            env_path = next(
-                iter(
-                    [
-                        p
-                        for p in os_path
-                        if pythonfinder.utils.is_in_path(p, os.environ["VIRTUAL_ENV"])
-                    ]
-                ),
-                None,
-            )
-            if env_path is not None:
-                os_path.remove(env_path)
-                os.environ["PATH"] = os.pathsep.join(os_path)
-            del os.environ["VIRTUAL_ENV"]
+        # pyenv_dir = pythonfinder.utils.normalize_path("./.pyenv")
+        # asdf_dir = pythonfinder.utils.normalize_path("./.asdf")
+        # m.delenv("PYENV_ROOT")
+        # m.delenv("ASDF_DATA_DIR")
+        # six.moves.reload_module(pythonfinder.environment)
+        # six.moves.reload_module(pythonfinder.models.path)
+        # m.setattr(pythonfinder.environment, "PYENV_INSTALLED", False)
+        # m.setattr(pythonfinder.environment, "ASDF_INSTALLED", False)
+        # m.setattr(pythonfinder.environment, "PYENV_ROOT", pyenv_dir)
+        # m.setattr(pythonfinder.environment, "ASDF_DATA_DIR", asdf_dir)
+        # m.setattr(
+        #     pythonfinder.environment,
+        #     "SHIM_PATHS",
+        #     pythonfinder.environment.get_shim_paths(),
+        # )
+        # if "VIRTUAL_ENV" in os.environ:
+        #     os_path = os.environ["PATH"].split(os.pathsep)
+        #     env_path = next(
+        #         iter(
+        #             [
+        #                 p
+        #                 for p in os_path
+        #                 if pythonfinder.utils.is_in_path(p, os.environ["VIRTUAL_ENV"])
+        #             ]
+        #         ),
+        #         None,
+        #     )
+        #     if env_path is not None:
+        #         os_path.remove(env_path)
+        #         os.environ["PATH"] = os.pathsep.join(os_path)
+        #     del os.environ["VIRTUAL_ENV"]
         f = pythonfinder.pythonfinder.Finder(
             global_search=True, system=False, ignore_unsupported=True
         )
         f.rehash()
         assert pythonfinder.environment.get_shim_paths() == []
-        assert os.path.join(pyenv_dir, "shims") in os.environ["PATH"]
+        assert is_in_ospath("./.pyenv/shims")
         assert not f.system_path.finders
-        assert os.path.join(pyenv_dir, "shims") in f.system_path.path_order
+        assert (
+            os.path.join(vistir.path.normalize_path("./.pyenv/shims"))
+            in f.system_path.path_order
+        )
         python_versions = f.find_all_python_versions()
         anaconda = f.find_python_version("anaconda3-5.3.0")
+        if not anaconda:
+            print("OS PATH: {0}".format(os.environ["PATH"]), file=sys.stderr)
+            print("PYENV DIR:")
+            for fn in os.listdir(vistir.path.normalize_path("./.pyenv/shims")):
+                print("    {0}".format(fn), file=sys.stderr)
+            print_python_versions(python_versions)
         assert anaconda is not None, python_versions
         assert "shims" in anaconda.path.as_posix(), [
             f.system_path.path_order,

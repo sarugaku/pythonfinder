@@ -229,10 +229,8 @@ class PythonFinder(BaseFinder, BasePath):
         return self.pythons
 
     @classmethod
-    def create(
-        cls, root, sort_function, version_glob_path=None, ignore_unsupported=True
-    ):  # type: ignore
-        # type: (Type[PythonFinder], str, Callable, Optional[str], bool) -> PythonFinder
+    def create(cls, root, sort_function, version_glob_path=None, ignore_unsupported=True):
+        # type: (str, Callable, Optional[str], bool) -> PythonFinder
         root = ensure_path(root)
         if not version_glob_path:
             version_glob_path = "versions/*"

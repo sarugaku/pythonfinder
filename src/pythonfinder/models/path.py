@@ -91,7 +91,7 @@ class SystemPath(object):
     )  # type: Dict[str, Union[WindowsFinder, PythonFinder]]
 
     def _register_finder(self, finder_name, finder):
-        # type: (str, Union[WindowsFinder, PythonFinder]) -> "PythonFinder"
+        # type: (str, Union[WindowsFinder, PythonFinder]) -> "SystemPath"
         if finder_name not in self.__finders:
             self.__finders[finder_name] = finder
         return self
@@ -112,6 +112,8 @@ class SystemPath(object):
             pyenv_finder=None,
             windows_finder=None,
             asdf_finder=None,
+            path_order=[],
+            paths=defaultdict(PathEntry),
         )
 
     def __del__(self):
@@ -195,6 +197,31 @@ class SystemPath(object):
         if not self.__class__ == SystemPath:
             return self
         new_instance = self
+        path_order = new_instance.path_order[:]
+        path_entries = self.paths.copy()
+        if self.global_search and "PATH" in os.environ:
+            path_order = path_order + os.environ["PATH"].split(os.pathsep)
+        path_instances = [
+            ensure_path(p.strip('"'))
+            for p in path_order
+            if not any(
+                is_in_path(normalize_path(str(p)), normalize_path(shim))
+                for shim in SHIM_PATHS
+            )
+        ]
+        path_entries.update(
+            {
+                p.as_posix(): PathEntry.create(
+                    path=p.absolute(), is_root=True, only_python=self.only_python
+                )
+                for p in path_instances
+            }
+        )
+        new_instance = attr.evolve(
+            new_instance,
+            path_order=[p.as_posix() for p in path_instances],
+            paths=path_entries,
+        )
         if os.name == "nt" and "windows" not in self.finders:
             new_instance = new_instance._setup_windows()
         #: slice in pyenv
@@ -211,9 +238,10 @@ class SystemPath(object):
         if venv and (new_instance.system or new_instance.global_search):
             p = ensure_path(venv)
             path_order = [(p / bin_dir).as_posix()] + new_instance.path_order
+            new_instance = attr.evolve(new_instance, path_order=path_order)
             paths = new_instance.paths.copy()
             paths[p] = new_instance.get_path(p.joinpath(bin_dir))
-            new_instance = attr.evolve(new_instance, paths=paths, path_order=path_order)
+            new_instance = attr.evolve(new_instance, paths=paths)
         if new_instance.system:
             syspath = Path(sys.executable)
             syspath_bin = syspath.parent
@@ -403,7 +431,7 @@ class SystemPath(object):
         return _path
 
     def _get_paths(self):
-        # type: () -> Iterator
+        # type: () -> Generator[PathType, None, None]
         for path in self.path_order:
             try:
                 entry = self.get_path(path)
@@ -611,25 +639,37 @@ class SystemPath(object):
         paths = []  # type: List[str]
         if ignore_unsupported:
             os.environ["PYTHONFINDER_IGNORE_UNSUPPORTED"] = fs_str("1")
-        if global_search:
-            if "PATH" in os.environ:
-                paths = os.environ["PATH"].split(os.pathsep)
+        # if global_search:
+        #     if "PATH" in os.environ:
+        #         paths = os.environ["PATH"].split(os.pathsep)
+        path_order = []
         if path:
-            paths = [path] + paths
-        paths = [p for p in paths if not any(is_in_path(p, shim) for shim in SHIM_PATHS)]
-        _path_objects = [ensure_path(p.strip('"')) for p in paths]
-        paths = [p.as_posix() for p in _path_objects]
-        path_entries.update(
-            {
-                p.as_posix(): PathEntry.create(
-                    path=p.absolute(), is_root=True, only_python=only_python
-                )
-                for p in _path_objects
-            }
-        )
+            path_order = [path]
+            path_instance = ensure_path(path)
+            path_entries.update(
+                {
+                    path_instance.as_posix(): PathEntry.create(
+                        path=path_instance.absolute(),
+                        is_root=True,
+                        only_python=only_python,
+                    )
+                }
+            )
+            # paths = [path] + paths
+        # paths = [p for p in paths if not any(is_in_path(p, shim) for shim in SHIM_PATHS)]
+        # _path_objects = [ensure_path(p.strip('"')) for p in paths]
+        # paths = [p.as_posix() for p in _path_objects]
+        # path_entries.update(
+        #     {
+        #         p.as_posix(): PathEntry.create(
+        #             path=p.absolute(), is_root=True, only_python=only_python
+        #         )
+        #         for p in _path_objects
+        #     }
+        # )
         instance = cls(
             paths=path_entries,
-            path_order=paths,
+            path_order=path_order,
             only_python=only_python,
             system=system,
             global_search=global_search,

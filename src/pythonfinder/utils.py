@@ -56,7 +56,7 @@ PYTHON_IMPLEMENTATIONS = (
     "micropython",
 )
 RE_MATCHER = re.compile(
-    r"(({0})(?:\d?(?:\.\d[cpm]{{0,3}}))?(?:-?[\d\.]+)*[^z])".format(
+    r"((?P<implementation>{0})(?:\d?(?:\.\d[cpm]{{0,3}}))?(?:-?[\d\.]+)*[^z])".format(
         "|".join(PYTHON_IMPLEMENTATIONS)
     )
 )
