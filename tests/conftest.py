@@ -97,12 +97,12 @@ def no_pyenv_root_envvar(monkeypatch):
         m.setattr(pythonfinder.environment, "PYENV_INSTALLED", False)
         m.setattr(pythonfinder.environment, "ASDF_INSTALLED", False)
         m.setattr(
-            pythonfinder.environment, "PYENV_ROOT", vistir.path.normalize_path("./pyenv")
+            pythonfinder.environment, "PYENV_ROOT", vistir.path.normalize_path("./.pyenv")
         )
         m.setattr(
             pythonfinder.environment,
             "ASDF_DATA_DIR",
-            vistir.path.normalize_path("./asdf"),
+            vistir.path.normalize_path("./.asdf"),
         )
         m.setattr(
             pythonfinder.environment,
@@ -182,7 +182,8 @@ def build_python_versions(path, link_to=None):
                 os.link(exe_file.as_posix(), other_target.as_posix())
             else:
                 target.symlink_to(exe_file.as_posix())
-                other_target.symlink_to(exe_file.as_posix())
+                if not other_target.exists():
+                    other_target.symlink_to(exe_file.as_posix())
     return all_versions
 
 

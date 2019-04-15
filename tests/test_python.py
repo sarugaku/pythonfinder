@@ -11,7 +11,7 @@ from packaging.version import Version
 
 import pythonfinder
 
-from .testutils import is_in_ospath, print_python_versions
+from .testutils import is_in_ospath, normalized_match, print_python_versions
 
 
 def test_python_versions(monkeypatch, special_character_python):
@@ -114,10 +114,10 @@ def test_shims_are_kept(monkeypatch, no_pyenv_root_envvar, setup_pythons, no_vir
         )
         f.rehash()
         assert pythonfinder.environment.get_shim_paths() == []
-        assert is_in_ospath("./.pyenv/shims")
+        assert is_in_ospath("./.asdf/shims")
         assert not f.system_path.finders
         assert (
-            os.path.join(vistir.path.normalize_path("./.pyenv/shims"))
+            os.path.join(vistir.path.normalize_path("./.asdf/shims"))
             in f.system_path.path_order
         )
         python_versions = f.find_all_python_versions()
@@ -125,37 +125,23 @@ def test_shims_are_kept(monkeypatch, no_pyenv_root_envvar, setup_pythons, no_vir
         if not anaconda:
             print("OS PATH: {0}".format(os.environ["PATH"]), file=sys.stderr)
             print("PYENV DIR:")
-            for fn in os.listdir(vistir.path.normalize_path("./.pyenv/shims")):
+            for fn in os.listdir(vistir.path.normalize_path("./.asdf/shims")):
                 print("    {0}".format(fn), file=sys.stderr)
             print_python_versions(python_versions)
         assert anaconda is not None, python_versions
         assert "shims" in anaconda.path.as_posix(), [
             f.system_path.path_order,
-            f.system_path.pyenv_finder.roots,
+            f.system_path.asdf_finder.roots,
         ]
         assert "shims" in f.which("anaconda3-5.3.0").path.as_posix()
 
 
-def test_shims_are_removed(monkeypatch, setup_pythons):
+def test_shims_are_removed(monkeypatch, no_virtual_env, setup_pythons):
     with monkeypatch.context() as m:
         pyenv_dir = pythonfinder.utils.normalize_path("./.pyenv")
         asdf_dir = pythonfinder.utils.normalize_path("./.asdf")
         six.moves.reload_module(pythonfinder.environment)
         six.moves.reload_module(pythonfinder.models.path)
-        if "VIRTUAL_ENV" in os.environ:
-            os_path = os.environ["PATH"].split(os.pathsep)
-            env_path = next(
-                iter(
-                    p
-                    for p in os_path
-                    if pythonfinder.utils.is_in_path(p, os.environ["VIRTUAL_ENV"])
-                ),
-                None,
-            )
-            if env_path is not None:
-                os_path.remove(env_path)
-                os.environ["PATH"] = os.pathsep.join(os_path)
-            del os.environ["VIRTUAL_ENV"]
         m.setattr(
             pythonfinder.environment,
             "SHIM_PATHS",
@@ -177,12 +163,24 @@ def test_shims_are_removed(monkeypatch, setup_pythons):
         python_version_paths = list(
             v.path
             for v in python_versions
-            if pythonfinder.utils.is_in_path(str(v.path), os.environ["PYENV_ROOT"])
+            if normalized_match(str(v.path), os.environ["PYENV_ROOT"])
         )
         # Make sure we have an entry for every python version installed
         python_names = set(list(v.parent.parent.name for v in python_version_paths))
+        setup_key_list = [
+            set(list(finder.keys())) for finder in list(setup_pythons.values())
+        ]
+        setup_pythons = {python for finder in setup_key_list for python in finder}
         # this calculates the pythons not present when we ran `find_all_python_versions`
-        missing_from_finder = python_names ^ set(list(setup_pythons.keys()))
+        missing_from_finder = python_names ^ setup_pythons
+        if missing_from_finder:
+            print_python_versions(python_versions)
+            for p in python_version_paths:
+                print("path: {0}".format(p), file=sys.stderr)
+            for p in sorted(python_names):
+                print("python_name: {0}".format(p), file=sys.stderr)
+            for p in sorted(list(setup_pythons.keys())):
+                print("setup python key: {0}".format(p), file=sys.stderr)
         assert not missing_from_finder, missing_from_finder
         anaconda = f.find_python_version("anaconda3-5.3.0")
         assert anaconda is not None, os.listdir(
