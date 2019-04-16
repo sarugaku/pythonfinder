@@ -3,6 +3,7 @@ from __future__ import absolute_import, print_function
 
 import os
 import random
+import stat
 import sys
 from collections import namedtuple
 
@@ -17,23 +18,6 @@ import pythonfinder
 from .testutils import normalized_match, yield_versions
 
 pythoninfo = namedtuple("PythonVersion", ["version", "path", "arch"])
-
-# def pytest_generate_tests(metafunc):
-#     idlist = []
-#     argvalues = []
-#     for python in PYTHON_VERSIONS:
-#         idlist.append(python.path.as_posix())
-#         argnames = ["python",]
-#         argvalues.append(([python,]))
-#     metafunc.parametrize(argnames, argvalues, ids=idlist, scope="function")
-
-
-# @pytest.fixture(params=PYTHON_VERSIONS)
-# def python(request):
-#     return request.params
-
-
-# Having these versions correct isn't as important as having them approximately right
 
 
 @pytest.fixture
@@ -173,6 +157,7 @@ def build_python_versions(path, link_to=None):
         for executable in executable_names:
             exe_file = bin_dir.joinpath(executable)
             os.link(sys.executable, str(exe_file))
+            os.chmod(exe_file.as_posix(), stat.S_IEXEC)
         all_versions[python_name] = bin_dir / executable_names[3]
         if link_to:
             target = link_to.joinpath(python_name)
@@ -220,6 +205,7 @@ def setup_asdf(home_dir):
 def setup_pythons(isolated_envdir):
     asdf_dict = setup_asdf(isolated_envdir)
     pyenv_dict = setup_pyenv(isolated_envdir)
+    os.environ["PATH"] = os.environ.get("PATH").replace("::", ":")
     version_dicts = {"pyenv": pyenv_dict, "asdf": asdf_dict}
     return version_dicts
 

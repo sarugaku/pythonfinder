@@ -128,6 +128,9 @@ def test_shims_are_kept(monkeypatch, no_pyenv_root_envvar, setup_pythons, no_vir
             for fn in os.listdir(vistir.path.normalize_path("./.asdf/shims")):
                 print("    {0}".format(fn), file=sys.stderr)
             print_python_versions(python_versions)
+            print(
+                "Finder path order: {0}".format(f.system_path.path_order), file=sys.stderr
+            )
         assert anaconda is not None, python_versions
         assert "shims" in anaconda.path.as_posix(), [
             f.system_path.path_order,

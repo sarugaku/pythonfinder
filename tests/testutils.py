@@ -21,7 +21,7 @@ def is_in_ospath(path):
 def print_python_versions(versions):
     versions = list(versions)
     if versions:
-        vistir.misc.echo("Found python at the following locations:", fg="green", err=True)
+        vistir.misc.echo("Found python at the following locations:", err=True)
         for v in versions:
             py = v.py_version
             comes_from = getattr(py, "comes_from", None)
@@ -33,7 +33,6 @@ def print_python_versions(versions):
                 "{py.name!s}: {py.version!s} ({py.architecture!s}) @ {comes_from!s}".format(
                     py=py, comes_from=comes_from_path
                 ),
-                fg="yellow",
                 err=True,
             )
 

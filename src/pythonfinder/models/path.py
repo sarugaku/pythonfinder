@@ -140,6 +140,14 @@ class SystemPath(object):
         # type: () -> List[str]
         return [k for k in self.__finders.keys()]
 
+    @staticmethod
+    def check_for_pyenv():
+        return PYENV_INSTALLED or os.path.exists(normalize_path(PYENV_ROOT))
+
+    @staticmethod
+    def check_for_asdf():
+        return ASDF_INSTALLED or os.path.exists(normalize_path(ASDF_DATA_DIR))
+
     @python_version_dict.default
     def create_python_version_dict(self):
         # type: () -> DefaultDict[Tuple, List[PythonVersion]]
@@ -225,10 +233,10 @@ class SystemPath(object):
         if os.name == "nt" and "windows" not in self.finders:
             new_instance = new_instance._setup_windows()
         #: slice in pyenv
-        if PYENV_INSTALLED and "pyenv" not in self.finders:
+        if self.check_for_pyenv() and "pyenv" not in self.finders:
             new_instance = new_instance._setup_pyenv()
         #: slice in asdf
-        if ASDF_INSTALLED and "asdf" not in self.finders:
+        if self.check_for_asdf() and "asdf" not in self.finders:
             new_instance = new_instance._setup_asdf()
         venv = os.environ.get("VIRTUAL_ENV")
         if os.name == "nt":
@@ -315,7 +323,7 @@ class SystemPath(object):
         try:
             asdf_index = self._get_last_instance(ASDF_DATA_DIR)
         except ValueError:
-            pyenv_index = 0 if is_in_path(next(iter(os_path), ""), PYENV_ROOT) else -1
+            asdf_index = 0 if is_in_path(next(iter(os_path), ""), ASDF_DATA_DIR) else -1
         if asdf_index is None:
             # we are in a virtualenv without global pyenv on the path, so we should
             # not write pyenv to the path here
