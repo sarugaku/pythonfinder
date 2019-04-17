@@ -86,6 +86,8 @@ class Finder(object):
         if self._system_path is not None:
             self._system_path = self._system_path.clear_caches()
             self._system_path = None
+        del pyfinder_path
+        from .models import path as pyfinder_path
         six.moves.reload_module(pyfinder_path)
         self._system_path = self.create_system_path()
 

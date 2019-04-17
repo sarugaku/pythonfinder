@@ -20,6 +20,11 @@ from .testutils import normalized_match, yield_versions
 pythoninfo = namedtuple("PythonVersion", ["version", "path", "arch"])
 
 
+def pytest_runtest_setup(item):
+    if item.get_marker('skip_nt') is not None and os.name == "nt":
+        pytest.skip('does not run on windows')
+
+
 @pytest.fixture
 def pathlib_tmpdir(request, tmpdir):
     yield vistir.compat.Path(str(tmpdir))
