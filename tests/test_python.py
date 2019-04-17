@@ -182,7 +182,7 @@ def test_shims_are_removed(monkeypatch, no_virtual_env, setup_pythons):
                 print("path: {0}".format(p), file=sys.stderr)
             for p in sorted(python_names):
                 print("python_name: {0}".format(p), file=sys.stderr)
-            for p in sorted(list(setup_pythons.keys())):
+            for p in sorted(list(setup_pythons)):
                 print("setup python key: {0}".format(p), file=sys.stderr)
         assert not missing_from_finder, missing_from_finder
         anaconda = f.find_python_version("anaconda3-5.3.0")
