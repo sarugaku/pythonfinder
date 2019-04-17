@@ -1,6 +1,7 @@
 # -*- coding=utf-8 -*-
 from __future__ import absolute_import, print_function
 
+import importlib
 import operator
 import os
 
@@ -10,7 +11,6 @@ from vistir.compat import lru_cache
 
 from . import environment
 from .exceptions import InvalidPythonVersion
-from .models import path as pyfinder_path
 from .utils import Iterable, filter_pythons, version_re
 
 if environment.MYPY_RUNNING:
@@ -68,6 +68,7 @@ class Finder(object):
 
     def create_system_path(self):
         # type: () -> SystemPath
+        pyfinder_path = importlib.import_module("pythonfinder.models.path")
         return pyfinder_path.SystemPath.create(
             path=self.path_prepend,
             system=self.system,
@@ -86,8 +87,7 @@ class Finder(object):
         if self._system_path is not None:
             self._system_path = self._system_path.clear_caches()
             self._system_path = None
-        del pyfinder_path
-        from .models import path as pyfinder_path
+        pyfinder_path = importlib.import_module("pythonfinder.models.path")
         six.moves.reload_module(pyfinder_path)
         self._system_path = self.create_system_path()
 
