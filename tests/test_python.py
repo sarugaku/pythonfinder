@@ -1,6 +1,7 @@
 # -*- coding=utf-8 -*-
 from __future__ import absolute_import, print_function
 
+import functools
 import os
 import sys
 
@@ -21,6 +22,9 @@ def test_python_versions(monkeypatch, special_character_python):
         class FakeObj(object):
             def __init__(self, out):
                 self.out = out
+
+            def kill(self):
+                pass
 
         c = FakeObj(version_output.split()[0])
         return c
@@ -56,7 +60,7 @@ def test_python_versions(monkeypatch, special_character_python):
         (
             "/fake/path/2.7.15+/bin/python",
             "2.7.15+ (default, Jun 28 2018, 13:15:42)",
-            "2.7.15+",
+            "2.7.15",
         ),
     ],
 )
@@ -66,12 +70,24 @@ def test_python_version_output_variants(monkeypatch, path, version_output, versi
             def __init__(self, out):
                 self.out = out
 
-        c = FakeObj(version_output.split()[0])
+            def kill(self):
+                pass
+
+        c = FakeObj(".".join([str(i) for i in version_output.split()[0].split(".")]))
         return c
+
+    def get_python_version(path, orig_fn=None):
+        if not os.path.exists(path):
+            return mock_version(version_output)
+        return orig_fn(path)
 
     with monkeypatch.context() as m:
         os.environ["PYTHONFINDER_IGNORE_UNSUPPORTED"] = str("1")
         m.setattr("vistir.misc.run", mock_version)
+        orig_run_fn = pythonfinder.utils.get_python_version
+        get_pyversion = functools.partial(get_python_version, orig_fn=orig_run_fn)
+        m.setattr("pythonfinder.utils.get_python_version", get_pyversion)
+        # m.setattr("pythonfinder.utils.get_python_version", mock_version)
         parsed = pythonfinder.models.python.PythonVersion.from_path(path)
         assert isinstance(parsed.version, Version)
 
