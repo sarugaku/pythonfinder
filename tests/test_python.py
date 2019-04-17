@@ -76,6 +76,7 @@ def test_python_version_output_variants(monkeypatch, path, version_output, versi
         assert isinstance(parsed.version, Version)
 
 
+@pytest.mark.skip_nt
 def test_shims_are_kept(monkeypatch, no_pyenv_root_envvar, setup_pythons, no_virtual_env):
     with monkeypatch.context() as m:
         # pyenv_dir = pythonfinder.utils.normalize_path("./.pyenv")
@@ -139,6 +140,7 @@ def test_shims_are_kept(monkeypatch, no_pyenv_root_envvar, setup_pythons, no_vir
         assert "shims" in f.which("anaconda3-5.3.0").path.as_posix()
 
 
+@pytest.mark.skip_nt
 def test_shims_are_removed(monkeypatch, no_virtual_env, setup_pythons):
     with monkeypatch.context() as m:
         pyenv_dir = pythonfinder.utils.normalize_path("./.pyenv")
@@ -194,6 +196,5 @@ def test_shims_are_removed(monkeypatch, no_virtual_env, setup_pythons):
         assert "shims" not in which_anaconda.path.as_posix()
 
 
-# @pytest.mark.skipif(os.name != "nt", "windows only test")
 def test_windows_pythonfinder(expected_python_versions, all_python_versions):
     assert sorted(expected_python_versions) == sorted(all_python_versions)
