@@ -17,12 +17,12 @@ import pythonfinder
 
 from .testutils import normalized_match, yield_versions
 
-pythoninfo = namedtuple("PythonVersion", ["version", "path", "arch"])
+pythoninfo = namedtuple("PythonVersion", ["name", "version", "path", "arch"])
 
 
 def pytest_runtest_setup(item):
-    if item.get_marker('skip_nt') is not None and os.name == "nt":
-        pytest.skip('does not run on windows')
+    if item.get_marker("skip_nt") is not None and os.name == "nt":
+        pytest.skip("does not run on windows")
 
 
 @pytest.fixture
@@ -36,7 +36,9 @@ def pathlib_tmpdir(request, tmpdir):
 
 def _create_tracked_dir():
     temp_args = {"prefix": "pythonfinder-", "suffix": "-test"}
-    temp_args["dir"] = os.path.dirname(os.getcwd())
+    temp_args["dir"] = os.environ.get("TMPDIR", "/tmp")
+    if temp_args["dir"] == "/":
+        temp_args["dir"] = os.getcwd()
     temp_path = vistir.path.create_tracked_tempdir(**temp_args)
     return temp_path
 
@@ -86,12 +88,12 @@ def no_pyenv_root_envvar(monkeypatch):
         m.setattr(pythonfinder.environment, "PYENV_INSTALLED", False)
         m.setattr(pythonfinder.environment, "ASDF_INSTALLED", False)
         m.setattr(
-            pythonfinder.environment, "PYENV_ROOT", vistir.path.normalize_path("./.pyenv")
+            pythonfinder.environment, "PYENV_ROOT", vistir.path.normalize_path("~/.pyenv")
         )
         m.setattr(
             pythonfinder.environment,
             "ASDF_DATA_DIR",
-            vistir.path.normalize_path("./.asdf"),
+            vistir.path.normalize_path("~/.asdf"),
         )
         m.setattr(
             pythonfinder.environment,
@@ -146,6 +148,20 @@ def isolated_envdir(create_tmpdir):
         yield home_dir_path
 
 
+def setup_plugin(name):
+    target = os.path.expandvars(os.path.expanduser("~/.{0}".format(name)))
+    this = vistir.compat.Path(__file__).absolute().parent
+    plugin_dir = this / "test_artifacts" / name
+    plugin_uri = plugin_dir.as_uri()
+    if not "file:///" in plugin_uri and "file:/" in plugin_uri:
+        plugin_uri = plugin_uri.replace("file:/", "file:///")
+    out, err = vistir.misc.run(
+        ["git", "clone", plugin_uri, vistir.compat.Path(target).as_posix()], nospin=True
+    )
+    print(err, file=sys.stderr)
+    print(out, file=sys.stderr)
+
+
 def build_python_versions(path, link_to=None):
     all_versions = {}
     for python_name, python_version in yield_versions():
@@ -174,6 +190,10 @@ def build_python_versions(path, link_to=None):
                 target.symlink_to(exe_file.as_posix())
                 if not other_target.exists():
                     other_target.symlink_to(exe_file.as_posix())
+                if python_name.startswith("anaconda"):
+                    anaconda_target = link_to.joinpath("anaconda")
+                    if not anaconda_target.exists():
+                        anaconda_target.symlink_to(exe_file.as_posix())
     return all_versions
 
 
@@ -207,12 +227,21 @@ def setup_asdf(home_dir):
 
 
 @pytest.fixture
-def setup_pythons(isolated_envdir):
-    asdf_dict = setup_asdf(isolated_envdir)
-    pyenv_dict = setup_pyenv(isolated_envdir)
-    os.environ["PATH"] = os.environ.get("PATH").replace("::", ":")
-    version_dicts = {"pyenv": pyenv_dict, "asdf": asdf_dict}
-    return version_dicts
+def setup_pythons(isolated_envdir, monkeypatch):
+    with monkeypatch.context() as m:
+        setup_plugin("asdf")
+        setup_plugin("pyenv")
+        asdf_dict = setup_asdf(isolated_envdir)
+        pyenv_dict = setup_pyenv(isolated_envdir)
+        os.environ["PATH"] = os.environ.get("PATH").replace("::", ":")
+        version_dicts = {"pyenv": pyenv_dict, "asdf": asdf_dict}
+        shim_paths = [
+            vistir.path.normalize_path(isolated_envdir.joinpath(p).as_posix())
+            for p in [".asdf/shims", ".pyenv/shims"]
+        ]
+        m.setattr("pythonfinder.environment.get_shim_paths", lambda: shim_paths)
+        m.setattr("pythonfinder.environment.SHIM_PATHS", shim_paths)
+        yield version_dicts
 
 
 @pytest.fixture
@@ -260,9 +289,13 @@ def _build_python_tuples():
             else pythonfinder.environment.SYSTEM_ARCH
         )
         arch = arch.replace("bit", "")
+        if version.name.startswith("python"):
+            name = str(version.version)
+        else:
+            name = version.name
         path = vistir.path.normalize_path(v.path)
         version = str(version.version)
-        versions.append(pythoninfo(version, path, arch))
+        versions.append(pythoninfo(name, version, path, arch))
     return versions
 
 
@@ -290,5 +323,5 @@ def get_windows_python_versions():
             arch = None
             if "-" in version:
                 version, _, arch = version.partition("-")
-            versions.append(pythoninfo(version, path, arch))
+            versions.append(pythoninfo(version, version, path, arch))
     return versions

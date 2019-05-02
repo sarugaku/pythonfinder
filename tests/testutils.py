@@ -37,51 +37,16 @@ def print_python_versions(versions):
             )
 
 
-STACKLESS = [
-    ("stackless-2.7-dev", "2.7.0"),
-    ("stackless-2.7.2", "2.7.2"),
-    ("stackless-2.7.3", "2.7.3"),
-    ("stackless-2.7.4", "2.7.4"),
-    ("stackless-2.7.5", "2.7.5"),
-    ("stackless-2.7.6", "2.7.6"),
-    ("stackless-2.7.7", "2.7.7"),
-    ("stackless-2.7.8", "2.7.8"),
-    ("stackless-2.7.9", "2.7.9"),
-    ("stackless-2.7.10", "2.7.10"),
-    ("stackless-2.7.11", "2.7.11"),
-    ("stackless-2.7.12", "2.7.12"),
-    ("stackless-2.7.14", "2.7.14"),
-    ("stackless-3.2.2", "3.2.2"),
-    ("stackless-3.2.5", "3.2.5"),
-    ("stackless-3.3.5", "3.3.5"),
-    ("stackless-3.3.7", "3.3.7"),
-    ("stackless-3.4-dev", "3.4.0"),
-    ("stackless-3.4.1", "3.4.1"),
-    ("stackless-3.4.2", "3.4.2"),
-    ("stackless-3.4.7", "3.4.7"),
-    ("stackless-3.5.4", "3.5.4"),
-]
+STACKLESS = [("stackless-2.7.14", "2.7.14"), ("stackless-3.5.4", "3.5.4")]
 PYPY = [
-    ("pypy3-2.3.1", "3.3"),
-    ("pypy3-2.4.0-src", "3.4"),
-    ("pypy3-2.4.0", "3.4"),
-    ("pypy2-5.6.0", "2.7"),
     ("pypy2.7-5.10.0", "2.7"),
     ("pypy2.7-6.0.0", "2.7"),
-    ("pypy-5.3.1", "2.7.12"),
     ("pypy3.5-5.10.1", "3.5"),
-    ("pypy3.5-6.0.0-src", "3.5"),
     ("pypy3.5-6.0.0", "3.5"),
 ]
 # These are definitely no longer supported but people may still have them installed
-PYSTON = [("pyston-0.5.1", "2.7.8"), ("pyston-0.6.0", "2.7.8"), ("pyston-0.6.1", "2.7.8")]
+# PYSTON = [("pyston-0.5.1", "2.7.8"), ("pyston-0.6.0", "2.7.8"), ("pyston-0.6.1", "2.7.8")]
 MINICONDA = [
-    ("miniconda-2.2.2", "2.7"),
-    ("miniconda-3.0.0", "2.7"),
-    ("miniconda-3.0.4", "2.7"),
-    ("miniconda-3.0.5", "2.7"),
-    ("miniconda-3.3.0", "2.7"),
-    ("miniconda-3.4.2", "2.7"),
     ("miniconda3-3.18.3", "3.5.4"),
     ("miniconda3-3.19.0", "3.5.5"),
     ("miniconda3-4.0.5", "3.6.2"),
@@ -90,15 +55,15 @@ MINICONDA = [
     ("miniconda3-4.3.30", "3.7.2"),
 ]
 # I have no idea how these are represented
-MICROPYTHON = [("micropython-1.9.3", "1.9.3"), ("micropython-1.9.4", "1.9.4")]
+# MICROPYTHON = [("micropython-1.9.3", "1.9.3"), ("micropython-1.9.4", "1.9.4")]
 JYTHON = [
-    ("jython-2.5-dev", "2.5-dev"),
-    ("jython-2.5.1", "2.5.1"),
-    ("jython-2.5.2", "2.5.2"),
-    ("jython-2.5.3", "2.5.3"),
-    ("jython-2.5.4-rc1", "2.5.4-rc1"),
-    ("jython-2.7.0", "2.7.0"),
-    ("jython-2.7.1", "2.7.1"),
+    # ("jython-2.5-dev", "2.5-dev"),
+    # ("jython-2.5.1", "2.5.1"),
+    # ("jython-2.5.2", "2.5.2"),
+    # ("jython-2.5.3", "2.5.3"),
+    # ("jython-2.5.4-rc1", "2.5.4-rc1"),
+    # ("jython-2.7.0", "2.7.0"),
+    ("jython-2.7.1", "2.7.1")
 ]
 ANACONDA = [
     ("anaconda2-2.4.1", "2.7.8"),
@@ -123,11 +88,11 @@ ANACONDA = [
     ("anaconda3-2019.03", "3.7.2"),
 ]
 IRONPYTHON = [
-    ("ironpython-dev", "2.7.8"),
-    ("ironpython-2.7.4", "2.7.4"),
-    ("ironpython-2.7.5", "2.7.5"),
-    ("ironpython-2.7.6.3", "2.7.6"),
-    ("ironpython-2.7.7", "2.7.7"),
+    # ("ironpython-dev", "2.7.8"),
+    # ("ironpython-2.7.4", "2.7.4"),
+    # ("ironpython-2.7.5", "2.7.5"),
+    # ("ironpython-2.7.6.3", "2.7.6"),
+    ("ironpython-2.7.7", "2.7.7")
 ]
 ACTIVEPYTHON = [
     ("activepython-2.7.14", "2.7.14"),
@@ -135,11 +100,7 @@ ACTIVEPYTHON = [
     ("activepython-3.6.0", "3.6.0"),
 ]
 PYTHON = [
-    ("2.7.11", "2.7.11"),
-    ("2.7.12", "2.7.12"),
-    ("2.7.13", "2.7.13"),
     ("2.7.14", "2.7.14"),
-    ("2.7.14rc1", "2.7.14rc1"),
     ("2.7.15", "2.7.15"),
     ("3.6.6", "3.6.6"),
     ("3.6.7", "3.6.7"),
@@ -157,9 +118,9 @@ def yield_versions():
     return itertools.chain(
         STACKLESS,
         PYPY,
-        PYSTON,
+        # PYSTON,
         MINICONDA,
-        MICROPYTHON,
+        # MICROPYTHON,
         JYTHON,
         ANACONDA,
         IRONPYTHON,

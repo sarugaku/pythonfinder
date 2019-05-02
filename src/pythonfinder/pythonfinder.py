@@ -33,9 +33,14 @@ class Finder(object):
     """
 
     def __init__(
-        self, path=None, system=False, global_search=True, ignore_unsupported=True
+        self,
+        path=None,
+        system=False,
+        global_search=True,
+        ignore_unsupported=True,
+        sort_by_path=False,
     ):
-        # type: (Optional[str], bool, bool, bool) -> None
+        # type: (Optional[str], bool, bool, bool, bool) -> None
         """Create a new :class:`~pythonfinder.pythonfinder.Finder` instance.
 
         :param path: A bin-directory search location, defaults to None
@@ -46,12 +51,14 @@ class Finder(object):
         :param global_search: bool, optional
         :param ignore_unsupported: Whether to ignore unsupported python versions, if False, an error is raised, defaults to True
         :param ignore_unsupported: bool, optional
+        :param bool sort_by_path: Whether to always sort by path
         :returns: a :class:`~pythonfinder.pythonfinder.Finder` object.
         """
 
         self.path_prepend = path  # type: Optional[str]
         self.global_search = global_search  # type: bool
         self.system = system  # type: bool
+        self.sort_by_path = sort_by_path  # type: bool
         self.ignore_unsupported = ignore_unsupported  # type: bool
         self._system_path = None  # type: Optional[SystemPath]
         self._windows_finder = None  # type: Optional[WindowsFinder]
@@ -92,7 +99,7 @@ class Finder(object):
         self._system_path = self.create_system_path()
 
     def rehash(self):
-        # type: () -> None
+        # type: () -> "Finder"
         if not self._system_path:
             self._system_path = self.create_system_path()
         self.find_all_python_versions.cache_clear()
@@ -125,9 +132,17 @@ class Finder(object):
 
     @lru_cache(maxsize=1024)
     def find_python_version(
-        self, major=None, minor=None, patch=None, pre=None, dev=None, arch=None, name=None
+        self,
+        major=None,  # type: Optional[Union[str, int]]
+        minor=None,  # type: Optional[int]
+        patch=None,  # type: Optional[int]
+        pre=None,  # type: Optional[bool]
+        dev=None,  # type: Optional[bool]
+        arch=None,  # type: Optional[str]
+        name=None,  # type: Optional[str]
+        sort_by_path=False,  # type: bool
     ):
-        # type: (Optional[Union[str, int]], Optional[int], Optional[int], Optional[bool], Optional[bool], Optional[str], Optional[str]) -> PathEntry
+        # type: (...) -> Optional[PathEntry]
         """
         Find the python version which corresponds most closely to the version requested.
 
@@ -138,6 +153,7 @@ class Finder(object):
         :param Optional[bool] dev: If provided, whether to search dev-releases.
         :param Optional[str] arch: If provided, which architecture to search.
         :param Optional[str] name: *Name* of the target python, e.g. ``anaconda3-5.3.0``
+        :param bool sort_by_path: Whether to sort by path -- default sort is by version(default: False)
         :return: A new *PathEntry* pointer at a matching python version, if one can be located.
         :rtype: :class:`pythonfinder.models.path.PathEntry`
         """
@@ -151,7 +167,14 @@ class Finder(object):
             "minor": minor,
             "patch": patch,
         }  # type: Dict[str, Union[str, int, Any]]
-
+        version_dict = {
+            "major": major,
+            "minor": minor,
+            "patch": patch,
+            "pre": pre,
+            "dev": dev,
+            "arch": arch,
+        }
         if (
             isinstance(major, six.string_types)
             and pre is None
@@ -181,38 +204,36 @@ class Finder(object):
             elif major[0].isalpha():
                 name = "%s" % major
                 major = None
-            else:
-                if "." in major and all(part.isdigit() for part in major.split(".")[:2]):
-                    match = version_re.match(major)
-                    version_dict = match.groupdict()
-                    version_dict["is_prerelease"] = bool(
-                        version_dict.get("prerel", False)
-                    )
-                    version_dict["is_devrelease"] = bool(version_dict.get("dev", False))
-                else:
-                    version_dict = {
-                        "major": major,
-                        "minor": minor,
-                        "patch": patch,
-                        "pre": pre,
-                        "dev": dev,
-                        "arch": arch,
-                    }
-            if version_dict.get("minor") is not None:
-                minor = int(version_dict["minor"])
-            if version_dict.get("patch") is not None:
-                patch = int(version_dict["patch"])
-            if version_dict.get("major") is not None:
-                major = int(version_dict["major"])
+            elif "." in major and all(part.isdigit() for part in major.split(".")[:2]):
+                match = version_re.match(major)
+                version_dict = match.groupdict() if match else {}  # type: ignore
+                version_dict["is_prerelease"] = bool(version_dict.get("prerel", False))
+                version_dict["is_devrelease"] = bool(version_dict.get("dev", False))
+            minor = (
+                int(version_dict["minor"])
+                if version_dict.get("minor") is not None
+                else minor
+            )
+            patch = (
+                int(version_dict["patch"])
+                if version_dict.get("patch") is not None
+                else patch
+            )
+            major = (
+                int(version_dict["major"])
+                if version_dict.get("major") is not None
+                else major
+            )
             _pre = version_dict.get("is_prerelease", pre)
             pre = bool(_pre) if _pre is not None else pre
             _dev = version_dict.get("is_devrelease", dev)
             dev = bool(_dev) if _dev is not None else dev
-            arch = (
-                version_dict.get("architecture", None) if arch is None else arch
-            )  # type: ignore
+            if "architecture" in version_dict and isinstance(
+                version_dict["architecture"], six.string_types
+            ):
+                arch = version_dict["architecture"]  # type: ignore
         if os.name == "nt" and self.windows_finder is not None:
-            match = self.windows_finder.find_python_version(
+            found = self.windows_finder.find_python_version(
                 major=major,
                 minor=minor,
                 patch=patch,
@@ -221,10 +242,17 @@ class Finder(object):
                 arch=arch,
                 name=name,
             )
-            if match:
-                return match
+            if found:
+                return found
         return self.system_path.find_python_version(
-            major=major, minor=minor, patch=patch, pre=pre, dev=dev, arch=arch, name=name
+            major=major,
+            minor=minor,
+            patch=patch,
+            pre=pre,
+            dev=dev,
+            arch=arch,
+            name=name,
+            sort_by_path=self.sort_by_path,
         )
 
     @lru_cache(maxsize=1024)

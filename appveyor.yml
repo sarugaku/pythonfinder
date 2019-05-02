@@ -1,6 +1,6 @@
 environment:
   matrix:
-    # Unit and integration tests. 
+    # Unit and integration tests.
     - PYTHON: "C:\\Python27"
       RUN_INTEGRATION_TESTS: "True"
     - PYTHON: "C:\\Python36-x64"
@@ -13,8 +13,8 @@ environment:
 install:
   - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
   - "python --version"
-  - "pip install --upgrade pip pytest pytest-xdist"
-  - "pip install -e ."
+  - "pip install --upgrade pip==19.0.3 pytest pytest-xdist"
+  - "pip install -e .[tests,dev]"
 
 build: off
 
