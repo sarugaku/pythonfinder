@@ -130,6 +130,79 @@ class Finder(object):
         # type: (str) -> Optional[PathEntry]
         return self.system_path.which(exe)
 
+    @classmethod
+    def parse_major(cls, major, minor=None, patch=None, pre=None, dev=None, arch=None):
+        # type: (Optional[str], Optional[int], Optional[int], Optional[bool], Optional[bool], Optional[str]) -> Dict[str, Union[int, str, bool, None]]
+        from .models import PythonVersion
+
+        major_is_str = major and isinstance(major, six.string_types)
+        is_num = (
+            major
+            and major_is_str
+            and all(part.isdigit() for part in major.split(".")[:2])
+        )
+        major_has_arch = (
+            arch is None
+            and major
+            and major_is_str
+            and "-" in major
+            and major[0].isdigit()
+        )
+        name = None
+        if major and major_has_arch:
+            orig_string = "{0!s}".format(major)
+            major, _, arch = major.rpartition("-")
+            if arch:
+                arch = arch.lower().lstrip("x").replace("bit", "")
+                if not (arch.isdigit() and (int(arch) & int(arch) - 1) == 0):
+                    major = orig_string
+                    arch = None
+                else:
+                    arch = "{0}bit".format(arch)
+            try:
+                version_dict = PythonVersion.parse(major)
+            except (ValueError, InvalidPythonVersion):
+                if name is None:
+                    name = "{0!s}".format(major)
+                    major = None
+                version_dict = {}
+        elif major and major[0].isalpha():
+            return {"major": None, "name": major, "arch": arch}
+        elif major and is_num:
+            match = version_re.match(major)
+            version_dict = match.groupdict() if match else {}  # type: ignore
+            version_dict.update(
+                {
+                    "is_prerelease": bool(version_dict.get("prerel", False)),
+                    "is_devrelease": bool(version_dict.get("dev", False)),
+                }
+            )
+        else:
+            version_dict = {
+                "major": major,
+                "minor": minor,
+                "patch": patch,
+                "pre": pre,
+                "dev": dev,
+                "arch": arch,
+            }
+        if not version_dict.get("arch") and arch:
+            version_dict["arch"] = arch
+        version_dict["minor"] = (
+            int(version_dict["minor"]) if version_dict.get("minor") is not None else minor
+        )
+        version_dict["patch"] = (
+            int(version_dict["patch"]) if version_dict.get("patch") is not None else patch
+        )
+        version_dict["major"] = (
+            int(version_dict["major"]) if version_dict.get("major") is not None else major
+        )
+        if not (version_dict["major"] or version_dict.get("name")):
+            version_dict["major"] = major
+            if name:
+                version_dict["name"] = name
+        return version_dict
+
     @lru_cache(maxsize=1024)
     def find_python_version(
         self,
@@ -167,14 +240,7 @@ class Finder(object):
             "minor": minor,
             "patch": patch,
         }  # type: Dict[str, Union[str, int, Any]]
-        version_dict = {
-            "major": major,
-            "minor": minor,
-            "patch": patch,
-            "pre": pre,
-            "dev": dev,
-            "arch": arch,
-        }
+
         if (
             isinstance(major, six.string_types)
             and pre is None
@@ -182,48 +248,11 @@ class Finder(object):
             and dev is None
             and patch is None
         ):
-            if arch is None and "-" in major and major[0].isdigit():
-                orig_string = "{0!s}".format(major)
-                major, _, arch = major.rpartition("-")
-                if arch.startswith("x"):
-                    arch = arch.lstrip("x")
-                if arch.lower().endswith("bit"):
-                    arch = arch.lower().replace("bit", "")
-                if not (arch.isdigit() and (int(arch) & int(arch) - 1) == 0):
-                    major = orig_string
-                    arch = None
-                else:
-                    arch = "{0}bit".format(arch)
-                try:
-                    version_dict = PythonVersion.parse(major)
-                except (ValueError, InvalidPythonVersion):
-                    if name is None:
-                        name = "{0!s}".format(major)
-                        major = None
-                    version_dict = {}
-            elif major[0].isalpha():
-                name = "%s" % major
-                major = None
-            elif "." in major and all(part.isdigit() for part in major.split(".")[:2]):
-                match = version_re.match(major)
-                version_dict = match.groupdict() if match else {}  # type: ignore
-                version_dict["is_prerelease"] = bool(version_dict.get("prerel", False))
-                version_dict["is_devrelease"] = bool(version_dict.get("dev", False))
-            minor = (
-                int(version_dict["minor"])
-                if version_dict.get("minor") is not None
-                else minor
-            )
-            patch = (
-                int(version_dict["patch"])
-                if version_dict.get("patch") is not None
-                else patch
-            )
-            major = (
-                int(version_dict["major"])
-                if version_dict.get("major") is not None
-                else major
-            )
+            version_dict = self.parse_major(major, minor=minor, patch=patch, arch=arch)
+            major = version_dict["major"]
+            minor = version_dict.get("minor", minor)  # type: ignore
+            patch = version_dict.get("patch", patch)  # type: ignore
+            arch = version_dict.get("arch", arch)  # type: ignore
             _pre = version_dict.get("is_prerelease", pre)
             pre = bool(_pre) if _pre is not None else pre
             _dev = version_dict.get("is_devrelease", dev)
