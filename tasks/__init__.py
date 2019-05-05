@@ -19,6 +19,15 @@ INIT_PY = ROOT.joinpath("src", PACKAGE_NAME, "__init__.py")
 
 
 @invoke.task()
+def typecheck(ctx):
+    src_dir = ROOT / "src" / PACKAGE_NAME
+    src_dir = src_dir.as_posix()
+    config_file = ROOT / "setup.cfg"
+    env = {"MYPYPATH": src_dir}
+    ctx.run(f"mypy {src_dir} --config-file={config_file}", env=env)
+
+
+@invoke.task()
 def clean(ctx):
     """Clean previously built package artifacts."""
     ctx.run(f"python setup.py clean")

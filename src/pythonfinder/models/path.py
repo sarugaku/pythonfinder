@@ -442,7 +442,7 @@ class SystemPath(object):
         return _path
 
     def _get_paths(self):
-        # type: () -> Generator[PathType, None, None]
+        # type: () -> Generator[Union[PathType, WindowsFinder], None, None]
         for path in self.path_order:
             try:
                 entry = self.get_path(path)
@@ -453,7 +453,7 @@ class SystemPath(object):
 
     @cached_property
     def path_entries(self):
-        # type: () -> List[Union[PathEntry, FinderType]]
+        # type: () -> List[Union[PathType, WindowsFinder]]
         paths = list(self._get_paths())
         return paths
 
