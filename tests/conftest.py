@@ -177,7 +177,10 @@ def build_python_versions(path, link_to=None):
         ]
         for executable in executable_names:
             exe_file = bin_dir.joinpath(executable)
-            if python_name.startswith("anaconda"):
+            if (
+                python_name.startswith("anaconda")
+                and not bin_dir.joinpath("anaconda").exists()
+            ):
                 os.link(sys.executable, str(bin_dir.joinpath("anaconda")))
                 os.chmod(bin_dir.joinpath("anaconda").as_posix(), stat.S_IEXEC)
             os.link(sys.executable, str(exe_file))
