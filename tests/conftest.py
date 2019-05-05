@@ -177,6 +177,9 @@ def build_python_versions(path, link_to=None):
         ]
         for executable in executable_names:
             exe_file = bin_dir.joinpath(executable)
+            if python_name.startswith("anaconda"):
+                os.link(sys.executable, str(bin_dir.joinpath("anaconda")))
+                os.chmod(bin_dir.joinpath("anaconda").as_posix(), stat.S_IEXEC)
             os.link(sys.executable, str(exe_file))
             os.chmod(exe_file.as_posix(), stat.S_IEXEC)
         all_versions[python_name] = bin_dir / executable_names[3]
