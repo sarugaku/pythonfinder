@@ -128,6 +128,11 @@ def test_shims_are_kept(monkeypatch, no_pyenv_root_envvar, setup_pythons, no_vir
             f.system_path.pyenv_finder.roots,
         ]
         # for docker, use just 'anaconda'
+        for path in f.system_path.path_order:
+            print(
+                "path: {0}    Entry: {1}".format(path, f.system_path.get_path(path)),
+                file=sys.stderr,
+            )
         which_anaconda = f.which("anaconda3-5.3.0")
         assert "shims" not in which_anaconda.path.as_posix()
 
