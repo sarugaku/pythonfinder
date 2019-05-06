@@ -188,6 +188,9 @@ def build_python_versions(path, link_to=None):
                 os.link(exe_file.as_posix(), other_target.as_posix())
             else:
                 target.symlink_to(exe_file.as_posix())
+                bin_target = bin_dir.joinpath(python_name)
+                if not bin_target.exists():
+                    bin_target.symlink_to(exe_file.as_posix())
                 if not other_target.exists():
                     other_target.symlink_to(exe_file.as_posix())
                 if python_name.startswith("anaconda"):
