@@ -242,8 +242,6 @@ def setup_pythons(isolated_envdir, monkeypatch):
             vistir.path.normalize_path(isolated_envdir.joinpath(p).as_posix())
             for p in [".asdf/shims", ".pyenv/shims"]
         ]
-        m.setattr("pythonfinder.environment.get_shim_paths", lambda: shim_paths)
-        m.setattr("pythonfinder.environment.SHIM_PATHS", shim_paths)
         yield version_dicts
 
 

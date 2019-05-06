@@ -104,24 +104,24 @@ def test_shims_are_kept(monkeypatch, no_pyenv_root_envvar, setup_pythons, no_vir
         f.rehash()
         # assert pythonfinder.environment.get_shim_paths() == []
         assert is_in_ospath("~/.pyenv/shims")
+        shim_paths = pythonfinder.environment.get_shim_paths()
         # Shims directories are no longer added to the system path order
         # but instead are used as indicators of the presence of the plugin
-        # and used to trigger plugin setup
-        assert (
-            os.path.join(vistir.path.normalize_path("~/.pyenv/shims"))
-            not in f.system_path.path_order
-        ), "\n".join(f.system_path.path_order)
+        # and used to trigger plugin setup -- this is true only if ``PYENV_ROOT`` is set`
+        if shim_paths:
+            assert (
+                os.path.join(vistir.path.normalize_path("~/.pyenv/shims"))
+                not in f.system_path.path_order
+            ), (
+                pythonfinder.environment.get_shim_paths()
+            )  # "\n".join(f.system_path.path_order)
+        else:
+            assert (
+                os.path.join(vistir.path.normalize_path("~/.pyenv/shims"))
+                in f.system_path.path_order
+            ), "\n".join(f.system_path.path_order)
         python_versions = f.find_all_python_versions()
         anaconda = f.find_python_version("anaconda3-5.3.0")
-        if not anaconda:
-            print("OS PATH: {0}".format(os.environ["PATH"]), file=sys.stderr)
-            print("PYENV DIR:")
-            for fn in os.listdir(vistir.path.normalize_path("~/.pyenv/shims")):
-                print("    {0}".format(fn), file=sys.stderr)
-            print_python_versions(python_versions)
-            print(
-                "Finder path order: {0}".format(f.system_path.path_order), file=sys.stderr
-            )
         assert anaconda is not None, python_versions
         assert "shims" not in anaconda.path.as_posix(), [
             f.system_path.path_order,
@@ -134,7 +134,10 @@ def test_shims_are_kept(monkeypatch, no_pyenv_root_envvar, setup_pythons, no_vir
                 file=sys.stderr,
             )
         which_anaconda = f.which("anaconda3-5.3.0")
-        assert "shims" not in which_anaconda.path.as_posix()
+        if shim_paths:
+            assert "shims" not in which_anaconda.path.as_posix()
+        else:
+            assert "shims" in which_anaconda.path.as_posix()
 
 
 @pytest.mark.skip_nt
