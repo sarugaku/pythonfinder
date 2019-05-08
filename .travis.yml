@@ -10,6 +10,8 @@ install:
   - "pip install --upgrade setuptools pip pipenv --upgrade-strategy=eager"
   - "pipenv install --dev"
 script:
+  # Remove Windows specific helper from Unix test runs
+  - rm -r src/pythonfinder/_vendor/pep514tools
   - "pipenv run pytest"
 
 jobs:
