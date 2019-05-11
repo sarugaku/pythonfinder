@@ -123,7 +123,7 @@ def test_shims_are_kept(monkeypatch, no_pyenv_root_envvar, setup_pythons, no_vir
         python_versions = f.find_all_python_versions()
         anaconda = f.find_python_version("anaconda3-5.3.0")
         assert anaconda is not None, python_versions
-        assert "shims" not in anaconda.path.as_posix(), [
+        assert "shims" in anaconda.path.as_posix(), [
             f.system_path.path_order,
             f.system_path.pyenv_finder.roots,
         ]
