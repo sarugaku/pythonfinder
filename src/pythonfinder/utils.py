@@ -104,7 +104,7 @@ def get_python_version(path):
             combine_stderr=False,
             write_to_stdout=False,
         )
-        timer = Timer(5, c.kill)
+        timer = Timer(SUBPROCESS_TIMEOUT, c.kill)
     except OSError:
         raise InvalidPythonVersion("%s is not a valid python path" % path)
     if not c.out:
