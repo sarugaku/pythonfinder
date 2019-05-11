@@ -231,8 +231,6 @@ class Finder(object):
         :rtype: :class:`pythonfinder.models.path.PathEntry`
         """
 
-        from .models import PythonVersion
-
         minor = int(minor) if minor is not None else minor
         patch = int(patch) if patch is not None else patch
 
