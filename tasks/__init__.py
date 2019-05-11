@@ -1,4 +1,5 @@
 # -*- coding=utf-8 -*-
+import os
 import pathlib
 import re
 import shutil
@@ -16,6 +17,17 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 PACKAGE_NAME = "pythonfinder"
 
 INIT_PY = ROOT.joinpath("src", PACKAGE_NAME, "__init__.py")
+
+
+@invoke.task()
+def test(ctx):
+    new_path = os.environ["PATH"].split(os.pathsep)
+    if os.path.expanduser("~/.pyenv/shims") in new_path:
+        new_path.remove(os.path.expanduser("~/.pyenv/shims"))
+    if os.path.expanduser("~/.pyenv/bin") in new_path:
+        new_path.remove(os.path.expanduser("~/.pyenv/bin"))
+    env = {"PYENV_ROOT": "", "PATH": os.pathsep.join(new_path)}
+    ctx.run("pytest -ra tests/", env=env)
 
 
 @invoke.task()
@@ -233,6 +245,7 @@ def clean_mdchangelog(ctx):
 
 
 ns = invoke.Collection(
+    typecheck,
     build_docs,
     vendoring,
     release,
@@ -243,4 +256,5 @@ ns = invoke.Collection(
     generate_news,
     get_changelog,
     tag_release,
+    test,
 )
