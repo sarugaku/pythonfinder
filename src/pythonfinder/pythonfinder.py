@@ -14,10 +14,12 @@ from .exceptions import InvalidPythonVersion
 from .utils import Iterable, filter_pythons, version_re
 
 if environment.MYPY_RUNNING:
-    from typing import Optional, Dict, Any, Union, List, Iterator
+    from typing import Optional, Dict, Any, Union, List, Iterator, Text
     from .models.path import Path, PathEntry
     from .models.windows import WindowsFinder
     from .models.path import SystemPath
+
+    STRING_TYPE = Union[str, Text, bytes]
 
 
 class Finder(object):
@@ -237,6 +239,8 @@ class Finder(object):
         version_dict = {
             "minor": minor,
             "patch": patch,
+            "name": name,
+            "arch": arch,
         }  # type: Dict[str, Union[str, int, Any]]
 
         if (
@@ -251,6 +255,7 @@ class Finder(object):
             minor = version_dict.get("minor", minor)  # type: ignore
             patch = version_dict.get("patch", patch)  # type: ignore
             arch = version_dict.get("arch", arch)  # type: ignore
+            name = version_dict.get("name", name)  # type: ignore
             _pre = version_dict.get("is_prerelease", pre)
             pre = bool(_pre) if _pre is not None else pre
             _dev = version_dict.get("is_devrelease", dev)
