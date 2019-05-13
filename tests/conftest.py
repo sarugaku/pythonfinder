@@ -21,7 +21,7 @@ pythoninfo = namedtuple("PythonVersion", ["name", "version", "path", "arch"])
 
 
 def pytest_runtest_setup(item):
-    if item.get_marker("skip_nt") is not None and os.name == "nt":
+    if item.get_closest_marker("skip_nt") is not None and os.name == "nt":
         pytest.skip("does not run on windows")
 
 
