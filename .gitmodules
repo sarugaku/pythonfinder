@@ -1,0 +1,6 @@
+[submodule "tests/test_artifacts/pyenv"]
+	path = tests/test_artifacts/pyenv
+	url = https://github.com/pyenv/pyenv.git
+[submodule "tests/test_artifacts/asdf"]
+	path = tests/test_artifacts/asdf
+	url = https://github.com/asdf-vm/asdf.git
