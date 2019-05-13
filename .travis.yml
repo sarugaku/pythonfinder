@@ -12,12 +12,14 @@ install:
   - "pipenv run python -m pip install pip==19.0.3"
   - "pipenv install --dev"
 script:
+  # Remove Windows specific helper from Unix test runs
+  - rm -r src/pythonfinder/_vendor/pep514tools
   - "pipenv run pytest"
 
 jobs:
   include:
     - stage: test
-    - python: "3.7"
+      python: "3.7"
       dist: xenial
       sudo: required
     - python: "3.6"
