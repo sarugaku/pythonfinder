@@ -7,7 +7,9 @@ matrix:
   fast_finish: true
 
 install:
-  - "pip install --upgrade setuptools pip pipenv --upgrade-strategy=eager"
+  - "git submodule update --init --recursive"
+  - "pip install --upgrade setuptools pip==19.0.3 pipenv --upgrade-strategy=eager"
+  - "pipenv run python -m pip install pip==19.0.3"
   - "pipenv install --dev"
 script:
   - "pipenv run pytest"

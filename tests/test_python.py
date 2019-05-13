@@ -1,12 +1,18 @@
 # -*- coding=utf-8 -*-
+from __future__ import absolute_import, print_function
 
+import functools
 import os
+import sys
 
 import pytest
 import six
+import vistir
 from packaging.version import Version
 
 import pythonfinder
+
+from .testutils import is_in_ospath, normalized_match, print_python_versions
 
 
 def test_python_versions(monkeypatch, special_character_python):
@@ -16,6 +22,9 @@ def test_python_versions(monkeypatch, special_character_python):
         class FakeObj(object):
             def __init__(self, out):
                 self.out = out
+
+            def kill(self):
+                pass
 
         c = FakeObj(version_output.split()[0])
         return c
@@ -51,7 +60,7 @@ def test_python_versions(monkeypatch, special_character_python):
         (
             "/fake/path/2.7.15+/bin/python",
             "2.7.15+ (default, Jun 28 2018, 13:15:42)",
-            "2.7.15+",
+            "2.7.15",
         ),
     ],
 )
@@ -61,57 +70,56 @@ def test_python_version_output_variants(monkeypatch, path, version_output, versi
             def __init__(self, out):
                 self.out = out
 
-        c = FakeObj(version_output.split()[0])
+            def kill(self):
+                pass
+
+        c = FakeObj(".".join([str(i) for i in version_output.split()[0].split(".")]))
         return c
+
+    def get_python_version(path, orig_fn=None):
+        if not os.path.exists(path):
+            return mock_version(version_output)
+        return orig_fn(path)
 
     with monkeypatch.context() as m:
         os.environ["PYTHONFINDER_IGNORE_UNSUPPORTED"] = str("1")
         m.setattr("vistir.misc.run", mock_version)
+        orig_run_fn = pythonfinder.utils.get_python_version
+        get_pyversion = functools.partial(get_python_version, orig_fn=orig_run_fn)
+        m.setattr("pythonfinder.utils.get_python_version", get_pyversion)
+        # m.setattr("pythonfinder.utils.get_python_version", mock_version)
         parsed = pythonfinder.models.python.PythonVersion.from_path(path)
         assert isinstance(parsed.version, Version)
 
 
-def test_shims_are_kept(monkeypatch, setup_pythons):
+@pytest.mark.skip_nt
+def test_shims_are_kept(monkeypatch, no_pyenv_root_envvar, setup_pythons, no_virtual_env):
     with monkeypatch.context() as m:
-        pyenv_dir = pythonfinder.utils.normalize_path("./.pyenv")
-        asdf_dir = pythonfinder.utils.normalize_path("./.asdf")
-        m.delenv("PYENV_ROOT")
-        m.delenv("ASDF_DATA_DIR")
-        six.moves.reload_module(pythonfinder.environment)
-        six.moves.reload_module(pythonfinder.models.path)
-        m.setattr(pythonfinder.environment, "PYENV_INSTALLED", False)
-        m.setattr(pythonfinder.environment, "ASDF_INSTALLED", False)
-        m.setattr(pythonfinder.environment, "PYENV_ROOT", pyenv_dir)
-        m.setattr(pythonfinder.environment, "ASDF_DATA_DIR", asdf_dir)
-        m.setattr(
-            pythonfinder.environment,
-            "SHIM_PATHS",
-            pythonfinder.environment.get_shim_paths(),
+        os.environ["PATH"] = "{0}:{1}".format(
+            vistir.path.normalize_path("~/.pyenv/shims"), os.environ["PATH"]
         )
-        if "VIRTUAL_ENV" in os.environ:
-            os_path = os.environ["PATH"].split(os.pathsep)
-            env_path = next(
-                iter(
-                    [
-                        p
-                        for p in os_path
-                        if pythonfinder.utils.is_in_path(p, os.environ["VIRTUAL_ENV"])
-                    ]
-                ),
-                None,
-            )
-            if env_path is not None:
-                os_path.remove(env_path)
-                os.environ["PATH"] = os.pathsep.join(os_path)
-            del os.environ["VIRTUAL_ENV"]
         f = pythonfinder.pythonfinder.Finder(
             global_search=True, system=False, ignore_unsupported=True
         )
         f.rehash()
-        assert pythonfinder.environment.get_shim_paths() == []
-        assert os.path.join(pyenv_dir, "shims") in os.environ["PATH"]
-        assert not f.system_path.finders
-        assert os.path.join(pyenv_dir, "shims") in f.system_path.path_order
+        # assert pythonfinder.environment.get_shim_paths() == []
+        assert is_in_ospath("~/.pyenv/shims")
+        shim_paths = pythonfinder.environment.get_shim_paths()
+        # Shims directories are no longer added to the system path order
+        # but instead are used as indicators of the presence of the plugin
+        # and used to trigger plugin setup -- this is true only if ``PYENV_ROOT`` is set`
+        if shim_paths:
+            assert (
+                os.path.join(vistir.path.normalize_path("~/.pyenv/shims"))
+                not in f.system_path.path_order
+            ), (
+                pythonfinder.environment.get_shim_paths()
+            )  # "\n".join(f.system_path.path_order)
+        else:
+            assert (
+                os.path.join(vistir.path.normalize_path("~/.pyenv/shims"))
+                in f.system_path.path_order
+            ), "\n".join(f.system_path.path_order)
         python_versions = f.find_all_python_versions()
         anaconda = f.find_python_version("anaconda3-5.3.0")
         assert anaconda is not None, python_versions
@@ -119,29 +127,26 @@ def test_shims_are_kept(monkeypatch, setup_pythons):
             f.system_path.path_order,
             f.system_path.pyenv_finder.roots,
         ]
-        assert "shims" in f.which("anaconda3-5.3.0").path.as_posix()
+        # for docker, use just 'anaconda'
+        for path in f.system_path.path_order:
+            print(
+                "path: {0}    Entry: {1}".format(path, f.system_path.get_path(path)),
+                file=sys.stderr,
+            )
+        which_anaconda = f.which("anaconda3-5.3.0")
+        if shim_paths:
+            assert "shims" not in which_anaconda.path.as_posix()
+        else:
+            assert "shims" in which_anaconda.path.as_posix()
 
 
-def test_shims_are_removed(monkeypatch, setup_pythons):
+@pytest.mark.skip_nt
+def test_shims_are_removed(monkeypatch, no_virtual_env, setup_pythons):
     with monkeypatch.context() as m:
-        pyenv_dir = pythonfinder.utils.normalize_path("./.pyenv")
-        asdf_dir = pythonfinder.utils.normalize_path("./.asdf")
+        pyenv_dir = pythonfinder.utils.normalize_path("~/.pyenv")
+        asdf_dir = pythonfinder.utils.normalize_path("~/.asdf")
         six.moves.reload_module(pythonfinder.environment)
         six.moves.reload_module(pythonfinder.models.path)
-        if "VIRTUAL_ENV" in os.environ:
-            os_path = os.environ["PATH"].split(os.pathsep)
-            env_path = next(
-                iter(
-                    p
-                    for p in os_path
-                    if pythonfinder.utils.is_in_path(p, os.environ["VIRTUAL_ENV"])
-                ),
-                None,
-            )
-            if env_path is not None:
-                os_path.remove(env_path)
-                os.environ["PATH"] = os.pathsep.join(os_path)
-            del os.environ["VIRTUAL_ENV"]
         m.setattr(
             pythonfinder.environment,
             "SHIM_PATHS",
@@ -151,24 +156,37 @@ def test_shims_are_removed(monkeypatch, setup_pythons):
             global_search=True, system=False, ignore_unsupported=True
         )
         f.rehash()
-        # assert "pyenv" in f.system_path.finders
         python_versions = f.find_all_python_versions()
         assert os.environ["PYENV_ROOT"] == os.path.abspath(
-            os.path.join(os.curdir, ".pyenv")
+            os.path.join(os.path.expanduser("~"), ".pyenv")
         )
         assert os.environ["PYENV_ROOT"] == pythonfinder.environment.PYENV_ROOT
         assert pythonfinder.environment.PYENV_INSTALLED
         assert f.system_path.pyenv_finder is not None
-        # assert len(python_versions) == 0
         python_version_paths = list(
             v.path
             for v in python_versions
-            if pythonfinder.utils.is_in_path(str(v.path), os.environ["PYENV_ROOT"])
+            if normalized_match(str(v.path), os.environ["PYENV_ROOT"])
         )
         # Make sure we have an entry for every python version installed
         python_names = set(list(v.parent.parent.name for v in python_version_paths))
+        # this is how we test in docker / on local machines with python installs
+        # setup_pythons = {version.name for version in all_python_versions if any(plugin in version.path for plugin in ("pyenv", "asdf"))}
+        # this is the test implementation when we are simulating
+        setup_key_list = [
+            set(list(finder.keys())) for finder in list(setup_pythons.values())
+        ]
+        setup_pythons = {python for finder in setup_key_list for python in finder}
         # this calculates the pythons not present when we ran `find_all_python_versions`
-        missing_from_finder = python_names ^ set(list(setup_pythons.keys()))
+        missing_from_finder = python_names ^ setup_pythons
+        if missing_from_finder:
+            print_python_versions(python_versions)
+            for p in python_version_paths:
+                print("path: {0}".format(p), file=sys.stderr)
+            for p in sorted(python_names):
+                print("python_name: {0}".format(p), file=sys.stderr)
+            for p in sorted(list(setup_pythons)):
+                print("setup python key: {0}".format(p), file=sys.stderr)
         assert not missing_from_finder, missing_from_finder
         anaconda = f.find_python_version("anaconda3-5.3.0")
         assert anaconda is not None, os.listdir(
@@ -176,9 +194,10 @@ def test_shims_are_removed(monkeypatch, setup_pythons):
         )
         assert "shims" not in anaconda.path.as_posix()
         which_anaconda = f.which("anaconda3-5.3.0")
+        # for docker, use just 'anaconda'
+        # which_anaconda = f.which("anaconda")
         assert "shims" not in which_anaconda.path.as_posix()
 
 
-# @pytest.mark.skipif(os.name != "nt", "windows only test")
 def test_windows_pythonfinder(expected_python_versions, all_python_versions):
     assert sorted(expected_python_versions) == sorted(all_python_versions)
