@@ -191,7 +191,7 @@ def release(ctx, type_, repo, prebump=PREBUMP, yes=False):
 
     version = bump_version(ctx, type_, log=True)
     # Needs to happen before Towncrier deletes fragment files.
-    tag_release(version, yes=yes)
+    tag_release(ctx, version, yes=yes)
 
     ctx.run(f"python setup.py sdist bdist_wheel")
 
