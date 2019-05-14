@@ -1,3 +1,12 @@
+1.2.1 (2019-05-13)
+==================
+
+Features & Improvements
+-----------------------
+
+- Added support for subprocess timeouts while discovering python paths.  `#62 <https://github.com/sarugaku/pythonfinder/issues/62>`_
+
+
 1.2.0 (2019-03-02)
 ==================
 

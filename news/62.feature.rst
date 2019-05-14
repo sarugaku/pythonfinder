@@ -1,1 +1,0 @@
-Added support for subprocess timeouts while discovering python paths.
