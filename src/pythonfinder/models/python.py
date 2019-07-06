@@ -620,11 +620,13 @@ class PythonVersion(object):
         return result_dict
 
     @classmethod
-    def from_windows_launcher(cls, launcher_entry, name=None):
-        # type: (Environment, Optional[str]) -> PythonVersion
+    def from_windows_launcher(cls, launcher_entry, name=None, company=None):
+        # type: (Environment, Optional[str], Optional[str]) -> PythonVersion
         """Create a new PythonVersion instance from a Windows Launcher Entry
 
         :param launcher_entry: A python launcher environment object.
+        :param Optional[str] name: The name of the distribution.
+        :param Optional[str] company: The name of the distributing company.
         :return: An instance of a PythonVersion.
         :rtype: :class:`~pythonfinder.models.python.PythonVersion`
         """
