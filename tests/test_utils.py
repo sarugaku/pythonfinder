@@ -63,7 +63,7 @@ def test_parse_python_version(python, expected):
             del expected[key]
         if key in python:
             del python[key]
-        del expected["company"]
+    del expected["company"]
     assert python == expected
 
 
