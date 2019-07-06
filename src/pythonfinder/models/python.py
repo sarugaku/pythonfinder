@@ -381,7 +381,7 @@ class PythonVersion(object):
 
     @property
     def version_sort(self):
-        # type: () -> Tuple[Optional[int], Optional[int], int, int]
+        # type: () -> Tuple[int, int, Optional[int], int, int]
         """
         A tuple for sorting against other instances of the same class.
 
@@ -639,7 +639,7 @@ class PythonVersion(object):
         exe_path = ensure_path(
             getattr(launcher_entry.info.install_path, "executable_path", default_path)
         )
-        company = getattr(launcher_entry, "company", "PythonCore")
+        company = getattr(launcher_entry, "company", guess_company(exe_path.as_posix()))
         creation_dict.update(
             {
                 "architecture": getattr(
