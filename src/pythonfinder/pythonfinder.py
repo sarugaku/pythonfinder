@@ -317,4 +317,4 @@ class Finder(object):
                 resolved_path = path.path.absolute()
             if not path_map.get(resolved_path.as_posix()):
                 path_map[resolved_path.as_posix()] = path
-        return list(path_map.values())
+        return path_list
