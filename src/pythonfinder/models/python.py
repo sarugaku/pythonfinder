@@ -1,7 +1,6 @@
 # -*- coding=utf-8 -*-
 from __future__ import absolute_import, print_function
 
-import copy
 import logging
 import operator
 import platform
@@ -13,7 +12,6 @@ import six
 from packaging.version import Version
 from vistir.compat import Path, lru_cache
 
-from .mixins import BaseFinder, BasePath
 from ..environment import ASDF_DATA_DIR, MYPY_RUNNING, PYENV_ROOT, SYSTEM_ARCH
 from ..exceptions import InvalidPythonVersion
 from ..utils import (
@@ -21,14 +19,17 @@ from ..utils import (
     _filter_none,
     ensure_path,
     get_python_version,
+    guess_company,
     is_in_path,
     looks_like_python,
     optional_instance_of,
     parse_asdf_version_order,
     parse_pyenv_version_order,
     parse_python_version,
+    path_is_pythoncore,
     unnest,
 )
+from .mixins import BaseFinder, BasePath
 
 if MYPY_RUNNING:
     from typing import (
@@ -44,9 +45,14 @@ if MYPY_RUNNING:
         Type,
         TypeVar,
         Iterator,
+        overload,
     )
     from .path import PathEntry
     from .._vendor.pep514tools.environment import Environment
+else:
+
+    def overload(f):
+        return f
 
 
 logger = logging.getLogger(__name__)
@@ -229,6 +235,7 @@ class PythonFinder(BaseFinder, BasePath):
         # type: () -> DefaultDict[str, PathEntry]
         return self.pythons
 
+    @overload
     @classmethod
     def create(cls, root, sort_function, version_glob_path=None, ignore_unsupported=True):
         # type: (str, Callable, Optional[str], bool) -> PythonFinder
@@ -352,6 +359,7 @@ class PythonVersion(object):
     architecture = attr.ib(default=None)  # type: Optional[str]
     comes_from = attr.ib(default=None)  # type: Optional[PathEntry]
     executable = attr.ib(default=None)  # type: Optional[str]
+    company = attr.ib(default=None)  # type: Optional[str]
     name = attr.ib(default=None, type=str)
 
     def __getattribute__(self, key):
@@ -378,15 +386,18 @@ class PythonVersion(object):
 
     @property
     def version_sort(self):
-        # type: () -> Tuple[Optional[int], Optional[int], int, int]
+        # type: () -> Tuple[int, int, Optional[int], int, int]
         """
         A tuple for sorting against other instances of the same class.
 
-        Returns a tuple of the python version but includes a point for non-dev,
-        and a point for non-prerelease versions.  So released versions will have 2 points
-        for this value.  E.g. `(3, 6, 6, 2)` is a release, `(3, 6, 6, 1)` is a prerelease,
-        `(3, 6, 6, 0)` is a dev release, and `(3, 6, 6, 3)` is a postrelease.
+        Returns a tuple of the python version but includes points for core python,
+        non-dev,  and non-prerelease versions.  So released versions will have 2 points
+        for this value.  E.g. ``(1, 3, 6, 6, 2)`` is a release, ``(1, 3, 6, 6, 1)`` is a
+        prerelease, ``(1, 3, 6, 6, 0)`` is a dev release, and ``(1, 3, 6, 6, 3)`` is a
+        postrelease.  ``(0, 3, 7, 3, 2)`` represents a non-core python release, e.g. by
+        a repackager of python like Continuum.
         """
+        company_sort = 1 if (self.company and self.company == "PythonCore") else 0
         release_sort = 2
         if self.is_postrelease:
             release_sort = 3
@@ -396,7 +407,13 @@ class PythonVersion(object):
             release_sort = 0
         elif self.is_debug:
             release_sort = 1
-        return (self.major, self.minor, self.patch if self.patch else 0, release_sort)
+        return (
+            company_sort,
+            self.major,
+            self.minor,
+            self.patch if self.patch else 0,
+            release_sort,
+        )
 
     @property
     def version_tuple(self):
@@ -474,6 +491,7 @@ class PythonVersion(object):
             "is_devrelease": self.is_devrelease,
             "is_debug": self.is_debug,
             "version": self.version,
+            "company": self.company,
         }
 
     def update_metadata(self, metadata):
@@ -488,7 +506,7 @@ class PythonVersion(object):
 
         for key in metadata:
             try:
-                current_value = getattr(self, key)
+                _ = getattr(self, key)
             except AttributeError:
                 continue
             else:
@@ -533,8 +551,8 @@ class PythonVersion(object):
         return self.architecture
 
     @classmethod
-    def from_path(cls, path, name=None, ignore_unsupported=True):
-        # type: (Union[str, PathEntry], Optional[str], bool) -> PythonVersion
+    def from_path(cls, path, name=None, ignore_unsupported=True, company=None):
+        # type: (Union[str, PathEntry], Optional[str], bool, Optional[str]) -> PythonVersion
         """
         Parses a python version from a system path.
 
@@ -545,6 +563,7 @@ class PythonVersion(object):
         :type path: str or :class:`~pythonfinder.models.path.PathEntry` instance
         :param str name: Name of the python distribution in question
         :param bool ignore_unsupported: Whether to ignore or error on unsupported paths.
+        :param Optional[str] company: The company or vendor packaging the distribution.
         :return: An instance of a PythonVersion.
         :rtype: :class:`~pythonfinder.models.python.PythonVersion`
         """
@@ -577,6 +596,8 @@ class PythonVersion(object):
             instance_dict = cls.parse_executable(path.path.absolute().as_posix())
         if name is None:
             name = path_name
+        if company is None:
+            company = guess_company(path.path.as_posix())
         instance_dict.update(
             {"comes_from": path, "name": name, "executable": path.path.as_posix()}
         )
@@ -604,11 +625,13 @@ class PythonVersion(object):
         return result_dict
 
     @classmethod
-    def from_windows_launcher(cls, launcher_entry, name=None):
-        # type: (Environment, Optional[str]) -> PythonVersion
+    def from_windows_launcher(cls, launcher_entry, name=None, company=None):
+        # type: (Environment, Optional[str], Optional[str]) -> PythonVersion
         """Create a new PythonVersion instance from a Windows Launcher Entry
 
         :param launcher_entry: A python launcher environment object.
+        :param Optional[str] name: The name of the distribution.
+        :param Optional[str] company: The name of the distributing company.
         :return: An instance of a PythonVersion.
         :rtype: :class:`~pythonfinder.models.python.PythonVersion`
         """
@@ -623,6 +646,7 @@ class PythonVersion(object):
         exe_path = ensure_path(
             getattr(launcher_entry.info.install_path, "executable_path", default_path)
         )
+        company = getattr(launcher_entry, "company", guess_company(exe_path.as_posix()))
         creation_dict.update(
             {
                 "architecture": getattr(
@@ -630,6 +654,7 @@ class PythonVersion(object):
                 ),
                 "executable": exe_path,
                 "name": name,
+                "company": company,
             }
         )
         py_version = cls.create(**creation_dict)
@@ -657,7 +682,7 @@ class VersionMap(object):
         # type: (...) -> None
         version = entry.as_python  # type: PythonVersion
         if version:
-            entries = self.versions[version.version_tuple]
+            _ = self.versions[version.version_tuple]
             paths = {p.path for p in self.versions.get(version.version_tuple, [])}
             if entry.path not in paths:
                 self.versions[version.version_tuple].append(entry)

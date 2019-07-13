@@ -108,3 +108,5 @@ venv.bak/
 .vscode/
 !news/
 mypyhtml/
+XDG_CACHE_HOME/
+pip-wheel-metadata/
