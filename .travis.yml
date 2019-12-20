@@ -1,7 +1,7 @@
 language: python
 sudo: false
 cache: pip
-dist: trusty
+dist: bionic
 
 matrix:
   fast_finish: true
