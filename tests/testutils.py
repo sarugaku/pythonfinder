@@ -1,15 +1,143 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, print_function
 
+import atexit
 import itertools
 import os
+import shutil
+import stat
+import sys
+import tempfile
+import warnings
+from contextlib import contextmanager
 
-import vistir
+import click
+import six
+
+
+if sys.version_info[:2] < (3, 5):
+    from pathlib2 import Path
+else:
+    from pathlib import Path
+
+
+TRACKED_TEMPORARY_DIRECTORIES = []
+
+
+def set_write_bit(fn):
+    # type: (str) -> None
+    """
+    Set read-write permissions for the current user on the target path.  Fail silently
+    if the path doesn't exist.
+
+    :param str fn: The target filename or path
+    :return: None
+    """
+
+    if not os.path.exists(fn):
+        return
+    file_stat = os.stat(fn).st_mode
+    os.chmod(fn, file_stat | stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+    if not os.path.isdir(fn):
+        for path in [fn, os.path.dirname(fn)]:
+            try:
+                os.chflags(path, 0)
+            except AttributeError:
+                pass
+        return None
+    for root, dirs, files in os.walk(fn, topdown=False):
+        for dir_ in [os.path.join(root, d) for d in dirs]:
+            set_write_bit(dir_)
+        for file_ in [os.path.join(root, f) for f in files]:
+            set_write_bit(file_)
+
+
+def create_tracked_tempdir(*args, **kwargs):
+    """Create a tracked temporary directory.
+
+    This uses ``tempfile.mkdtemp``, but does not remove the directory when
+    the return value goes out of scope, instead registers a handler to cleanup
+    on program exit.
+
+    The return value is the path to the created directory.
+    """
+
+    tempdir = tempfile.mkdtemp(*args, **kwargs)
+    TRACKED_TEMPORARY_DIRECTORIES.append(tempdir)
+    atexit.register(shutil.rmtree, tempdir)
+    warnings.simplefilter("ignore", ResourceWarning)
+    return tempdir
+
+
+@contextmanager
+def cd(path):
+    if not path:
+        return
+    prev_cwd = Path.cwd().as_posix()
+    if isinstance(path, Path):
+        path = path.as_posix()
+    os.chdir(str(path))
+    try:
+        yield
+    finally:
+        os.chdir(prev_cwd)
+
+
+@contextmanager
+def temp_environ():
+    """Allow the ability to set os.environ temporarily"""
+    environ = dict(os.environ)
+    try:
+        yield
+    finally:
+        os.environ.clear()
+        os.environ.update(environ)
+
+
+def normalize_path(path):
+    # type: (AnyStr) -> AnyStr
+    """
+    Return a case-normalized absolute variable-expanded path.
+
+    :param str path: The non-normalized path
+    :return: A normalized, expanded, case-normalized path
+    :rtype: str
+    """
+
+    path = os.path.abspath(os.path.expandvars(os.path.expanduser(str(path))))
+    if os.name == "nt" and os.path.exists(path):
+        try:
+            from ctypes import create_unicode_buffer, windll
+        except ImportError:
+            path = os.path.normpath(os.path.normcase(path))
+        else:
+            BUFSIZE = 500
+            buffer = create_unicode_buffer(BUFSIZE)
+            get_long_path_name = windll.kernel32.GetLongPathNameW
+            get_long_path_name(six.ensure_text(path), buffer, BUFSIZE)
+            path = buffer.value
+        return path
+
+    return os.path.normpath(os.path.normcase(path))
+
+
+def is_in_path(path, parent):
+    # type: (AnyStr, AnyStr) -> bool
+    """
+    Determine if the provided full path is in the given parent root.
+
+    :param str path: The full path to check the location of.
+    :param str parent: The parent path to check for membership in
+    :return: Whether the full path is a member of the provided parent.
+    :rtype: bool
+    """
+
+    return normalize_path(str(path)).startswith(normalize_path(str(parent)))
 
 
 def normalized_match(path, parent):
-    return vistir.path.is_in_path(
-        vistir.path.normalize_path(path), vistir.path.normalize_path(parent)
+    return is_in_path(
+        normalize_path(path), normalize_path(parent)
     )
 
 
@@ -21,7 +149,7 @@ def is_in_ospath(path):
 def print_python_versions(versions):
     versions = list(versions)
     if versions:
-        vistir.misc.echo("Found python at the following locations:", err=True)
+        click.echo("Found python at the following locations:", err=True)
         for v in versions:
             py = v.py_version
             comes_from = getattr(py, "comes_from", None)
@@ -29,7 +157,7 @@ def print_python_versions(versions):
                 comes_from_path = getattr(comes_from, "path", v.path)
             else:
                 comes_from_path = v.path
-            vistir.misc.echo(
+            click.echo(
                 "{py.name!s}: {py.version!s} ({py.architecture!s}) @ {comes_from!s}".format(
                     py=py, comes_from=comes_from_path
                 ),

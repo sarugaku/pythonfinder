@@ -7,12 +7,21 @@ import sys
 
 import pytest
 import six
-import vistir
 from packaging.version import Version
 
 import pythonfinder
 
-from .testutils import is_in_ospath, normalized_match, print_python_versions
+from .testutils import (
+    is_in_ospath,
+    normalize_path,
+    normalized_match,
+    print_python_versions,
+)
+
+if sys.version_info[:2] < (3, 5):
+    from pathlib2 import Path
+else:
+    from pathlib import Path
 
 
 def test_python_versions(monkeypatch, special_character_python):
@@ -23,6 +32,9 @@ def test_python_versions(monkeypatch, special_character_python):
             def __init__(self, out):
                 self.out = out
 
+            def communicate(self):
+                return self.out, ""
+
             def kill(self):
                 pass
 
@@ -31,7 +43,7 @@ def test_python_versions(monkeypatch, special_character_python):
 
     os.environ["PYTHONFINDER_IGNORE_UNSUPPORTED"] = str("1")
     with monkeypatch.context() as m:
-        m.setattr("vistir.misc.run", mock_version)
+        m.setattr("subprocess.Popen", mock_version)
         parsed = pythonfinder.models.python.PythonVersion.from_path(
             special_character_python.strpath
         )
@@ -70,6 +82,9 @@ def test_python_version_output_variants(monkeypatch, path, version_output, versi
             def __init__(self, out):
                 self.out = out
 
+            def communicate(self):
+                return self.out, ""
+
             def kill(self):
                 pass
 
@@ -83,7 +98,7 @@ def test_python_version_output_variants(monkeypatch, path, version_output, versi
 
     with monkeypatch.context() as m:
         os.environ["PYTHONFINDER_IGNORE_UNSUPPORTED"] = str("1")
-        m.setattr("vistir.misc.run", mock_version)
+        m.setattr("subprocess.Popen", mock_version)
         orig_run_fn = pythonfinder.utils.get_python_version
         get_pyversion = functools.partial(get_python_version, orig_fn=orig_run_fn)
         m.setattr("pythonfinder.utils.get_python_version", get_pyversion)
@@ -96,7 +111,7 @@ def test_python_version_output_variants(monkeypatch, path, version_output, versi
 def test_shims_are_kept(monkeypatch, no_pyenv_root_envvar, setup_pythons, no_virtual_env):
     with monkeypatch.context() as m:
         os.environ["PATH"] = "{0}:{1}".format(
-            vistir.path.normalize_path("~/.pyenv/shims"), os.environ["PATH"]
+            normalize_path("~/.pyenv/shims"), os.environ["PATH"]
         )
         f = pythonfinder.pythonfinder.Finder(
             global_search=True, system=False, ignore_unsupported=True
@@ -110,14 +125,14 @@ def test_shims_are_kept(monkeypatch, no_pyenv_root_envvar, setup_pythons, no_vir
         # and used to trigger plugin setup -- this is true only if ``PYENV_ROOT`` is set`
         if shim_paths:
             assert (
-                os.path.join(vistir.path.normalize_path("~/.pyenv/shims"))
+                os.path.join(normalize_path("~/.pyenv/shims"))
                 not in f.system_path.path_order
             ), (
                 pythonfinder.environment.get_shim_paths()
             )  # "\n".join(f.system_path.path_order)
         else:
             assert (
-                os.path.join(vistir.path.normalize_path("~/.pyenv/shims"))
+                os.path.join(normalize_path("~/.pyenv/shims"))
                 in f.system_path.path_order
             ), "\n".join(f.system_path.path_order)
         python_versions = f.find_all_python_versions()

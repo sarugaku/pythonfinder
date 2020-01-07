@@ -1,13 +1,18 @@
 # -*- coding=utf-8 -*-
 
 import os
+import sys
 from collections import namedtuple
 
 import pytest
-import vistir
 
 import pythonfinder.utils
 from pythonfinder import Finder
+
+if sys.version_info[:2] < (3, 5):
+    from pathlib2 import Path
+else:
+    from pathlib import Path
 
 os.environ["ANSI_COLORS_DISABLED"] = "1"
 
@@ -72,4 +77,4 @@ def test_parse_python_version(python, expected):
 def test_is_python(python, expected):
     assert pythonfinder.utils.path_is_known_executable(python)
     assert pythonfinder.utils.looks_like_python(os.path.basename(python))
-    assert pythonfinder.utils.path_is_python(vistir.compat.Path(python))
+    assert pythonfinder.utils.path_is_python(Path(python))
