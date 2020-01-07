@@ -1,16 +1,15 @@
-# -*- coding=utf-8 -*-
-import os
+import datetime
 import pathlib
 import re
 import shutil
 import subprocess
+import time
+from pathlib import Path
 
 import invoke
 import parver
 from towncrier._builder import find_fragments, render_fragments, split_fragments
 from towncrier._settings import load_config
-
-from . import vendoring
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
@@ -39,28 +38,51 @@ def typecheck(ctx):
     ctx.run(f"mypy {src_dir} --config-file={config_file}", env=env)
 
 
+
+def _get_git_root(ctx):
+    return Path(ctx.run("git rev-parse --show-toplevel", hide=True).stdout.strip())
+
+
+def _get_branch(ctx):
+    return ctx.run("git rev-parse --abbrev-ref HEAD", hide=True).stdout.strip()
+
+
 @invoke.task()
 def clean(ctx):
-    """Clean previously built package artifacts."""
-    ctx.run(f"python setup.py clean")
+    """Clean previously built package artifacts.
+    """
     dist = ROOT.joinpath("dist")
     build = ROOT.joinpath("build")
-    print(f"[clean] Removing {dist} and {build}")
+    print("[clean] Removing dist and build dirs")
     if dist.exists():
-        shutil.rmtree(str(dist))
+        shutil.rmtree(dist.as_posix())
     if build.exists():
-        shutil.rmtree(str(build))
+        shutil.rmtree(build.as_posix())
 
 
 def _read_version():
     out = subprocess.check_output(["git", "tag"], encoding="ascii")
-    versions = [line.strip() for line in out.splitlines() if line]
-    _unparsed = [v for v in versions if v.startswith("v")]
     try:
-        version = max(parver.Version.parse(v.lstrip("v")).normalize() for v in versions)
+        version = max(
+            parver.Version.parse(v.lstrip("v")).normalize()
+            for v in (line.strip() for line in out.split("\n"))
+            if v
+        )
     except ValueError:
         version = parver.Version.parse("0.0.0")
     return version
+
+
+def _read_text_version():
+    lines = INIT_PY.read_text().splitlines()
+    match = next(iter(line for line in lines if line.startswith("__version__")), None)
+    if match is not None:
+        _, _, version_text = match.partition("=")
+        version_text = version_text.strip().strip('"').strip("'")
+        version = parver.Version.parse(version_text).normalize()
+        return version
+    else:
+        return _read_version()
 
 
 def _write_version(v):
@@ -85,6 +107,11 @@ def _render_log():
         None,
         definitions,
     )
+    project_options = {
+        "name": config["package"],
+        "version": _read_text_version(),
+        "date": datetime.date.today().isoformat(),
+    }
     rendered = render_fragments(
         pathlib.Path(config["template"]).read_text(encoding="utf-8"),
         config["issue_format"],
@@ -92,6 +119,7 @@ def _render_log():
         definitions,
         config["underlines"][1:],
         False,  # Don't add newlines to wrapped text.
+        project_options,
     )
     return rendered
 
@@ -103,7 +131,11 @@ def _bump_release(version, type_, log=False):
     if type_ not in REL_TYPES:
         raise ValueError(f"{type_} not in {REL_TYPES}")
     index = REL_TYPES.index(type_)
-    next_version = version.base_version().bump_release(index=index)
+    current_version = version.base_version()
+    if version.is_prerelease and type_ == "patch":
+        next_version = current_version
+    else:
+        next_version = current_version.bump_release(index=index)
     if log:
         print(f"[bump] {version} -> {next_version}")
     print(f"{next_version}")
@@ -182,16 +214,47 @@ def tag_release(ctx, version=None, type_="patch", yes=False, dry_run=False):
         ctx.run(git_tag_cmd)
 
 
+@invoke.task(optional=["version", "type_"])
+def release(ctx, version=None, type_="patch", yes=False, dry_run=False):
+    if version is None:
+        version = bump_version(ctx, type_, log=not dry_run, dry_run=dry_run)
+    else:
+        _write_version(version)
+    tag_content = get_changelog(ctx)
+    current_branch = _get_branch(ctx)
+    generate_news(ctx, yes=yes, dry_run=dry_run)
+    git_commit_cmd = f'git commit -am "Release {version}"'
+    git_tag_cmd = f'git tag -a {version} -m "Version {version}\n\n{tag_content}"'
+    git_push_cmd = f"git push origin {current_branch}"
+    git_push_tags_cmd = "git push --tags"
+    if dry_run:
+        print("Would run commands:")
+        print(f"    {git_commit_cmd}")
+        print(f"    {git_tag_cmd}")
+        print(f"    {git_push_cmd}")
+        print(f"    {git_push_tags_cmd}")
+    else:
+        ctx.run(git_commit_cmd)
+        ctx.run(git_tag_cmd)
+        ctx.run(git_push_cmd)
+        print("Waiting 5 seconds before pushing tags...")
+        time.sleep(5)
+        ctx.run(git_push_tags_cmd)
+
+
 @invoke.task(pre=[clean])
-def release(ctx, type_, repo, prebump=PREBUMP, yes=False):
-    """Make a new release."""
+def full_release(ctx, type_, repo, prebump=PREBUMP, yes=False):
+    """Make a new release.
+    """
     if prebump not in REL_TYPES:
         raise ValueError(f"{type_} not in {REL_TYPES}")
     prebump = REL_TYPES.index(prebump)
 
     version = bump_version(ctx, type_, log=True)
+
     # Needs to happen before Towncrier deletes fragment files.
-    tag_release(ctx, version, yes=yes)
+
+    tag_release(version, yes=yes)
 
     ctx.run(f"python setup.py sdist bdist_wheel")
 

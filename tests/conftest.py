@@ -254,6 +254,7 @@ def special_character_python(tmpdir):
     python_name = "{0}+".format(python.name)
     python_folder = tmpdir.mkdir(python_name)
     bin_dir = python_folder.mkdir("bin")
+    vistir.path.set_write_bit(bin_dir.strpath)
     python_path = bin_dir.join("python")
     os.link(python.path.as_posix(), python_path.strpath)
     return python_path
