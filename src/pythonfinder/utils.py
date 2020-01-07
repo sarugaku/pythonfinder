@@ -14,7 +14,7 @@ import attr
 import six
 from packaging.version import LegacyVersion, Version
 
-from .compat import Path, lru_cache
+from .compat import Path, lru_cache, TimeoutError  # noqa
 from .environment import MYPY_RUNNING, PYENV_ROOT, SUBPROCESS_TIMEOUT
 from .exceptions import InvalidPythonVersion
 
@@ -105,10 +105,10 @@ def get_python_version(path):
     c = subprocess.Popen(version_cmd, **subprocess_kwargs)
     timer = Timer(SUBPROCESS_TIMEOUT, c.kill)
     try:
-        out, err = c.communicate()
+        out, _ = c.communicate()
     except (SystemExit, KeyboardInterrupt, TimeoutError):
         c.terminate()
-        out, err = c.communicate()
+        out, _ = c.communicate()
         raise
     except OSError:
         raise InvalidPythonVersion("%s is not a valid python path" % path)

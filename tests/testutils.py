@@ -65,7 +65,8 @@ def create_tracked_tempdir(*args, **kwargs):
     tempdir = tempfile.mkdtemp(*args, **kwargs)
     TRACKED_TEMPORARY_DIRECTORIES.append(tempdir)
     atexit.register(shutil.rmtree, tempdir)
-    warnings.simplefilter("ignore", ResourceWarning)
+    if six.PY3:
+        warnings.simplefilter("ignore", ResourceWarning)
     return tempdir
 
 

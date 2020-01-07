@@ -35,7 +35,7 @@ if MYPY_RUNNING:
         TypeVar,
         Type,
     )
-    from ..compat import Path
+    from ..compat import Path  # noqa
 
     BaseFinderType = TypeVar("BaseFinderType")
 

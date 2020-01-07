@@ -10,8 +10,12 @@ else:
 
 if six.PY3:
     from functools import lru_cache
+    from builtins import TimeoutError
 else:
     from backports.functools_lru_cache import lru_cache  # type: ignore  # noqa
+
+    class TimeoutError(OSError):
+        pass
 
 
 def getpreferredencoding():
