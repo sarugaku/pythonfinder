@@ -248,10 +248,11 @@ def setup_pythons(isolated_envdir, monkeypatch):
 @pytest.fixture
 def special_character_python(tmpdir):
     finder = pythonfinder.Finder(
-        global_search=True, system=False, ignore_unsupported=True
+        global_search=False, system=True, ignore_unsupported=True,
+        sort_by_path=True
     )
-    python = finder.find_python_version("2")
-    python_name = "{0}+".format(python.name)
+    python = finder.find_python_version()
+    python_name = "2+"
     python_folder = tmpdir.mkdir(python_name)
     bin_dir = python_folder.mkdir("bin")
     vistir.path.set_write_bit(bin_dir.strpath)
