@@ -372,7 +372,7 @@
                 "sha256:09a12ebe427279cf7aa9445114a68d83a6f0ffccdd4105368d6e85373541eb8f",
                 "sha256:bc4a35972342256abddf84591fbb82f7360981db1b71e39a8ba0400e906239cf"
             ],
-            "markers": "python_version >= '3.5'",
+            "markers": "python_version > '3.5'",
             "version": "==20.1.2"
         },
         "funcsigs": {
