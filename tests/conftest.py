@@ -1,21 +1,40 @@
 # -*- coding=utf-8 -*-
 from __future__ import absolute_import, print_function
 
+import atexit
 import os
 import random
+import shutil
 import stat
+import subprocess
 import sys
+import tempfile
+import warnings
 from collections import namedtuple
+from contextlib import contextmanager
 
 import click
 import click.testing
 import pytest
 import six
-import vistir
 
 import pythonfinder
 
-from .testutils import normalized_match, yield_versions
+from .testutils import (
+    cd,
+    create_tracked_tempdir,
+    normalize_path,
+    normalized_match,
+    set_write_bit,
+    temp_environ,
+    yield_versions,
+)
+
+if sys.version_info[:2] < (3, 5):
+    from pathlib2 import Path
+else:
+    from pathlib import Path
+
 
 pythoninfo = namedtuple("PythonVersion", ["name", "version", "path", "arch"])
 
@@ -27,7 +46,7 @@ def pytest_runtest_setup(item):
 
 @pytest.fixture
 def pathlib_tmpdir(request, tmpdir):
-    yield vistir.compat.Path(str(tmpdir))
+    yield Path(str(tmpdir))
     try:
         tmpdir.remove(ignore_errors=True)
     except Exception:
@@ -39,30 +58,30 @@ def _create_tracked_dir():
     temp_args["dir"] = os.environ.get("TMPDIR", "/tmp")
     if temp_args["dir"] == "/":
         temp_args["dir"] = os.getcwd()
-    temp_path = vistir.path.create_tracked_tempdir(**temp_args)
+    temp_path = create_tracked_tempdir(**temp_args)
     return temp_path
 
 
 @pytest.fixture
-def vistir_tmpdir():
+def tracked_tmpdir():
     temp_path = _create_tracked_dir()
-    yield vistir.compat.Path(temp_path)
+    yield Path(temp_path)
 
 
 @pytest.fixture(name="create_tmpdir")
-def vistir_tmpdir_factory():
+def tracked_tmpdir_factory():
     def create_tmpdir():
-        return vistir.compat.Path(_create_tracked_dir())
+        return Path(_create_tracked_dir())
 
     yield create_tmpdir
 
 
 @pytest.fixture
 def no_virtual_env():
-    with vistir.contextmanagers.temp_environ():
+    with temp_environ():
         if "VIRTUAL_ENV" in os.environ["PATH"]:
             orig_path = os.environ["PATH"].split(os.pathsep)
-            venv = vistir.path.normalize_path(os.environ["VIRTUAL_ENV"])
+            venv = normalize_path(os.environ["VIRTUAL_ENV"])
             match = next(iter(p for p in orig_path if normalized_match(p, venv)), None)
             if match:
                 orig_path.remove(match)
@@ -88,12 +107,12 @@ def no_pyenv_root_envvar(monkeypatch):
         m.setattr(pythonfinder.environment, "PYENV_INSTALLED", False)
         m.setattr(pythonfinder.environment, "ASDF_INSTALLED", False)
         m.setattr(
-            pythonfinder.environment, "PYENV_ROOT", vistir.path.normalize_path("~/.pyenv")
+            pythonfinder.environment, "PYENV_ROOT", normalize_path("~/.pyenv")
         )
         m.setattr(
             pythonfinder.environment,
             "ASDF_DATA_DIR",
-            vistir.path.normalize_path("~/.asdf"),
+            normalize_path("~/.asdf"),
         )
         m.setattr(
             pythonfinder.environment,
@@ -108,11 +127,11 @@ def isolated_envdir(create_tmpdir):
     runner = click.testing.CliRunner()
     fake_root_path = create_tmpdir()
     fake_root = fake_root_path.as_posix()
-    vistir.path.set_write_bit(fake_root)
-    with vistir.contextmanagers.temp_environ(), vistir.contextmanagers.cd(fake_root):
+    set_write_bit(fake_root)
+    with temp_environ(), cd(fake_root):
         home_dir_path = fake_root_path.joinpath("home/pythonfinder")
         home_dir_path.mkdir(parents=True)
-        home_dir = vistir.path.normalize_path(home_dir_path.as_posix())
+        home_dir = normalize_path(home_dir_path.as_posix())
         os.chdir(home_dir)
         # This is pip's isolation approach, swipe it for now for time savings
         if sys.platform == "win32":
@@ -126,18 +145,18 @@ def isolated_envdir(create_tmpdir):
             ):
                 path = os.path.join(home_dir, *sub_path.split("/"))
                 os.environ[env_var] = path
-                vistir.path.mkdir_p(path)
+                Path(path).mkdir(exist_ok=True, parents=True)
         else:
             os.environ["HOME"] = home_dir
             os.environ["XDG_DATA_HOME"] = os.path.join(home_dir, ".local", "share")
             os.environ["XDG_CONFIG_HOME"] = os.path.join(home_dir, ".config")
             os.environ["XDG_CACHE_HOME"] = os.path.join(home_dir, ".cache")
             os.environ["XDG_RUNTIME_DIR"] = os.path.join(home_dir, ".runtime")
-            vistir.path.mkdir_p(os.path.join(home_dir, ".cache"))
-            vistir.path.mkdir_p(os.path.join(home_dir, ".config"))
-            vistir.path.mkdir_p(os.path.join(home_dir, ".local", "share"))
-            vistir.path.mkdir_p(os.path.join(fake_root, "usr", "local", "share"))
-            vistir.path.mkdir_p(os.path.join(fake_root, "usr", "share"))
+            Path(os.path.join(home_dir, ".cache")).mkdir(exist_ok=True, parents=True)
+            Path(os.path.join(home_dir, ".config")).mkdir(exist_ok=True, parents=True)
+            Path(os.path.join(home_dir, ".local", "share")).mkdir(exist_ok=True, parents=True)
+            Path(os.path.join(fake_root, "usr", "local", "share")).mkdir(exist_ok=True, parents=True)
+            Path(os.path.join(fake_root, "usr", "share")).mkdir(exist_ok=True, parents=True)
             os.environ["XDG_DATA_DIRS"] = ":".join(
                 [
                     os.path.join(fake_root, "usr", "local", "share"),
@@ -150,15 +169,14 @@ def isolated_envdir(create_tmpdir):
 
 def setup_plugin(name):
     target = os.path.expandvars(os.path.expanduser("~/.{0}".format(name)))
-    this = vistir.compat.Path(__file__).absolute().parent
+    this = Path(__file__).absolute().parent
     plugin_dir = this / "test_artifacts" / name
     plugin_uri = plugin_dir.as_uri()
     if not "file:///" in plugin_uri and "file:/" in plugin_uri:
         plugin_uri = plugin_uri.replace("file:/", "file:///")
-    out, err = vistir.misc.run(
-        ["git", "clone", plugin_uri, vistir.compat.Path(target).as_posix()], nospin=True
+    out = subprocess.check_output(
+        ["git", "clone", plugin_uri, Path(target).as_posix()]
     )
-    print(err, file=sys.stderr)
     print(out, file=sys.stderr)
 
 
@@ -168,7 +186,7 @@ def build_python_versions(path, link_to=None):
         python_dir = path / python_name
         bin_dir = python_dir / "bin"
         bin_dir.mkdir(parents=True)
-        vistir.path.set_write_bit(bin_dir.as_posix())
+        set_write_bit(bin_dir.as_posix())
         executable_names = [
             python_name,
             "python",
@@ -239,7 +257,7 @@ def setup_pythons(isolated_envdir, monkeypatch):
         os.environ["PATH"] = os.environ.get("PATH").replace("::", ":")
         version_dicts = {"pyenv": pyenv_dict, "asdf": asdf_dict}
         shim_paths = [
-            vistir.path.normalize_path(isolated_envdir.joinpath(p).as_posix())
+            normalize_path(isolated_envdir.joinpath(p).as_posix())
             for p in [".asdf/shims", ".pyenv/shims"]
         ]
         yield version_dicts
@@ -255,7 +273,7 @@ def special_character_python(tmpdir):
     python_name = "2+"
     python_folder = tmpdir.mkdir(python_name)
     bin_dir = python_folder.mkdir("bin")
-    vistir.path.set_write_bit(bin_dir.strpath)
+    set_write_bit(bin_dir.strpath)
     python_path = bin_dir.join("python")
     os.link(python.path.as_posix(), python_path.strpath)
     return python_path
@@ -263,7 +281,7 @@ def special_character_python(tmpdir):
 
 @pytest.fixture(autouse=True)
 def setup_env():
-    with vistir.contextmanagers.temp_environ():
+    with temp_environ():
         os.environ["ANSI_COLORS_DISABLED"] = str("1")
 
 
@@ -296,7 +314,7 @@ def _build_python_tuples():
             name = str(version.version)
         else:
             name = version.name
-        path = vistir.path.normalize_path(v.path)
+        path = normalize_path(v.path)
         version = str(version.version)
         versions.append(pythoninfo(name, version, path, arch))
     return versions
@@ -308,21 +326,14 @@ def all_python_versions():
 
 
 def get_windows_python_versions():
-    c = vistir.misc.run(
-        "py -0p",
-        block=True,
-        nospin=True,
-        return_object=True,
-        combine_stderr=False,
-        write_to_stdout=False,
-    )
+    out = subprocess.check_output("py -0p", shell=True)
     versions = []
     for line in c.out.splitlines():
         line = line.strip()
         if line and not "Installed Pythons found" in line:
             version, path = line.split("\t")
             version = version.strip().lstrip("-")
-            path = vistir.path.normalize_path(path.strip().strip('"'))
+            path = normalize_path(path.strip().strip('"'))
             arch = None
             if "-" in version:
                 version, _, arch = version.partition("-")
