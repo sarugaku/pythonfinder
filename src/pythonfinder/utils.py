@@ -6,6 +6,7 @@ import itertools
 import os
 import re
 import subprocess
+import warnings
 from collections import OrderedDict
 from fnmatch import fnmatch
 from threading import Timer
@@ -14,7 +15,7 @@ import attr
 import six
 from packaging.version import LegacyVersion, Version
 
-from .compat import Path, lru_cache, TimeoutError  # noqa
+from .compat import Path, TimeoutError, lru_cache  # noqa
 from .environment import MYPY_RUNNING, PYENV_ROOT, SUBPROCESS_TIMEOUT
 from .exceptions import InvalidPythonVersion
 
@@ -447,3 +448,22 @@ def dedup(iterable):
     order-reserved.
     """
     return iter(OrderedDict.fromkeys(iterable))
+
+
+def show_deprecation(
+    msg="Use of the specified options is deprecated",  # type: str
+    type_=None,  # type: Optional[str]
+    name=None,  # type: Optional[str]
+    version_removed=None,  # type: Optional[str]
+):
+    # type: (...) -> None
+    if not any([type_, name, version_removed]):
+        msg = "{}.".format(msg)
+    elif type_:
+        msg = msg.replace("options", type_)
+    if name:
+        msg = "{0}: {1}".format(msg, name)
+    if version_removed:
+        msg = "{0} (removed in version {1})".format(msg, version_removed)
+    warnings.simplefilter("default", DeprecationWarning)
+    warnings.warn(msg, DeprecationWarning)

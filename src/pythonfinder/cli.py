@@ -12,6 +12,23 @@ from .pythonfinder import Finder
 @click.option("--which", default=False, nargs=1, help="Run the which command.")
 @click.option("--findall", is_flag=True, default=False, help="Find all python versions.")
 @click.option(
+    "--prefer-running-interpreter",
+    is_flag=True,
+    default=False,
+    help="Prefer the running python interpreter.",
+)
+@click.option(
+    "--global-search/--no-global-search",
+    default=True,
+    help="Recursively search the system path for python executables. If false, searches known python locations (pyenv, asdf, windows registry) and current interpreter path.",
+)
+@click.option(
+    "--sort-by-path",
+    is_flag=True,
+    default=False,
+    help="Sort by order in which executables are discovered on $PATH instead of ordering by version number.",
+)
+@click.option(
     "--version", is_flag=True, default=False, help="Display PythonFinder version."
 )
 @click.option(
@@ -24,17 +41,34 @@ from .pythonfinder import Finder
 @click.version_option(prog_name="pyfinder", version=__version__)
 @click.pass_context
 def cli(
-    ctx, find=False, which=False, findall=False, version=False, ignore_unsupported=True
+    ctx,
+    find=False,
+    which=False,
+    findall=False,
+    prefer_running_interpreter=False,
+    global_search=True,
+    sort_by_path=False,
+    version=False,
+    ignore_unsupported=True,
 ):
     if version:
         click.echo(
             "{0} version {1}".format(
                 click.style("PythonFinder", fg="white", bold=True),
-                click.style(str(__version__), fg="yellow")
+                click.style(str(__version__), fg="yellow"),
             )
         )
         ctx.exit()
-    finder = Finder(ignore_unsupported=ignore_unsupported)
+    finder_args = {"ignore_unsupported": ignore_unsupported}
+    if not which:
+        finder_args.update(
+            {
+                "prefer_running_interpreter": prefer_running_interpreter,
+                "global_search": global_search,
+                "sort_by_path": sort_by_path,
+            }
+        )
+    finder = Finder(**finder_args)
     if findall:
         versions = [v for v in finder.find_all_python_versions()]
         if versions:

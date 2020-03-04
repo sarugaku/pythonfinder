@@ -6,12 +6,11 @@ import operator
 import os
 
 import six
-from click import secho
 
 from . import environment
 from .compat import lru_cache
 from .exceptions import InvalidPythonVersion
-from .utils import Iterable, filter_pythons, version_re
+from .utils import Iterable, filter_pythons, show_deprecation, version_re
 
 if environment.MYPY_RUNNING:
     from typing import Optional, Dict, Any, Union, List, Iterator, Text
@@ -28,16 +27,17 @@ class Finder(object):
     A cross-platform Finder for locating python and other executables.
 
     Searches for python and other specified binaries starting in *path*, if supplied,
-    but searching the bin path of ``sys.executable`` if *system* is ``True``, and then
-    searching in the ``os.environ['PATH']`` if *global_search* is ``True``.  When *global_search*
-    is ``False``, this search operation is restricted to the allowed locations of
-    *path* and *system*.
+    but searching the bin path of ``sys.executable`` if *prefer_running_interpreter*
+    is ``True``, and then searching in the ``os.environ['PATH']`` if *global_search*
+    is ``True``.  When *global_search* is ``False``, this search operation is
+    restricted to the allowed locations of *path* and *sys.executable*.
     """
 
     def __init__(
         self,
         path=None,
-        system=False,
+        prefer_running_interpreter=None,  # type: Optional[bool]
+        system=None,  # type: Optional[bool]
         global_search=True,
         ignore_unsupported=True,
         sort_by_path=False,
@@ -47,20 +47,29 @@ class Finder(object):
 
         :param path: A bin-directory search location, defaults to None
         :param path: str, optional
-        :param system: Whether to include the bin-dir of ``sys.executable``, defaults to False
+        :param system: Whether to include the bin-dir of ``sys.executable``, defaults
+            to False
         :param system: bool, optional
-        :param global_search: Whether to search the global path from os.environ, defaults to True
+        :param global_search: Whether to search the global path from os.environ,
+            defaults to True
         :param global_search: bool, optional
-        :param ignore_unsupported: Whether to ignore unsupported python versions, if False, an
-            error is raised, defaults to True
+        :param ignore_unsupported: Whether to ignore unsupported python versions, if
+            False, an error is raised. Defaults to True
         :param ignore_unsupported: bool, optional
-        :param bool sort_by_path: Whether to always sort by path
+        :param bool sort_by_path: Whether to always sort by path. When False, sort by
+            version instead
         :returns: a :class:`~pythonfinder.pythonfinder.Finder` object.
         """
 
+        if prefer_running_interpreter is None and system is not None:
+            show_deprecation(type_="argument", name="system", version_removed="2.0")
+            prefer_running_interpreter = system
+        elif prefer_running_interpreter is None and system is None:
+            prefer_running_interpreter = False
+
         self.path_prepend = path  # type: Optional[str]
         self.global_search = global_search  # type: bool
-        self.system = system  # type: bool
+        self.prefer_running_interpreter = prefer_running_interpreter  # type: bool
         self.sort_by_path = sort_by_path  # type: bool
         self.ignore_unsupported = ignore_unsupported  # type: bool
         self._system_path = None  # type: Optional[SystemPath]
@@ -69,7 +78,12 @@ class Finder(object):
     def __hash__(self):
         # type: () -> int
         return hash(
-            (self.path_prepend, self.system, self.global_search, self.ignore_unsupported)
+            (
+                self.path_prepend,
+                self.prefer_running_interpreter,
+                self.global_search,
+                self.ignore_unsupported,
+            )
         )
 
     def __eq__(self, other):
@@ -81,7 +95,7 @@ class Finder(object):
         pyfinder_path = importlib.import_module("pythonfinder.models.path")
         return pyfinder_path.SystemPath.create(
             path=self.path_prepend,
-            system=self.system,
+            system=self.prefer_running_interpreter,
             global_search=self.global_search,
             ignore_unsupported=self.ignore_unsupported,
         )
