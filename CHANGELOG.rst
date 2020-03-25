@@ -1,3 +1,22 @@
+1.2.2 (2020-03-25)
+==================
+
+Features & Improvements
+-----------------------
+
+- Non-core versions of python will no longer sort ahead of core python versions.  `#75 <https://github.com/sarugaku/pythonfinder/issues/75>`_
+    
+- Reduced dependencies by removing ``vistir``,, ``crayons`` and intermediate calls.  `#78 <https://github.com/sarugaku/pythonfinder/issues/78>`_
+    
+
+Bug Fixes
+---------
+
+- Fixed a bug which could cause python searches to fail when ``pyenv global`` was set with repeated identical versions.  `#71 <https://github.com/sarugaku/pythonfinder/issues/71>`_
+    
+- ``pythonfinder`` will now avoid accidentally pathing into ``pythonw.exe`` on windows and using it as a python version.  `#73 <https://github.com/sarugaku/pythonfinder/issues/73>`_
+
+
 1.2.1 (2019-05-13)
 ==================
 

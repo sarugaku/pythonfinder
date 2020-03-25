@@ -1,1 +1,0 @@
-``pythonfinder`` will now avoid accidentally pathing into ``pythonw.exe`` on windows and using it as a python version.

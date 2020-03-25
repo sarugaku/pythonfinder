@@ -1,1 +1,0 @@
-Fixed a bug which could cause python searches to fail when ``pyenv global`` was set with repeated identical versions.
