@@ -287,12 +287,10 @@ class PythonFinder(BaseFinder, BasePath):
             ]
         else:
             pythons = [sub_finder(path) for path in self.paths]
-        pythons = list(expand_paths(pythons, True))
+        pythons = expand_paths(pythons, True)
         version_sort = operator.attrgetter("as_python.version_sort")
         paths = [
-            p
-            for p in sorted(list(pythons), key=version_sort, reverse=True)
-            if p is not None
+            p for p in sorted(pythons, key=version_sort, reverse=True) if p is not None
         ]
         return paths
 
