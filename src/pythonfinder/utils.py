@@ -437,7 +437,9 @@ def expand_paths(path, only_python=True):
                 ):
                     yield sub_path
     else:
-        if path is not None and path.is_python and path.as_python is not None:
+        if path is not None and not (
+            only_python and path.is_python and path.as_python is not None
+        ):
             yield path
 
 
