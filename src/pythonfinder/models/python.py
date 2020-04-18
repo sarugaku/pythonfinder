@@ -287,7 +287,7 @@ class PythonFinder(BaseFinder, BasePath):
             ]
         else:
             pythons = [sub_finder(path) for path in self.paths]
-        pythons = expand_paths(pythons, True)
+        pythons = list(expand_paths(pythons, True))
         version_sort = operator.attrgetter("as_python.version_sort")
         paths = [
             p
