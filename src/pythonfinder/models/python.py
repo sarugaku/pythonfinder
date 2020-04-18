@@ -285,8 +285,14 @@ class PythonFinder(BaseFinder, BasePath):
                 for _, base in self._iter_version_bases()
             ]
         else:
-            pythons = list(unnest(sub_finder(path) for path in self.paths))
-        pythons = [p for p in pythons if p and p.is_python and p.as_python is not None]
+            pythons = [sub_finder(path) for path in self.paths]
+        try:
+            pythons = [
+                p for p in pythons if p and p.is_python and p.as_python is not None
+            ]
+        except AttributeError:
+            print(pythons)
+            raise
         version_sort = operator.attrgetter("as_python.version_sort")
         paths = [
             p
