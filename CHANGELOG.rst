@@ -1,3 +1,12 @@
+1.2.3 (2020-04-21)
+==================
+
+Bug Fixes
+---------
+
+- Unnest the mixed output from ``find_all_python_versions()``.  `#85 <https://github.com/sarugaku/pythonfinder/issues/85>`_
+
+
 1.2.2 (2020-03-25)
 ==================
 
