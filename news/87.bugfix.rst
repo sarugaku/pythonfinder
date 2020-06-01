@@ -1,0 +1,1 @@
+Filter out the None results of Windows python finder.
