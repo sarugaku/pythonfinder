@@ -1,3 +1,12 @@
+1.2.4 (2020-06-01)
+==================
+
+Bug Fixes
+---------
+
+- Filter out the None results of Windows python finder.  `#87 <https://github.com/sarugaku/pythonfinder/issues/87>`_
+
+
 1.2.3 (2020-04-21)
 ==================
 
