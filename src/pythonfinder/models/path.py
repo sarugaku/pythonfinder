@@ -429,7 +429,7 @@ class SystemPath(object):
         _path = self.paths.get(path)
         if not _path:
             _path = self.paths.get(path.as_posix())
-        if not _path and path.as_posix() in self.path_order:
+        if not _path and os.path.normcase(path.as_posix()) in self.path_order:
             _path = PathEntry.create(
                 path=path.absolute(), is_root=True, only_python=self.only_python
             )
