@@ -1,3 +1,13 @@
+1.2.5 (2020-08-27)
+==================
+
+Bug Fixes
+---------
+
+- Skip invalid entries from Windows registry.
+  Ensure paths are normalized with forward slashes.  `#89 <https://github.com/sarugaku/pythonfinder/issues/89>`_
+
+
 1.2.4 (2020-06-01)
 ==================
 
