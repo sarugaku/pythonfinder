@@ -1,1 +1,2 @@
 Skip invalid entries from Windows registry.
+Ensure paths are normalized with forward slashes.
