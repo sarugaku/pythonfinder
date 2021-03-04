@@ -685,7 +685,7 @@ class SystemPath(object):
 
 @attr.s(slots=True)
 class PathEntry(BasePath):
-    is_root = attr.ib(default=True, type=bool, cmp=False)
+    is_root = attr.ib(default=True, type=bool, order=False)
 
     def __lt__(self, other):
         # type: (BasePath) -> bool
