@@ -5,6 +5,7 @@ Removals and Deprecations
 -------------------------
 
 - Remove the deprecated usage of ``cmp`` in ``attr``.  `#94 <https://github.com/sarugaku/pythonfinder/issues/94>`_
+- Fix a bug that version sort is performed on None objects.
 
 
 1.2.5 (2020-08-27)
