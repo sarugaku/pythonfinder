@@ -45,12 +45,16 @@ jobs:
         # to upload to test pypi, pass --repository-url https://test.pypi.org/legacy/ and use secrets.TEST_PYPI_TOKEN
         run: |
           python -m pipenv run twine upload --verbose -u '__token__' -p '${{ secrets.PYPI_TOKEN }}' dist/*
-      # git push https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:master
-      # we need to use a deploy key for this to get around branch protection as the default token fails
+
       - name: Pre-bump
         run: |
           git config --local user.name 'Github Action'
           git config --local user.email action@github.com
           python -m pipenv run inv bump-version -t dev
-          git commit -am 'pre-bump'
-          git push git@github.com:${{ github.repository }}.git HEAD:master
+          git commit -am "pre-bump"
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
