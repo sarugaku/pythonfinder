@@ -1,3 +1,12 @@
+1.2.6 (2021-04-01)
+==================
+
+Removals and Deprecations
+-------------------------
+
+- Remove the deprecated usage of ``cmp`` in ``attr``.  `#94 <https://github.com/sarugaku/pythonfinder/issues/94>`_
+
+
 1.2.5 (2020-08-27)
 ==================
 
