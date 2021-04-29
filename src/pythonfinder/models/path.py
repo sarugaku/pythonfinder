@@ -778,6 +778,8 @@ class PathEntry(BasePath):
         """
 
         target = ensure_path(path)
+        if not target.exists():
+            raise InvalidPythonVersion("Python interpreter not exist: {}".format(target))
         guessed_name = False
         if not name:
             guessed_name = True
