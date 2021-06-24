@@ -19,6 +19,7 @@ from .testutils import (
 )
 
 
+@pytest.mark.skipif(sys.version_info < (3,), reason="Must run on Python 3")
 def test_python_versions(monkeypatch, special_character_python):
     def mock_version(*args, **kwargs):
         version_output = "2.7.15+ (default, Jun 28 2018, 13:15:42)\n[GCC 7.2.0]"
@@ -208,5 +209,6 @@ def test_shims_are_removed(monkeypatch, no_virtual_env, setup_pythons):
         assert "shims" not in which_anaconda.path.as_posix()
 
 
+@pytest.mark.skip_nt
 def test_windows_pythonfinder(expected_python_versions, all_python_versions):
     assert sorted(expected_python_versions) == sorted(all_python_versions)
