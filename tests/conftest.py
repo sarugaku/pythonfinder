@@ -106,9 +106,7 @@ def no_pyenv_root_envvar(monkeypatch):
         six.moves.reload_module(pythonfinder.models.path)
         m.setattr(pythonfinder.environment, "PYENV_INSTALLED", False)
         m.setattr(pythonfinder.environment, "ASDF_INSTALLED", False)
-        m.setattr(
-            pythonfinder.environment, "PYENV_ROOT", normalize_path("~/.pyenv")
-        )
+        m.setattr(pythonfinder.environment, "PYENV_ROOT", normalize_path("~/.pyenv"))
         m.setattr(
             pythonfinder.environment,
             "ASDF_DATA_DIR",
@@ -154,9 +152,15 @@ def isolated_envdir(create_tmpdir):
             os.environ["XDG_RUNTIME_DIR"] = os.path.join(home_dir, ".runtime")
             Path(os.path.join(home_dir, ".cache")).mkdir(exist_ok=True, parents=True)
             Path(os.path.join(home_dir, ".config")).mkdir(exist_ok=True, parents=True)
-            Path(os.path.join(home_dir, ".local", "share")).mkdir(exist_ok=True, parents=True)
-            Path(os.path.join(fake_root, "usr", "local", "share")).mkdir(exist_ok=True, parents=True)
-            Path(os.path.join(fake_root, "usr", "share")).mkdir(exist_ok=True, parents=True)
+            Path(os.path.join(home_dir, ".local", "share")).mkdir(
+                exist_ok=True, parents=True
+            )
+            Path(os.path.join(fake_root, "usr", "local", "share")).mkdir(
+                exist_ok=True, parents=True
+            )
+            Path(os.path.join(fake_root, "usr", "share")).mkdir(
+                exist_ok=True, parents=True
+            )
             os.environ["XDG_DATA_DIRS"] = ":".join(
                 [
                     os.path.join(fake_root, "usr", "local", "share"),
@@ -174,9 +178,7 @@ def setup_plugin(name):
     plugin_uri = plugin_dir.as_uri()
     if not "file:///" in plugin_uri and "file:/" in plugin_uri:
         plugin_uri = plugin_uri.replace("file:/", "file:///")
-    out = subprocess.check_output(
-        ["git", "clone", plugin_uri, Path(target).as_posix()]
-    )
+    out = subprocess.check_output(["git", "clone", plugin_uri, Path(target).as_posix()])
     print(out, file=sys.stderr)
 
 
@@ -266,8 +268,7 @@ def setup_pythons(isolated_envdir, monkeypatch):
 @pytest.fixture
 def special_character_python(tmpdir):
     finder = pythonfinder.Finder(
-        global_search=False, system=True, ignore_unsupported=True,
-        sort_by_path=True
+        global_search=False, system=True, ignore_unsupported=True, sort_by_path=True
     )
     python = finder.find_python_version()
     python_name = "2+"
@@ -328,7 +329,7 @@ def all_python_versions():
 def get_windows_python_versions():
     out = subprocess.check_output("py -0p", shell=True)
     versions = []
-    for line in c.out.splitlines():
+    for line in out.splitlines():
         line = line.strip()
         if line and not "Installed Pythons found" in line:
             version, path = line.split("\t")

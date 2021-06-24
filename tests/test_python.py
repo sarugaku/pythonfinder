@@ -18,11 +18,6 @@ from .testutils import (
     print_python_versions,
 )
 
-if sys.version_info[:2] < (3, 5):
-    from pathlib2 import Path
-else:
-    from pathlib import Path
-
 
 def test_python_versions(monkeypatch, special_character_python):
     def mock_version(*args, **kwargs):
@@ -132,8 +127,7 @@ def test_shims_are_kept(monkeypatch, no_pyenv_root_envvar, setup_pythons, no_vir
             )  # "\n".join(f.system_path.path_order)
         else:
             assert (
-                os.path.join(normalize_path("~/.pyenv/shims"))
-                in f.system_path.path_order
+                os.path.join(normalize_path("~/.pyenv/shims")) in f.system_path.path_order
             ), "\n".join(f.system_path.path_order)
         python_versions = f.find_all_python_versions()
         anaconda = f.find_python_version("anaconda3-5.3.0")
