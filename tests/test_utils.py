@@ -63,12 +63,11 @@ def test_get_version(python, expected):
 @pytest.mark.parse
 @pytest.mark.parametrize("python, expected", version_dicts)
 def test_parse_python_version(python, expected):
-    for key in ["comes_from", "architecture", "executable", "name"]:
+    for key in ["comes_from", "architecture", "executable", "name", "company"]:
         if key in expected:
             del expected[key]
         if key in python:
             del python[key]
-    del expected["company"]
     assert python == expected
 
 

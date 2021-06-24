@@ -18,12 +18,8 @@ from .testutils import (
     print_python_versions,
 )
 
-if sys.version_info[:2] < (3, 5):
-    from pathlib2 import Path
-else:
-    from pathlib import Path
 
-
+@pytest.mark.skipif(sys.version_info < (3,), reason="Must run on Python 3")
 def test_python_versions(monkeypatch, special_character_python):
     def mock_version(*args, **kwargs):
         version_output = "2.7.15+ (default, Jun 28 2018, 13:15:42)\n[GCC 7.2.0]"
@@ -45,7 +41,7 @@ def test_python_versions(monkeypatch, special_character_python):
     with monkeypatch.context() as m:
         m.setattr("subprocess.Popen", mock_version)
         parsed = pythonfinder.models.python.PythonVersion.from_path(
-            special_character_python.strpath
+            special_character_python.as_posix()
         )
         assert isinstance(parsed.version, Version)
 
@@ -132,8 +128,7 @@ def test_shims_are_kept(monkeypatch, no_pyenv_root_envvar, setup_pythons, no_vir
             )  # "\n".join(f.system_path.path_order)
         else:
             assert (
-                os.path.join(normalize_path("~/.pyenv/shims"))
-                in f.system_path.path_order
+                os.path.join(normalize_path("~/.pyenv/shims")) in f.system_path.path_order
             ), "\n".join(f.system_path.path_order)
         python_versions = f.find_all_python_versions()
         anaconda = f.find_python_version("anaconda3-5.3.0")
@@ -214,5 +209,6 @@ def test_shims_are_removed(monkeypatch, no_virtual_env, setup_pythons):
         assert "shims" not in which_anaconda.path.as_posix()
 
 
+@pytest.mark.skip_nt
 def test_windows_pythonfinder(expected_python_versions, all_python_versions):
     assert sorted(expected_python_versions) == sorted(all_python_versions)
