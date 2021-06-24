@@ -266,17 +266,17 @@ def setup_pythons(isolated_envdir, monkeypatch):
 
 
 @pytest.fixture
-def special_character_python(tmpdir):
+def special_character_python(tmp_path: Path):
     finder = pythonfinder.Finder(
         global_search=False, system=True, ignore_unsupported=True, sort_by_path=True
     )
     python = finder.find_python_version()
     python_name = "2+"
-    python_folder = tmpdir.mkdir(python_name)
-    bin_dir = python_folder.mkdir("bin")
-    set_write_bit(bin_dir.strpath)
-    python_path = bin_dir.join("python")
-    os.link(python.path.as_posix(), python_path.strpath)
+    python_folder = tmp_path / python_name / "bin"
+    python_folder.mkdir(parents=True)
+    set_write_bit(str(python_folder))
+    python_path = python_folder / "python"
+    python_path.symlink_to(python.path)
     return python_path
 
 
