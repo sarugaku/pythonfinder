@@ -266,7 +266,7 @@ def setup_pythons(isolated_envdir, monkeypatch):
 
 
 @pytest.fixture
-def special_character_python(tmp_path: Path):
+def special_character_python(tmp_path):
     finder = pythonfinder.Finder(
         global_search=False, system=True, ignore_unsupported=True, sort_by_path=True
     )

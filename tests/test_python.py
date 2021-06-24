@@ -40,7 +40,7 @@ def test_python_versions(monkeypatch, special_character_python):
     with monkeypatch.context() as m:
         m.setattr("subprocess.Popen", mock_version)
         parsed = pythonfinder.models.python.PythonVersion.from_path(
-            special_character_python.strpath
+            special_character_python.as_posix()
         )
         assert isinstance(parsed.version, Version)
 
