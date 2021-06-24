@@ -222,6 +222,7 @@ class SystemPath(object):
                     path=p.absolute(), is_root=True, only_python=self.only_python
                 )
                 for p in path_instances
+                if p.exists()
             }
         )
         new_instance = attr.evolve(
@@ -429,7 +430,7 @@ class SystemPath(object):
         _path = self.paths.get(path)
         if not _path:
             _path = self.paths.get(path.as_posix())
-        if not _path and path.as_posix() in self.path_order:
+        if not _path and path.as_posix() in self.path_order and path.exists():
             _path = PathEntry.create(
                 path=path.absolute(), is_root=True, only_python=self.only_python
             )
@@ -662,13 +663,13 @@ class SystemPath(object):
             paths = [path] + paths
         paths = [p for p in paths if not any(is_in_path(p, shim) for shim in SHIM_PATHS)]
         _path_objects = [ensure_path(p.strip('"')) for p in paths]
-        paths = [p.as_posix() for p in _path_objects]
         path_entries.update(
             {
                 p.as_posix(): PathEntry.create(
                     path=p.absolute(), is_root=True, only_python=only_python
                 )
                 for p in _path_objects
+                if p.exists()
             }
         )
         instance = cls(
