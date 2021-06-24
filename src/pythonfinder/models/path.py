@@ -740,7 +740,10 @@ class PathEntry(BasePath):
                     except (InvalidPythonVersion, ValueError):
                         continue
                 else:
-                    entry = PathEntry.create(path=child, **pass_args)  # type: ignore
+                    try:
+                        entry = PathEntry.create(path=child, **pass_args)  # type: ignore
+                    except (InvalidPythonVersion, ValueError):
+                        continue
                 yield (child.as_posix(), entry)
         return
 
