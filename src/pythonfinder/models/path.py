@@ -480,8 +480,16 @@ class SystemPath(object):
         """
 
         sub_which = operator.methodcaller("which", executable)
-        filtered = (sub_which(self.get_path(k)) for k in self.path_order)
-        return next(iter(f for f in filtered if f is not None), None)
+
+        def filtered():
+            for k in self.path_order:
+                try:
+                    p = self.get_path(k)
+                except ValueError:
+                    continue  # Path not found or generated..
+                yield sub_which(p)
+
+        return next(iter(f for f in filtered() if f is not None), None)
 
     def _filter_paths(self, finder):
         # type: (Callable) -> Iterator
