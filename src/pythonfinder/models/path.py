@@ -227,7 +227,7 @@ class SystemPath(object):
         )
         new_instance = attr.evolve(
             new_instance,
-            path_order=[p.as_posix() for p in path_instances],
+            path_order=[p.as_posix() for p in path_instances if p.exists()],
             paths=path_entries,
         )
         if os.name == "nt" and "windows" not in self.finders:
