@@ -1,1 +1,0 @@
-Ensure the path exists when initializing from the `PATH` env var.

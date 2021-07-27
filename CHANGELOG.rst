@@ -1,3 +1,12 @@
+1.2.8 (2021-07-27)
+==================
+
+Bug Fixes
+---------
+
+- Ensure the path exists when initializing from the `PATH` env var.  `#105 <https://github.com/sarugaku/pythonfinder/issues/105>`_
+
+
 1.2.7 (2021-06-24)
 ==================
 
