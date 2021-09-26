@@ -5,6 +5,7 @@ import logging
 import operator
 import platform
 import sys
+import os
 from collections import defaultdict
 
 import attr
@@ -133,6 +134,8 @@ class PythonFinder(BaseFinder, BasePath):
         # type: (Union[Path, str]) -> Path
         if isinstance(base, six.string_types):
             base = Path(base)
+        if os.name == "nt":
+            return base
         return base / "bin"
 
     @classmethod
