@@ -3,9 +3,9 @@ from __future__ import absolute_import, print_function
 
 import logging
 import operator
+import os
 import platform
 import sys
-import os
 from collections import defaultdict
 
 import attr
