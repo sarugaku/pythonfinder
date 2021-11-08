@@ -35,12 +35,10 @@ jobs:
 
       - name: Install latest tools for build
         run: |
-          python -m pip install --upgrade pip setuptools wheel pipenv invoke
-          python -m pipenv install --dev --pre
-          python -m pipenv run pip install invoke
+          python -m pip install invoke -e .[dev]
       - name: Build wheels
         run: |
-          python -m pipenv run inv build
+          inv build
       - name: Upload to PyPI via Twine
         # to upload to test pypi, pass --repository-url https://test.pypi.org/legacy/ and use secrets.TEST_PYPI_TOKEN
         run: |
@@ -50,7 +48,7 @@ jobs:
         run: |
           git config --local user.name 'Github Action'
           git config --local user.email action@github.com
-          python -m pipenv run inv bump-version -t dev
+          inv bump-version -t dev
           git commit -am "pre-bump"
 
       - name: Push changes
