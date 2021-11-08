@@ -190,19 +190,17 @@ def build_python_versions(path, link_to=None):
         bin_dir.mkdir(parents=True)
         set_write_bit(bin_dir.as_posix())
         executable_names = [
-            python_name,
             "python",
             "python{0}".format(python_version[0]),
             "python{0}".format(python_version[:3]),
         ]
         for executable in executable_names:
             exe_file = bin_dir.joinpath(executable)
-            os.link(sys.executable, str(exe_file))
-            os.chmod(exe_file.as_posix(), stat.S_IEXEC)
-        all_versions[python_name] = bin_dir / executable_names[3]
+            shutil.copy2(sys.executable, str(exe_file))
+        all_versions[python_name] = bin_dir / executable_names[-1]
         if link_to:
             target = link_to.joinpath(python_name)
-            other_target = link_to.joinpath(executable_names[3])
+            other_target = link_to.joinpath(executable_names[-1])
             if os.name == "nt":
                 os.link(exe_file.as_posix(), target.as_posix())
                 os.link(exe_file.as_posix(), other_target.as_posix())

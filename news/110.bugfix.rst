@@ -1,0 +1,1 @@
+Fix a bug that the version matcher ignores the version when patch number is 0.
