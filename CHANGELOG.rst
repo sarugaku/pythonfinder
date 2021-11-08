@@ -1,3 +1,12 @@
+1.2.9 (2021-11-08)
+==================
+
+Bug Fixes
+---------
+
+- Fix a bug that the version matcher ignores the version when patch number is 0.  `#110 <https://github.com/sarugaku/pythonfinder/issues/110>`_
+
+
 1.2.8 (2021-07-27)
 ==================
 
@@ -58,15 +67,15 @@ Features & Improvements
 -----------------------
 
 - Non-core versions of python will no longer sort ahead of core python versions.  `#75 <https://github.com/sarugaku/pythonfinder/issues/75>`_
-    
+
 - Reduced dependencies by removing ``vistir``,, ``crayons`` and intermediate calls.  `#78 <https://github.com/sarugaku/pythonfinder/issues/78>`_
-    
+
 
 Bug Fixes
 ---------
 
 - Fixed a bug which could cause python searches to fail when ``pyenv global`` was set with repeated identical versions.  `#71 <https://github.com/sarugaku/pythonfinder/issues/71>`_
-    
+
 - ``pythonfinder`` will now avoid accidentally pathing into ``pythonw.exe`` on windows and using it as a python version.  `#73 <https://github.com/sarugaku/pythonfinder/issues/73>`_
 
 
@@ -86,19 +95,19 @@ Features & Improvements
 -----------------------
 
 - Dramatically improved performance and stability.  `#51 <https://github.com/sarugaku/pythonfinder/issues/51>`_
-    
+
 - Added typehints and refactored mixins, updated shims to only attempt to remove themselves if they detect their respectve installations (fixes Hynek's issue).  `#52 <https://github.com/sarugaku/pythonfinder/issues/52>`_
-    
+
 
 Bug Fixes
 ---------
 
 - Add resilient parsing to look only for ``major.minor(.patch)?`` as a fallback parser and allow more graceful continuation if a path is not a real path to python.  `#40 <https://github.com/sarugaku/pythonfinder/issues/40>`_
-    
+
 - Added typehints and refactored mixins, updated shims to only attempt to remove themselves if they detect their respectve installations (fixes Hynek's issue).  `#52 <https://github.com/sarugaku/pythonfinder/issues/52>`_
-    
+
 - Fixed a bug which prevented parsing of numeric versions as inputs to pythonfinder.  `#59 <https://github.com/sarugaku/pythonfinder/issues/59>`_
-    
+
 - Windows path discovery now works correctly and does not attempt to assign cached properties.  `#61 <https://github.com/sarugaku/pythonfinder/issues/61>`_
 
 
@@ -109,9 +118,9 @@ Bug Fixes
 ---------
 
 - Fix a bug where version in version order file may not in global version paths  `#37 <https://github.com/sarugaku/pythonfinder/issues/37>`_
-    
+
 - Added further resilient version parser functionality to python version parser.  `#44 <https://github.com/sarugaku/pythonfinder/issues/44>`_
-    
+
 - Fixed an issue which prevented parsing single digit python versions as valid.  `#47 <https://github.com/sarugaku/pythonfinder/issues/47>`_
 
 
@@ -121,7 +130,7 @@ Bug Fixes
 Features & Improvements
 -----------------------
 
-- Added performance enhancements and error handling to python search algorithms.    
+- Added performance enhancements and error handling to python search algorithms.
 - Added support for ``asdf`` installations via the ``ASDF_DATA_DIR`` environment variable.  `#35 <https://github.com/sarugaku/pythonfinder/issues/35>`_
 
 
@@ -132,9 +141,9 @@ Bug Fixes
 ---------
 
 - Fix a bug where pyenv cannot be found when PYENV_ROOT is not set  `#29 <https://github.com/sarugaku/pythonfinder/issues/29>`_
-  
+
 - Fix a bug where pyenv python location is not properly got by sysconfig._get_default_scheme  `#31 <https://github.com/sarugaku/pythonfinder/issues/31>`_
-  
+
 - Fix finding pyenv's python versions issue when pyenv root version is not present  `#33 <https://github.com/sarugaku/pythonfinder/issues/33>`_
 
 
@@ -145,13 +154,13 @@ Features & Improvements
 -----------------------
 
 - Pyenv paths will now be ordered respecting global version settings and pyenv shims will be removed from the search path.  `#27 <https://github.com/sarugaku/pythonfinder/issues/27>`_
-  
+
 
 Bug Fixes
 ---------
 
 - Fixed an issue with unnesting paths when finding python versions.  `#24 <https://github.com/sarugaku/pythonfinder/issues/24>`_
-  
+
 - Fixed a bug with searching windows registry entries which sometimes caused errors for uninstalled python instances.  `#26 <https://github.com/sarugaku/pythonfinder/issues/26>`_
 
 
@@ -186,11 +195,11 @@ Features & Improvements
 -----------------------
 
 - Introduced lookup by name when searching for python versions, which allows searching for non-standard python releases such as ``anaconda3-5.3.0``.  `#20 <https://github.com/sarugaku/pythonfinder/issues/20>`_
-  
+
 - General improvements:
     - Improved ``pyenv`` support and architecture lookup support.
     - Improved overall performance and caching.  `#21 <https://github.com/sarugaku/pythonfinder/issues/21>`_
-  
+
 
 Bug Fixes
 ---------
@@ -205,13 +214,13 @@ Features & Improvements
 -----------------------
 
 - Added support for non-CPython interpreters.  `#16 <https://github.com/sarugaku/pythonfinder/issues/16>`_
-  
+
 
 Bug Fixes
 ---------
 
 - Added support for ignoring unsupported python versions during version search with the flag ``--ignore-unsupported``.  `#14 <https://github.com/sarugaku/pythonfinder/issues/14>`_
-  
+
 - Added support for pyenv virtualenvs.  `#15 <https://github.com/sarugaku/pythonfinder/issues/15>`_
 
 
@@ -258,21 +267,21 @@ Features & Improvements
 -----------------------
 
 - Add support for explicitly searching the global pythonpath using the ``global_search`` argument at initialization.  `#4 <https://github.com/sarugaku/pythonfinder/issues/4>`_
-  
+
 - Allow bare calls to ``find_all_python_versions()`` to return all python versions without specifying a major version.  `#5 <https://github.com/sarugaku/pythonfinder/issues/5>`_
-  
+
 - Added efficient crawling and caching when searching for python and other executables.
 
   - Carry architecture support all the way through the search stack to only return available python which matches the desired architecture.
   - Improve sub-path consolidations for searching for executables and pythons.
   - Use lazy loading of python versions to avoid unnecessary subprocess calls.  `#8 <https://github.com/sarugaku/pythonfinder/issues/8>`_
-  
+
 
 Bug Fixes
 ---------
 
 - Fixed a bug which caused version checks on older python versions to fail due to encoding issues.  `#3 <https://github.com/sarugaku/pythonfinder/issues/3>`_
-  
+
 - Prevent use of ``VIRTUAL_ENV`` as a search location when ``global_search`` is ``False``.  `#4 <https://github.com/sarugaku/pythonfinder/issues/4>`_
-  
+
 - Fixed an issue which sometimes caused pythonfinder to prefer prerelease versions.  `#7 <https://github.com/sarugaku/pythonfinder/issues/7>`_
