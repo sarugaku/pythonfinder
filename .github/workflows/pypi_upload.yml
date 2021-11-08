@@ -42,7 +42,7 @@ jobs:
       - name: Upload to PyPI via Twine
         # to upload to test pypi, pass --repository-url https://test.pypi.org/legacy/ and use secrets.TEST_PYPI_TOKEN
         run: |
-          python -m pipenv run twine upload --verbose -u '__token__' -p '${{ secrets.PYPI_TOKEN }}' dist/*
+          twine upload --verbose -u '__token__' -p '${{ secrets.PYPI_TOKEN }}' dist/*
 
       - name: Pre-bump
         run: |
