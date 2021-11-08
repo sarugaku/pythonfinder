@@ -454,9 +454,9 @@ class PythonVersion(object):
             if arch.isdigit():
                 arch = "{0}bit".format(arch)
         if (
-            (major is None or self.major and self.major == major)
-            and (minor is None or self.minor and self.minor == minor)
-            and (patch is None or self.patch and self.patch == patch)
+            (major is None or self.major == major)
+            and (minor is None or self.minor == minor)
+            and (patch is None or self.patch == patch)
             and (pre is None or self.is_prerelease == pre)
             and (dev is None or self.is_devrelease == dev)
             and (arch is None or own_arch == arch)
