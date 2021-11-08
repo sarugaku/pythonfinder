@@ -196,14 +196,7 @@ def build_python_versions(path, link_to=None):
         ]
         for executable in executable_names:
             exe_file = bin_dir.joinpath(executable)
-            os.link(sys.executable, str(exe_file))
-            print(
-                exe_file,
-                bin_dir.exists(),
-                exe_file.exists(),
-                os.path.exists(sys.executable),
-            )
-            os.chmod(exe_file.as_posix(), stat.S_IEXEC)
+            shutil.copy2(sys.executable, str(exe_file))
         all_versions[python_name] = bin_dir / executable_names[-1]
         if link_to:
             target = link_to.joinpath(python_name)
