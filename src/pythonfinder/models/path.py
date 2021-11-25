@@ -4,6 +4,7 @@ from __future__ import absolute_import, print_function
 import operator
 import os
 import sys
+import errno
 from collections import defaultdict
 from itertools import chain
 
@@ -65,7 +66,7 @@ def exists_and_is_accessible(path: Path) -> bool:
     try:
         return path.exists()
     except PermissionError as pe:
-        if pe.errno == 13: # Permission denied
+        if pe.errno == errno.EACCES: # Permission denied
             return False
         else:
             raise
