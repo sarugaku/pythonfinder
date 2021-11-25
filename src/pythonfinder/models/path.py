@@ -64,8 +64,11 @@ if MYPY_RUNNING:
 def exists_and_is_accessible(path: Path) -> bool:
     try:
         return path.exists()
-    except PermissionError:
-        return False
+    except PermissionError as pe:
+        if pe.errno == 13: # Permission denied
+            return False
+        else:
+            raise
 
 @attr.s
 class SystemPath(object):
