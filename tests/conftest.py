@@ -1,17 +1,11 @@
 # -*- coding=utf-8 -*-
 from __future__ import absolute_import, print_function
 
-import atexit
 import os
-import random
 import shutil
-import stat
 import subprocess
 import sys
-import tempfile
-import warnings
 from collections import namedtuple
-from contextlib import contextmanager
 
 import click
 import click.testing

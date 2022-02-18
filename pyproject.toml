@@ -20,6 +20,12 @@ exclude = '''
 )
 '''
 
+[tool.isort]
+profile = "black"
+atomic = true
+filter_files = true
+known_first_party = ["pythonfinder"]
+
 [tool.towncrier]
 package = "pythonfinder"
 package_dir = "src"

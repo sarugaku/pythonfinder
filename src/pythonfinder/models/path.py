@@ -3,6 +3,7 @@ from __future__ import absolute_import, print_function
 
 import operator
 import os
+import stat
 import sys
 from collections import defaultdict
 from itertools import chain
@@ -10,8 +11,8 @@ from itertools import chain
 import attr
 import six
 from cached_property import cached_property
-from ..compat import Path, fs_str
 
+from ..compat import Path, fs_str
 from ..environment import (
     ASDF_DATA_DIR,
     ASDF_INSTALLED,
@@ -41,19 +42,20 @@ from .mixins import BaseFinder, BasePath
 
 if MYPY_RUNNING:
     from typing import (
-        Optional,
-        Dict,
+        Any,
+        Callable,
         DefaultDict,
+        Dict,
+        Generator,
         Iterator,
         List,
-        Union,
+        Optional,
         Tuple,
-        Generator,
-        Callable,
         Type,
-        Any,
         TypeVar,
+        Union,
     )
+
     from .python import PythonFinder, PythonVersion
     from .windows import WindowsFinder
 
@@ -168,7 +170,7 @@ class SystemPath(object):
         for child in self.paths.values():
             if child.pythons:
                 python_executables.update(dict(child.pythons))
-        for finder_name, finder in self.__finders.items():
+        for _, finder in self.__finders.items():
             if finder.pythons:
                 python_executables.update(dict(finder.pythons))
         self._python_executables = python_executables
@@ -188,7 +190,7 @@ class SystemPath(object):
                     continue
                 if entry not in self._version_dict[version] and entry.is_python:
                     self._version_dict[version].append(entry)
-        for p, entry in self.python_executables.items():
+        for _, entry in self.python_executables.items():
             version = entry.as_python  # type: PythonVersion
             if not version:
                 continue
@@ -705,12 +707,14 @@ class PathEntry(BasePath):
         return self.path.as_posix() >= other.path.as_posix()
 
     def __del__(self):
-        if getattr(self, "_children"):
+        if hasattr(self, "_children"):
             del self._children
         BasePath.__del__(self)
 
     def _filter_children(self):
         # type: () -> Iterator[Path]
+        if not os.access(self.path, os.R_OK):
+            return iter([])
         if self.only_python:
             children = filter_pythons(self.path)
         else:

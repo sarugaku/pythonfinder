@@ -210,5 +210,5 @@ def test_shims_are_removed(monkeypatch, no_virtual_env, setup_pythons):
 
 
 @pytest.mark.skip_nt
-def test_windows_pythonfinder(expected_python_versions, all_python_versions):
+def test_pythonfinder(expected_python_versions, all_python_versions):
     assert sorted(expected_python_versions) == sorted(all_python_versions)
