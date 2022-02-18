@@ -713,7 +713,7 @@ class PathEntry(BasePath):
 
     def _filter_children(self):
         # type: () -> Iterator[Path]
-        if not os.access(self.path, os.R_OK):
+        if not os.access(str(self.path), os.R_OK):
             return iter([])
         if self.only_python:
             children = filter_pythons(self.path)
