@@ -62,7 +62,7 @@ if MYPY_RUNNING:
     ChildType = Union[PythonFinder, "PathEntry"]
     PathType = Union[PythonFinder, "PathEntry"]
 
-def exists_and_is_accessible(path: Path) -> bool:
+def exists_and_is_accessible(path):
     try:
         return path.exists()
     except PermissionError as pe:
