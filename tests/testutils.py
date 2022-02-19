@@ -14,7 +14,6 @@ from contextlib import contextmanager
 import click
 import six
 
-
 if sys.version_info[:2] < (3, 5):
     from pathlib2 import Path
 else:
@@ -137,9 +136,7 @@ def is_in_path(path, parent):
 
 
 def normalized_match(path, parent):
-    return is_in_path(
-        normalize_path(path), normalize_path(parent)
-    )
+    return is_in_path(normalize_path(path), normalize_path(parent))
 
 
 def is_in_ospath(path):
