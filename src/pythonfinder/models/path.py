@@ -5,6 +5,7 @@ import operator
 import os
 import stat
 import sys
+import errno
 from collections import defaultdict
 from itertools import chain
 
@@ -63,6 +64,14 @@ if MYPY_RUNNING:
     ChildType = Union[PythonFinder, "PathEntry"]
     PathType = Union[PythonFinder, "PathEntry"]
 
+def exists_and_is_accessible(path):
+    try:
+        return path.exists()
+    except PermissionError as pe:
+        if pe.errno == errno.EACCES: # Permission denied
+            return False
+        else:
+            raise
 
 @attr.s
 class SystemPath(object):
@@ -224,7 +233,7 @@ class SystemPath(object):
                     path=p.absolute(), is_root=True, only_python=self.only_python
                 )
                 for p in path_instances
-                if p.exists()
+                if exists_and_is_accessible(p)
             }
         )
         new_instance = attr.evolve(
@@ -671,7 +680,7 @@ class SystemPath(object):
                     path=p.absolute(), is_root=True, only_python=only_python
                 )
                 for p in _path_objects
-                if p.exists()
+                if exists_and_is_accessible(p)
             }
         )
         instance = cls(
