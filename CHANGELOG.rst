@@ -1,3 +1,12 @@
+1.2.10 (2022-02-19)
+Bug Fixes
+---------
+
+- Check the permission as well as the existence of path when finding Pythons.  `#111 <https://github.com/sarugaku/pythonfinder/issues/111>`_
+    
+- Fix an error of pythonfinder when `PATH` contains unreadable paths.  `#118 <https://github.com/sarugaku/pythonfinder/issues/118>`_
+
+
 1.2.9 (2021-11-08)
 ==================
 

@@ -1,1 +1,0 @@
-Fix an error of pythonfinder when `PATH` contains unreadable paths.

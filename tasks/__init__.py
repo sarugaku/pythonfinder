@@ -212,11 +212,10 @@ def release(ctx, version=None, type_="patch", yes=False, dry_run=False):
         version = bump_version(ctx, type_, log=not dry_run, dry_run=dry_run)
     else:
         _write_version(version)
-    tag_content = get_changelog(ctx)
     current_branch = _get_branch(ctx)
     generate_news(ctx, yes=yes, dry_run=dry_run)
     git_commit_cmd = f'git commit -am "Release {version}"'
-    git_tag_cmd = f'git tag -a {version} -m "Version {version}\n\n{tag_content}"'
+    git_tag_cmd = f'git tag -a {version} -m "Version {version}"'
     git_push_cmd = f"git push origin {current_branch}"
     git_push_tags_cmd = "git push --tags"
     if dry_run:
