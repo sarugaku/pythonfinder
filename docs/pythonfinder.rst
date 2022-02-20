@@ -11,7 +11,7 @@ Subpackages
 
 .. toctree::
 
-    pythonfinder.models
+    pythonfinder.providers
 
 Submodules
 ----------
@@ -19,8 +19,5 @@ Submodules
 .. toctree::
 
    pythonfinder.cli
-   pythonfinder.environment
-   pythonfinder.exceptions
-   pythonfinder.pythonfinder
+   pythonfinder.python
    pythonfinder.utils
-

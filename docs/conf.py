@@ -45,7 +45,7 @@ def find_version(*file_paths):
 
 
 release = find_version("src", "pythonfinder", "__init__.py")
-version = ".".join(release.split(".")[:2])
+version = release
 
 # This is for debugging in case the version is wrong
 print(version)
