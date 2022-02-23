@@ -6,6 +6,7 @@ import itertools
 import os
 import re
 import subprocess
+import sys
 from collections import OrderedDict
 from fnmatch import fnmatch
 from threading import Timer
@@ -106,8 +107,8 @@ def get_python_version(path):
         "stderr": subprocess.PIPE,
         "shell": False,
     }
+    print("Running: {0}".format(" ".join(version_cmd)), file=sys.stderr)
     c = subprocess.Popen(version_cmd, **subprocess_kwargs)
-    timer = Timer(SUBPROCESS_TIMEOUT, c.kill)
     try:
         out, _ = c.communicate()
     except (SystemExit, KeyboardInterrupt, TimeoutError):
