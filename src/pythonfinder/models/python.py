@@ -69,7 +69,7 @@ class PythonFinder(BaseFinder, BasePath):
     ignore_unsupported = attr.ib(default=True, type=bool)
     #: Glob path for python versions off of the root directory
     version_glob_path = attr.ib(default="versions/*", type=str)
-    #: The function to use to sort version order when returning an ordered verion set
+    #: The function to use to sort version order when returning an ordered version set
     sort_function = attr.ib(default=None)  # type: Callable
     #: The root locations used for discovery
     roots = attr.ib(default=attr.Factory(defaultdict), type=defaultdict)
@@ -525,7 +525,7 @@ class PythonVersion(object):
         Raises:
             ValueError -- Unable to parse version string
             ValueError -- Not a valid python version
-            TypeError -- NoneType or unparseable type passed in
+            TypeError -- NoneType or unparsable type passed in
 
         :param str version: A valid version string
         :return: A dictionary with metadata about the specified python version.
