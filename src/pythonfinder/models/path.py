@@ -1,11 +1,11 @@
 # -*- coding=utf-8 -*-
 from __future__ import absolute_import, print_function
 
+import errno
 import operator
 import os
 import stat
 import sys
-import errno
 from collections import defaultdict
 from itertools import chain
 
@@ -64,14 +64,16 @@ if MYPY_RUNNING:
     ChildType = Union[PythonFinder, "PathEntry"]
     PathType = Union[PythonFinder, "PathEntry"]
 
+
 def exists_and_is_accessible(path):
     try:
         return path.exists()
     except PermissionError as pe:
-        if pe.errno == errno.EACCES: # Permission denied
+        if pe.errno == errno.EACCES:  # Permission denied
             return False
         else:
             raise
+
 
 @attr.s
 class SystemPath(object):
@@ -238,7 +240,9 @@ class SystemPath(object):
         )
         new_instance = attr.evolve(
             new_instance,
-            path_order=[p.as_posix() for p in path_instances if p.exists()],
+            path_order=[
+                p.as_posix() for p in path_instances if exists_and_is_accessible(p)
+            ],
             paths=path_entries,
         )
         if os.name == "nt" and "windows" not in self.finders:
