@@ -31,7 +31,7 @@
 0.0.5
  - path cleanup for output
  - fix windows major version tracking
- - track achitectures
+ - track architectures
 0.0.4
  - Windows fixes
  - pep514 patch to fix environment.findall
