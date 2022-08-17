@@ -6,7 +6,6 @@ import operator
 import os
 
 import six
-from click import secho
 
 from . import environment
 from .compat import lru_cache
