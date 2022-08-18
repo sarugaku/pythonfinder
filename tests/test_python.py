@@ -2,11 +2,11 @@
 from __future__ import absolute_import, print_function
 
 import functools
+import importlib
 import os
 import sys
 
 import pytest
-import six
 from packaging.version import Version
 
 import pythonfinder
@@ -155,8 +155,8 @@ def test_shims_are_removed(monkeypatch, no_virtual_env, setup_pythons):
     with monkeypatch.context() as m:
         pyenv_dir = pythonfinder.utils.normalize_path("~/.pyenv")
         asdf_dir = pythonfinder.utils.normalize_path("~/.asdf")
-        six.moves.reload_module(pythonfinder.environment)
-        six.moves.reload_module(pythonfinder.models.path)
+        importlib.reload(pythonfinder.environment)
+        importlib.reload(pythonfinder.models.path)
         m.setattr(
             pythonfinder.environment,
             "SHIM_PATHS",

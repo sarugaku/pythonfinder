@@ -9,10 +9,7 @@ import pytest
 import pythonfinder.utils
 from pythonfinder import Finder
 
-if sys.version_info[:2] < (3, 5):
-    from pathlib2 import Path
-else:
-    from pathlib import Path
+from pathlib import Path
 
 os.environ["ANSI_COLORS_DISABLED"] = "1"
 

@@ -12,12 +12,8 @@ import warnings
 from contextlib import contextmanager
 
 import click
-import six
 
-if sys.version_info[:2] < (3, 5):
-    from pathlib2 import Path
-else:
-    from pathlib import Path
+from pathlib import Path
 
 
 TRACKED_TEMPORARY_DIRECTORIES = []
@@ -64,8 +60,7 @@ def create_tracked_tempdir(*args, **kwargs):
     tempdir = tempfile.mkdtemp(*args, **kwargs)
     TRACKED_TEMPORARY_DIRECTORIES.append(tempdir)
     atexit.register(shutil.rmtree, tempdir)
-    if six.PY3:
-        warnings.simplefilter("ignore", ResourceWarning)
+    warnings.simplefilter("ignore", ResourceWarning)
     return tempdir
 
 
@@ -114,7 +109,7 @@ def normalize_path(path):
             BUFSIZE = 500
             buffer = create_unicode_buffer(BUFSIZE)
             get_long_path_name = windll.kernel32.GetLongPathNameW
-            get_long_path_name(six.ensure_text(path), buffer, BUFSIZE)
+            get_long_path_name(path.decode(), buffer, BUFSIZE)
             path = buffer.value
         return path
 
