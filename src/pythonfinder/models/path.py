@@ -1,5 +1,4 @@
 # -*- coding=utf-8 -*-
-from __future__ import absolute_import, print_function
 
 import errno
 import operator
@@ -10,7 +9,6 @@ from collections import defaultdict
 from itertools import chain
 
 import attr
-import six
 from cached_property import cached_property
 
 from ..compat import Path, fs_str
@@ -740,9 +738,9 @@ class PathEntry(BasePath):
         pass_name = self.name != self.path.name
         pass_args = {"is_root": False, "only_python": self.only_python}
         if pass_name:
-            if self.name is not None and isinstance(self.name, six.string_types):
+            if self.name is not None and isinstance(self.name, str):
                 pass_args["name"] = self.name  # type: ignore
-            elif self.path is not None and isinstance(self.path.name, six.string_types):
+            elif self.path is not None and isinstance(self.path.name, str):
                 pass_args["name"] = self.path.name  # type: ignore
 
         if not self.is_dir:

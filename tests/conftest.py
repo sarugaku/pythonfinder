@@ -1,6 +1,7 @@
 # -*- coding=utf-8 -*-
 from __future__ import absolute_import, print_function
 
+import importlib
 import os
 import shutil
 import subprocess
@@ -10,7 +11,6 @@ from collections import namedtuple
 import click
 import click.testing
 import pytest
-import six
 
 import pythonfinder
 
@@ -96,8 +96,8 @@ def no_pyenv_root_envvar(monkeypatch):
             m.delenv("PYENV_ROOT")
         if "ASDF_DATA_DIR" in os.environ:
             m.delenv("ASDF_DATA_DIR")
-        six.moves.reload_module(pythonfinder.environment)
-        six.moves.reload_module(pythonfinder.models.path)
+        importlib.reload(pythonfinder.environment)
+        importlib.reload(pythonfinder.models.path)
         m.setattr(pythonfinder.environment, "PYENV_INSTALLED", False)
         m.setattr(pythonfinder.environment, "ASDF_INSTALLED", False)
         m.setattr(pythonfinder.environment, "PYENV_ROOT", normalize_path("~/.pyenv"))

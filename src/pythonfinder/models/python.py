@@ -1,5 +1,4 @@
 # -*- coding=utf-8 -*-
-from __future__ import absolute_import, print_function
 
 import logging
 import operator
@@ -9,7 +8,6 @@ import sys
 from collections import defaultdict
 
 import attr
-import six
 from packaging.version import Version
 
 from ..compat import Path, lru_cache
@@ -62,7 +60,7 @@ logger = logging.getLogger(__name__)
 
 
 @attr.s(slots=True)
-class PythonFinder(BaseFinder, BasePath):
+class PythonFinder(BasePath, BaseFinder):
     root = attr.ib(default=None, validator=optional_instance_of(Path), type=Path)
     # should come before versions, because its value is used in versions's default initializer.
     #: Whether to ignore any paths which raise exceptions and are not actually python
@@ -133,7 +131,7 @@ class PythonFinder(BaseFinder, BasePath):
 
     def get_bin_dir(self, base):
         # type: (Union[Path, str]) -> Path
-        if isinstance(base, six.string_types):
+        if isinstance(base, str):
             base = Path(base)
         if os.name == "nt":
             return base
@@ -374,7 +372,7 @@ class PythonVersion(object):
             elif self.comes_from:
                 executable = self.comes_from.path.as_posix()
             if executable is not None:
-                if not isinstance(executable, six.string_types):
+                if not isinstance(executable, str):
                     executable = executable.as_posix()
                 instance_dict = self.parse_executable(executable)
                 for k in instance_dict.keys():
@@ -614,7 +612,7 @@ class PythonVersion(object):
         result_version = None  # type: Optional[str]
         if path is None:
             raise TypeError("Must pass a valid path to parse.")
-        if not isinstance(path, six.string_types):
+        if not isinstance(path, str):
             path = path.as_posix()
         # if not looks_like_python(path):
         #     raise ValueError("Path %r does not look like a valid python path" % path)
