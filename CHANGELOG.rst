@@ -1,4 +1,18 @@
+1.3.0 (2022-24-08)
+==================
+Bug fixes
+---------
+- Fix permissions on WSL
+- Include tests and tests data into the sdist Close #116
+
+Updates
+-------
+- Make click optional dependency
+- Remove six
+- Drop Python2 Support
+
 1.2.10 (2022-02-19)
+===================
 Bug Fixes
 ---------
 
