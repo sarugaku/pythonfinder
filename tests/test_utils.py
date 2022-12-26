@@ -3,13 +3,12 @@
 import os
 import sys
 from collections import namedtuple
+from pathlib import Path
 
 import pytest
 
 import pythonfinder.utils
 from pythonfinder import Finder
-
-from pathlib import Path
 
 os.environ["ANSI_COLORS_DISABLED"] = "1"
 

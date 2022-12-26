@@ -5,17 +5,16 @@ import os
 import re
 import subprocess
 from collections import OrderedDict
+from collections.abc import Iterable, Sequence
 from fnmatch import fnmatch
 from threading import Timer
 
 import attr
-from packaging.version import Version, InvalidVersion
+from packaging.version import InvalidVersion, Version
 
 from .compat import Path, TimeoutError, lru_cache  # noqa
 from .environment import MYPY_RUNNING, PYENV_ROOT, SUBPROCESS_TIMEOUT
 from .exceptions import InvalidPythonVersion
-
-from collections.abc import Iterable, Sequence
 
 if MYPY_RUNNING:
     from typing import Any, Callable, Dict, Iterator, List, Optional, Set, Tuple, Union
