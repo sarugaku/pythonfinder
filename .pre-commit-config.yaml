@@ -15,6 +15,14 @@ repos:
     hooks:
       - id: python-use-type-annotations
 
+  - repo: https://github.com/asottile/yesqa
+    rev: v1.4.0
+    hooks:
+      - id: yesqa
+        additional_dependencies: &flake8_deps
+          - flake8-bugbear
+          - flake8-type-checking
+
   - repo: https://github.com/pycqa/isort
     rev: 5.12.0
     hooks:
@@ -34,6 +42,4 @@ repos:
     rev: 6.0.0
     hooks:
       - id: flake8
-        additional_dependencies:
-          - flake8-bugbear
-          - flake8-type-checking
+        additional_dependencies: *flake8_deps
