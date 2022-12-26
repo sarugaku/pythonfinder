@@ -23,4 +23,3 @@ Submodules
    pythonfinder.exceptions
    pythonfinder.pythonfinder
    pythonfinder.utils
-
