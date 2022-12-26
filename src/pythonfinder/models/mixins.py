@@ -1,6 +1,3 @@
-# -*- coding=utf-8 -*-
-from __future__ import absolute_import, unicode_literals
-
 import abc
 import operator
 from collections import defaultdict
@@ -41,7 +38,7 @@ if MYPY_RUNNING:
 
 
 @attr.s(slots=True)
-class BasePath(object):
+class BasePath:
     path = attr.ib(default=None)  # type: Path
     _children = attr.ib(
         default=attr.Factory(dict), order=False
@@ -58,7 +55,7 @@ class BasePath(object):
 
     def __str__(self):
         # type: () -> str
-        return fs_str("{0}".format(self.path.as_posix()))
+        return fs_str(f"{self.path.as_posix()}")
 
     def __lt__(self, other):
         # type: ("BasePath") -> bool
@@ -86,8 +83,7 @@ class BasePath(object):
         """
 
         valid_names = [name] + [
-            "{0}.{1}".format(name, ext).lower() if ext else "{0}".format(name).lower()
-            for ext in KNOWN_EXTS
+            f"{name}.{ext}".lower() if ext else f"{name}".lower() for ext in KNOWN_EXTS
         ]
         children = self.children
         found = None
@@ -108,7 +104,7 @@ class BasePath(object):
                 try:
                     delattr(self, key)
                 except Exception:
-                    print("failed deleting key: {0}".format(key))
+                    print(f"failed deleting key: {key}")
         self._children = {}
         for key in list(self._pythons.keys()):
             del self._pythons[key]
@@ -264,8 +260,7 @@ class BasePath(object):
                 if entry is None:
                     continue
                 elif entry.is_dir:
-                    for python in entry._iter_pythons():
-                        yield python
+                    yield from entry._iter_pythons()
                 elif entry.is_python and entry.as_python is not None:
                     yield entry
         elif self.is_python and self.as_python is not None:
@@ -285,8 +280,7 @@ class BasePath(object):
 
     def __iter__(self):
         # type: () -> Iterator
-        for entry in self.children.values():
-            yield entry
+        yield from self.children.values()
 
     def __next__(self):
         # type: () -> Generator
@@ -377,7 +371,7 @@ class BasePath(object):
         return next(iter(r[0] for r in results if r is not None), None)
 
 
-class BaseFinder(object, metaclass=abc.ABCMeta):
+class BaseFinder(metaclass=abc.ABCMeta):
     def __init__(self):
         #: Maps executable paths to PathEntries
         from .path import PathEntry

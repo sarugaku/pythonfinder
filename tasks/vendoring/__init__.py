@@ -1,4 +1,3 @@
-# -*- coding=utf-8 -*-
 # Taken from pip also
 """"Vendoring script, python 3.5 needed"""
 import os
@@ -38,7 +37,7 @@ def remove_all(paths):
 
 
 def log(msg):
-    print("[vendoring.%s] %s" % (TASK_NAME, msg))
+    print(f"[vendoring.{TASK_NAME}] {msg}")
 
 
 def _get_vendor_dir(ctx):
@@ -141,7 +140,7 @@ def download_licenses(ctx, vendor_dir=None):
         _, _, name = url.rpartition("/")
         library_dir = vendor_dir / license_name
         r = requests.get(url, allow_redirects=True)
-        log("Downloading {}".format(url))
+        log(f"Downloading {url}")
         r.raise_for_status()
         if library_dir.exists():
             dest = library_dir / name

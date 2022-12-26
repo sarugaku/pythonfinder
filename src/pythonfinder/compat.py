@@ -1,4 +1,3 @@
-# -*- coding=utf-8 -*-
 import sys
 from builtins import TimeoutError
 from functools import lru_cache

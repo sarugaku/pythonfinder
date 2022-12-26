@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Configuration file for the Sphinx documentation builder.
 #
@@ -26,7 +25,7 @@ import re
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
-root = os.path.dirname(os.path.dirname(os.path.abspath((__file__))))
+root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def read(*parts):

@@ -1,4 +1,3 @@
-# -*- coding=utf-8 -*-
 import io
 import itertools
 import os
@@ -56,8 +55,8 @@ PY_MATCH_STR = (
         "|".join(PYTHON_IMPLEMENTATIONS)
     )
 )
-EXE_MATCH_STR = r"{0}(?:\.(?P<ext>{1}))?".format(PY_MATCH_STR, "|".join(KNOWN_EXTS))
-RE_MATCHER = re.compile(r"({0}|{1})".format(version_re_str, PY_MATCH_STR))
+EXE_MATCH_STR = r"{}(?:\.(?P<ext>{}))?".format(PY_MATCH_STR, "|".join(KNOWN_EXTS))
+RE_MATCHER = re.compile(rf"({version_re_str}|{PY_MATCH_STR})")
 EXE_MATCHER = re.compile(EXE_MATCH_STR)
 RULES_BASE = [
     "*{0}",
@@ -72,9 +71,7 @@ RULES = [rule.format(impl) for impl in PYTHON_IMPLEMENTATIONS for rule in RULES_
 
 MATCH_RULES = []
 for rule in RULES:
-    MATCH_RULES.extend(
-        ["{0}.{1}".format(rule, ext) if ext else "{0}".format(rule) for ext in KNOWN_EXTS]
-    )
+    MATCH_RULES.extend([f"{rule}.{ext}" if ext else f"{rule}" for ext in KNOWN_EXTS])
 
 
 @lru_cache(maxsize=1024)
@@ -142,7 +139,7 @@ def parse_python_version(version_str):
         pre = ""
         if v_dict.get("prerel") and v_dict.get("prerelversion"):
             pre = v_dict.pop("prerel")
-            pre = "{0}{1}".format(pre, v_dict.pop("prerelversion"))
+            pre = "{}{}".format(pre, v_dict.pop("prerelversion"))
         v_dict["pre"] = pre
         keys = ["major", "minor", "patch", "pre", "postdev", "post", "dev"]
         values = [v_dict.get(val) for val in keys]
@@ -330,8 +327,7 @@ def unnest(item):
         for el in target:
             if isinstance(el, Iterable) and not isinstance(el, str):
                 el, el_copy = itertools.tee(el, 2)
-                for sub in unnest(el_copy):
-                    yield sub
+                yield from unnest(el_copy)
             else:
                 yield el
     else:
@@ -342,7 +338,7 @@ def parse_pyenv_version_order(filename="version"):
     # type: (str) -> List[str]
     version_order_file = normalize_path(os.path.join(PYENV_ROOT, filename))
     if os.path.exists(version_order_file) and os.path.isfile(version_order_file):
-        with io.open(version_order_file, encoding="utf-8") as fh:
+        with open(version_order_file, encoding="utf-8") as fh:
             contents = fh.read()
         version_order = [v for v in contents.splitlines()]
         return version_order
@@ -353,7 +349,7 @@ def parse_asdf_version_order(filename=".tool-versions"):
     # type: (str) -> List[str]
     version_order_file = normalize_path(os.path.join("~", filename))
     if os.path.exists(version_order_file) and os.path.isfile(version_order_file):
-        with io.open(version_order_file, encoding="utf-8") as fh:
+        with open(version_order_file, encoding="utf-8") as fh:
             contents = fh.read()
         python_section = next(
             iter(line for line in contents.splitlines() if line.startswith("python")),
@@ -391,7 +387,7 @@ def split_version_and_name(
                 major = major
                 name = None
         else:
-            name = "{0!s}".format(major)
+            name = f"{major!s}"
             major = None
     return (major, minor, patch, name)
 
@@ -419,17 +415,15 @@ def expand_paths(path, only_python=True):
         for p in path:
             if p is None:
                 continue
-            for expanded in itertools.chain.from_iterable(
+            yield from itertools.chain.from_iterable(
                 expand_paths(p, only_python=only_python)
-            ):
-                yield expanded
+            )
     elif path is not None and path.is_dir:
         for p in path.children.values():
             if p is not None and p.is_python and p.as_python is not None:
-                for sub_path in itertools.chain.from_iterable(
+                yield from itertools.chain.from_iterable(
                     expand_paths(p, only_python=only_python)
-                ):
-                    yield sub_path
+                )
     else:
         if path is not None and (
             not only_python or (path.is_python and path.as_python is not None)
