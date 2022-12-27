@@ -2,6 +2,8 @@
 # logger has no handler and warnings like this would be reported:
 #
 # > No handlers could be found for logger "pythonfinder.models.pyenv"
+from __future__ import annotations
+
 import logging
 
 from .exceptions import InvalidPythonVersion

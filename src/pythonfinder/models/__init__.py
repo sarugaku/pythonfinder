@@ -1,8 +1,5 @@
-import abc
-import operator
-from itertools import chain
+from __future__ import annotations
 
-from ..utils import KNOWN_EXTS, unnest
 from .path import SystemPath
 from .python import PythonVersion
 from .windows import WindowsFinder

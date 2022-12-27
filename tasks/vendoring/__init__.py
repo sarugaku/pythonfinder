@@ -1,6 +1,7 @@
 # Taken from pip also
 """"Vendoring script, python 3.5 needed"""
-import os
+from __future__ import annotations
+
 import re
 import shutil
 from pathlib import Path

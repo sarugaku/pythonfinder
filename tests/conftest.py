@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 import importlib
 import os
 import shutil
 import subprocess
 import sys
 from collections import namedtuple
+from pathlib import Path
 
 import click
 import click.testing
@@ -20,12 +23,6 @@ from .testutils import (
     temp_environ,
     yield_versions,
 )
-
-if sys.version_info[:2] < (3, 5):
-    from pathlib2 import Path
-else:
-    from pathlib import Path
-
 
 pythoninfo = namedtuple("PythonVersion", ["name", "version", "path", "arch"])
 

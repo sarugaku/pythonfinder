@@ -1,36 +1,24 @@
+from __future__ import annotations
+
 import abc
 import operator
 from collections import defaultdict
+from typing import TYPE_CHECKING, Any, DefaultDict, Generator, Iterator, List, TypeVar
 
 import attr
 
 from ..compat import fs_str
-from ..environment import MYPY_RUNNING
 from ..exceptions import InvalidPythonVersion
 from ..utils import (
     KNOWN_EXTS,
-    Sequence,
     expand_paths,
     looks_like_python,
     path_is_known_executable,
 )
 
-if MYPY_RUNNING:
-    from typing import (
-        Any,
-        DefaultDict,
-        Dict,
-        Generator,
-        Iterator,
-        List,
-        Optional,
-        Tuple,
-        Type,
-        TypeVar,
-        Union,
-    )
+if TYPE_CHECKING:
+    from pathlib import Path
 
-    from ..compat import Path  # noqa
     from .path import PathEntry
     from .python import PythonVersion
 
@@ -39,42 +27,34 @@ if MYPY_RUNNING:
 
 @attr.s(slots=True)
 class BasePath:
-    path = attr.ib(default=None)  # type: Path
-    _children = attr.ib(
-        default=attr.Factory(dict), order=False
-    )  # type: Dict[str, PathEntry]
-    only_python = attr.ib(default=False)  # type: bool
+    path: Path = attr.ib(default=None)
+    _children: dict[str, PathEntry] = attr.ib(default=attr.Factory(dict), order=False)
+    only_python: bool = attr.ib(default=False)
     name = attr.ib(type=str)
-    _py_version = attr.ib(default=None, order=False)  # type: Optional[PythonVersion]
-    _pythons = attr.ib(
+    _py_version: PythonVersion | None = attr.ib(default=None, order=False)
+    _pythons: DefaultDict[str, PathEntry] = attr.ib(
         default=attr.Factory(defaultdict), order=False
-    )  # type: DefaultDict[str, PathEntry]
-    _is_dir = attr.ib(default=None, order=False)  # type: Optional[bool]
-    _is_executable = attr.ib(default=None, order=False)  # type: Optional[bool]
-    _is_python = attr.ib(default=None, order=False)  # type: Optional[bool]
+    )
+    _is_dir: bool | None = attr.ib(default=None, order=False)
+    _is_executable: bool | None = attr.ib(default=None, order=False)
+    _is_python: bool | None = attr.ib(default=None, order=False)
 
-    def __str__(self):
-        # type: () -> str
+    def __str__(self) -> str:
         return fs_str(f"{self.path.as_posix()}")
 
-    def __lt__(self, other):
-        # type: ("BasePath") -> bool
+    def __lt__(self, other: BasePath) -> bool:
         return self.path.as_posix() < other.path.as_posix()
 
-    def __lte__(self, other):
-        # type: ("BasePath") -> bool
+    def __lte__(self, other: BasePath) -> bool:
         return self.path.as_posix() <= other.path.as_posix()
 
-    def __gt__(self, other):
-        # type: ("BasePath") -> bool
+    def __gt__(self, other: BasePath) -> bool:
         return self.path.as_posix() > other.path.as_posix()
 
-    def __gte__(self, other):
-        # type: ("BasePath") -> bool
+    def __gte__(self, other: BasePath) -> bool:
         return self.path.as_posix() >= other.path.as_posix()
 
-    def which(self, name):
-        # type: (str) -> Optional[PathEntry]
+    def which(self, name: str) -> PathEntry | None:
         """Search in this path for an executable.
 
         :param executable: The name of an executable to search for.
@@ -113,15 +93,13 @@ class BasePath:
         self.path = None
 
     @property
-    def children(self):
-        # type: () -> Dict[str, PathEntry]
+    def children(self) -> dict[str, PathEntry]:
         if not self.is_dir:
             return {}
         return self._children
 
     @property
-    def as_python(self):
-        # type: () -> PythonVersion
+    def as_python(self) -> PythonVersion:
         py_version = None
         if self.py_version:
             return self.py_version
@@ -140,15 +118,13 @@ class BasePath:
         return py_version  # type: ignore
 
     @name.default
-    def get_name(self):
-        # type: () -> Optional[str]
+    def get_name(self) -> str | None:
         if self.path:
             return self.path.name
         return None
 
     @property
-    def is_dir(self):
-        # type: () -> bool
+    def is_dir(self) -> bool:
         if self._is_dir is None:
             if not self.path:
                 ret_val = False
@@ -160,18 +136,15 @@ class BasePath:
         return self._is_dir
 
     @is_dir.setter
-    def is_dir(self, val):
-        # type: (bool) -> None
+    def is_dir(self, val: bool) -> None:
         self._is_dir = val
 
     @is_dir.deleter
-    def is_dir(self):
-        # type: () -> None
+    def is_dir(self) -> None:
         self._is_dir = None
 
     @property
-    def is_executable(self):
-        # type: () -> bool
+    def is_executable(self) -> bool:
         if self._is_executable is None:
             if not self.path:
                 self._is_executable = False
@@ -180,18 +153,15 @@ class BasePath:
         return self._is_executable
 
     @is_executable.setter
-    def is_executable(self, val):
-        # type: (bool) -> None
+    def is_executable(self, val: bool) -> None:
         self._is_executable = val
 
     @is_executable.deleter
-    def is_executable(self):
-        # type: () -> None
+    def is_executable(self) -> None:
         self._is_executable = None
 
     @property
-    def is_python(self):
-        # type: () -> bool
+    def is_python(self) -> bool:
         if self._is_python is None:
             if not self.path:
                 self._is_python = False
@@ -202,17 +172,14 @@ class BasePath:
         return self._is_python
 
     @is_python.setter
-    def is_python(self, val):
-        # type: (bool) -> None
+    def is_python(self, val: bool) -> None:
         self._is_python = val
 
     @is_python.deleter
-    def is_python(self):
-        # type: () -> None
+    def is_python(self) -> None:
         self._is_python = None
 
-    def get_py_version(self):
-        # type: () -> Optional[PythonVersion]
+    def get_py_version(self) -> PythonVersion | None:
         from ..environment import IGNORE_UNSUPPORTED
 
         if self.is_dir:
@@ -234,8 +201,7 @@ class BasePath:
         return None
 
     @property
-    def py_version(self):
-        # type: () -> Optional[PythonVersion]
+    def py_version(self) -> PythonVersion | None:
         if not self._py_version:
             py_version = self.get_py_version()
             self._py_version = py_version
@@ -244,17 +210,14 @@ class BasePath:
         return py_version
 
     @py_version.setter
-    def py_version(self, val):
-        # type: (Optional[PythonVersion]) -> None
+    def py_version(self, val: PythonVersion | None) -> None:
         self._py_version = val
 
     @py_version.deleter
-    def py_version(self):
-        # type: () -> None
+    def py_version(self) -> None:
         self._py_version = None
 
-    def _iter_pythons(self):
-        # type: () -> Iterator
+    def _iter_pythons(self) -> Iterator:
         if self.is_dir:
             for entry in self.children.values():
                 if entry is None:
@@ -267,8 +230,7 @@ class BasePath:
             yield self  # type: ignore
 
     @property
-    def pythons(self):
-        # type: () -> DefaultDict[Union[str, Path], PathEntry]
+    def pythons(self) -> DefaultDict[str | Path, PathEntry]:
         if not self._pythons:
             from .path import PathEntry
 
@@ -278,29 +240,25 @@ class BasePath:
                 self._pythons[python_path] = python
         return self._pythons
 
-    def __iter__(self):
-        # type: () -> Iterator
+    def __iter__(self) -> Iterator:
         yield from self.children.values()
 
-    def __next__(self):
-        # type: () -> Generator
+    def __next__(self) -> Generator:
         return next(iter(self))
 
-    def next(self):
-        # type: () -> Generator
+    def next(self) -> Generator:
         return self.__next__()
 
     def find_all_python_versions(
         self,
-        major=None,  # type: Optional[Union[str, int]]
-        minor=None,  # type: Optional[int]
-        patch=None,  # type: Optional[int]
-        pre=None,  # type: Optional[bool]
-        dev=None,  # type: Optional[bool]
-        arch=None,  # type: Optional[str]
-        name=None,  # type: Optional[str]
-    ):
-        # type: (...) -> List[PathEntry]
+        major: str | int | None = None,
+        minor: int | None = None,
+        patch: int | None = None,
+        pre: bool | None = None,
+        dev: bool | None = None,
+        arch: str | None = None,
+        name: str | None = None,
+    ) -> list[PathEntry]:
         """Search for a specific python version on the path. Return all copies
 
         :param major: Major python version to search for.
@@ -329,15 +287,14 @@ class BasePath:
 
     def find_python_version(
         self,
-        major=None,  # type: Optional[Union[str, int]]
-        minor=None,  # type: Optional[int]
-        patch=None,  # type: Optional[int]
-        pre=None,  # type: Optional[bool]
-        dev=None,  # type: Optional[bool]
-        arch=None,  # type: Optional[str]
-        name=None,  # type: Optional[str]
-    ):
-        # type: (...) -> Optional[PathEntry]
+        major: str | int | None = None,
+        minor: int | None = None,
+        patch: int | None = None,
+        pre: bool | None = None,
+        dev: bool | None = None,
+        arch: str | None = None,
+        name: str | None = None,
+    ) -> PathEntry | None:
         """Search or self for the specified Python version and return the first match.
 
         :param major: Major version number.
@@ -376,35 +333,29 @@ class BaseFinder(metaclass=abc.ABCMeta):
         #: Maps executable paths to PathEntries
         from .path import PathEntry
 
-        self._pythons = defaultdict(PathEntry)  # type: DefaultDict[str, PathEntry]
-        self._versions = defaultdict(PathEntry)  # type: Dict[Tuple, PathEntry]
+        self._pythons: DefaultDict[str, PathEntry] = defaultdict(PathEntry)
+        self._versions: dict[tuple, PathEntry] = defaultdict(PathEntry)
 
-    def get_versions(self):
-        # type: () -> DefaultDict[Tuple, PathEntry]
+    def get_versions(self) -> DefaultDict[tuple, PathEntry]:
         """Return the available versions from the finder"""
         raise NotImplementedError
 
     @classmethod
-    def create(cls, *args, **kwargs):
-        # type: (Any, Any) -> BaseFinderType
+    def create(cls, *args: Any, **kwargs: Any) -> BaseFinderType:
         raise NotImplementedError
 
     @property
-    def version_paths(self):
-        # type: () -> Any
+    def version_paths(self) -> Any:
         return self._versions.values()
 
     @property
-    def expanded_paths(self):
-        # type: () -> Any
+    def expanded_paths(self) -> Any:
         return (p.paths.values() for p in self.version_paths)
 
     @property
-    def pythons(self):
-        # type: () -> DefaultDict[str, PathEntry]
+    def pythons(self) -> DefaultDict[str, PathEntry]:
         return self._pythons
 
     @pythons.setter
-    def pythons(self, value):
-        # type: (DefaultDict[str, PathEntry]) -> None
+    def pythons(self, value: DefaultDict[str, PathEntry]) -> None:
         self._pythons = value
