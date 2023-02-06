@@ -1,3 +1,14 @@
+1.3.2 (2023-02-06)
+==================
+
+Bug Fixes
+---------
+
+- Include tests and tests data into the sdist.  `#116 <https://github.com/sarugaku/pythonfinder/issues/116>`_
+    
+- Fix: catch `InvalidVersion` instead of handling `LegacyVersion`  `#127 <https://github.com/sarugaku/pythonfinder/issues/127>`_
+
+
 1.3.0 (2022-24-08)
 ==================
 Bug fixes
