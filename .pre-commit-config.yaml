@@ -1,13 +1,5 @@
 exclude: >
   (?x)^(
-      \.eggs|
-      \.git|
-      \.mypy_cache|
-      \.tox|
-      \.pyre_configuration|
-      \.venv|
-      build|
-      dist|
       src/pythonfinder/_vendor/.*\.py
   )$
 
