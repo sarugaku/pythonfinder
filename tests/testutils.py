@@ -10,11 +10,9 @@ import sys
 import tempfile
 import warnings
 from contextlib import contextmanager
-
-import click
-
 from pathlib import Path
 
+import click
 
 TRACKED_TEMPORARY_DIRECTORIES = []
 

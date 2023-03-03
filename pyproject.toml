@@ -3,20 +3,9 @@ requires = ['setuptools>=40.8.0', 'wheel>=0.33.0']
 
 [tool.black]
 line-length = 90
-include = '\.pyi?$'
-exclude = '''
+extend-exclude = '''
 /(
-    \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.pyre_configuration
-  | \.venv
-  | _build
-  | build
-  | dist
-  | src/pythonfinder/_vendor
+  src/pythonfinder/_vendor
 )
 '''
 

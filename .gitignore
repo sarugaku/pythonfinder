@@ -110,3 +110,4 @@ venv.bak/
 mypyhtml/
 XDG_CACHE_HOME/
 pip-wheel-metadata/
+.pyre_configuration
