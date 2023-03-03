@@ -1,6 +1,3 @@
-# -*- coding=utf-8 -*-
-from __future__ import absolute_import, print_function
-
 import functools
 import importlib
 import os
@@ -24,7 +21,7 @@ def test_python_versions(monkeypatch, special_character_python):
     def mock_version(*args, **kwargs):
         version_output = "2.7.15+ (default, Jun 28 2018, 13:15:42)\n[GCC 7.2.0]"
 
-        class FakeObj(object):
+        class FakeObj:
             def __init__(self, out):
                 self.out = out
 
@@ -37,7 +34,7 @@ def test_python_versions(monkeypatch, special_character_python):
         c = FakeObj(version_output.split()[0])
         return c
 
-    os.environ["PYTHONFINDER_IGNORE_UNSUPPORTED"] = str("1")
+    os.environ["PYTHONFINDER_IGNORE_UNSUPPORTED"] = "1"
     with monkeypatch.context() as m:
         m.setattr("subprocess.Popen", mock_version)
         parsed = pythonfinder.models.python.PythonVersion.from_path(
@@ -74,7 +71,7 @@ def test_python_versions(monkeypatch, special_character_python):
 )
 def test_python_version_output_variants(monkeypatch, path, version_output, version):
     def mock_version(*args, **kwargs):
-        class FakeObj(object):
+        class FakeObj:
             def __init__(self, out):
                 self.out = out
 
@@ -93,7 +90,7 @@ def test_python_version_output_variants(monkeypatch, path, version_output, versi
         return orig_fn(path)
 
     with monkeypatch.context() as m:
-        os.environ["PYTHONFINDER_IGNORE_UNSUPPORTED"] = str("1")
+        os.environ["PYTHONFINDER_IGNORE_UNSUPPORTED"] = "1"
         m.setattr("subprocess.Popen", mock_version)
         orig_run_fn = pythonfinder.utils.get_python_version
         get_pyversion = functools.partial(get_python_version, orig_fn=orig_run_fn)
@@ -106,7 +103,7 @@ def test_python_version_output_variants(monkeypatch, path, version_output, versi
 @pytest.mark.skip_nt
 def test_shims_are_kept(monkeypatch, no_pyenv_root_envvar, setup_pythons, no_virtual_env):
     with monkeypatch.context() as m:
-        os.environ["PATH"] = "{0}:{1}".format(
+        os.environ["PATH"] = "{}:{}".format(
             normalize_path("~/.pyenv/shims"), os.environ["PATH"]
         )
         f = pythonfinder.pythonfinder.Finder(
@@ -140,7 +137,7 @@ def test_shims_are_kept(monkeypatch, no_pyenv_root_envvar, setup_pythons, no_vir
         # for docker, use just 'anaconda'
         for path in f.system_path.path_order:
             print(
-                "path: {0}    Entry: {1}".format(path, f.system_path.get_path(path)),
+                f"path: {path}    Entry: {f.system_path.get_path(path)}",
                 file=sys.stderr,
             )
         which_anaconda = f.which("anaconda3-5.3.0")
@@ -192,11 +189,11 @@ def test_shims_are_removed(monkeypatch, no_virtual_env, setup_pythons):
         if missing_from_finder:
             print_python_versions(python_versions)
             for p in python_version_paths:
-                print("path: {0}".format(p), file=sys.stderr)
+                print(f"path: {p}", file=sys.stderr)
             for p in sorted(python_names):
-                print("python_name: {0}".format(p), file=sys.stderr)
+                print(f"python_name: {p}", file=sys.stderr)
             for p in sorted(list(setup_pythons)):
-                print("setup python key: {0}".format(p), file=sys.stderr)
+                print(f"setup python key: {p}", file=sys.stderr)
         assert not missing_from_finder, missing_from_finder
         anaconda = f.find_python_version("anaconda3-5.3.0")
         assert anaconda is not None, os.listdir(

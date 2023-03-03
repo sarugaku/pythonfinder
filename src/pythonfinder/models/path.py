@@ -1,5 +1,3 @@
-# -*- coding=utf-8 -*-
-
 import errno
 import operator
 import os
@@ -74,7 +72,7 @@ def exists_and_is_accessible(path):
 
 
 @attr.s
-class SystemPath(object):
+class SystemPath:
     global_search = attr.ib(default=True)
     paths = attr.ib(
         default=attr.Factory(defaultdict)
@@ -283,7 +281,7 @@ class SystemPath(object):
         normalized_target = normalize_path(path)
         last_instance = next(iter(p for p in paths if normalized_target in p), None)
         if last_instance is None:
-            raise ValueError("No instance found on path for target: {0!s}".format(path))
+            raise ValueError(f"No instance found on path for target: {path!s}")
         path_index = self.path_order.index(last_instance)
         return path_index
 
@@ -357,8 +355,8 @@ class SystemPath(object):
         # type: (str) -> "SystemPath"
         if finder_name is None:
             raise TypeError("Must pass a string as the name of the target finder")
-        finder_attr = "{0}_finder".format(finder_name)
-        setup_attr = "_setup_{0}".format(finder_name)
+        finder_attr = f"{finder_name}_finder"
+        setup_attr = f"_setup_{finder_name}"
         try:
             current_finder = getattr(self, finder_attr)  # type: Any
         except AttributeError:
@@ -449,7 +447,7 @@ class SystemPath(object):
             )
             self.paths[path.as_posix()] = _path
         if not _path:
-            raise ValueError("Path not found or generated: {0!r}".format(path))
+            raise ValueError(f"Path not found or generated: {path!r}")
         return _path
 
     def _get_paths(self):

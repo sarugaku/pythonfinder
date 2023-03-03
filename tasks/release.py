@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 import re
 import sys
 from pathlib import Path
@@ -77,7 +76,7 @@ def generate_changelog(ctx, commit=False, draft=False):
     args = []
     if draft:
         args.append("--draft")
-    ctx.run("towncrier {0}".format(" ".join(args)))
+    ctx.run("towncrier {}".format(" ".join(args)))
     if commit:
         log("Committing...")
         ctx.run("git add .")
@@ -141,7 +140,7 @@ def bump_version(
             file_contents.replace(_current_version, str(new_version.normalize()))
         )
         if commit:
-            ctx.run("git add {0}".format(get_version_file(ctx)))
+            ctx.run(f"git add {get_version_file(ctx)}")
             log("Committing...")
             ctx.run('git commit -s -m "Bumped version."')
 

@@ -1,4 +1,3 @@
-# -*- coding=utf-8 -*-
 import importlib
 import operator
 import os
@@ -14,10 +13,10 @@ if environment.MYPY_RUNNING:
     from .models.path import Path, PathEntry, SystemPath
     from .models.windows import WindowsFinder
 
-    STRING_TYPE = Union[str, Text, bytes]
+    STRING_TYPE = Union[str, str, bytes]
 
 
-class Finder(object):
+class Finder:
 
     """
     A cross-platform Finder for locating python and other executables.
@@ -156,7 +155,7 @@ class Finder(object):
         )
         name = None
         if major and major_has_arch:
-            orig_string = "{0!s}".format(major)
+            orig_string = f"{major!s}"
             major, _, arch = major.rpartition("-")
             if arch:
                 arch = arch.lower().lstrip("x").replace("bit", "")
@@ -164,12 +163,12 @@ class Finder(object):
                     major = orig_string
                     arch = None
                 else:
-                    arch = "{0}bit".format(arch)
+                    arch = f"{arch}bit"
             try:
                 version_dict = PythonVersion.parse(major)
             except (ValueError, InvalidPythonVersion):
                 if name is None:
-                    name = "{0!s}".format(major)
+                    name = f"{major!s}"
                     major = None
                 version_dict = {}
         elif major and major[0].isalpha():

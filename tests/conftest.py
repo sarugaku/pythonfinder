@@ -1,6 +1,3 @@
-# -*- coding=utf-8 -*-
-from __future__ import absolute_import, print_function
-
 import importlib
 import os
 import shutil
@@ -166,7 +163,7 @@ def isolated_envdir(create_tmpdir):
 
 
 def setup_plugin(name):
-    target = os.path.expandvars(os.path.expanduser("~/.{0}".format(name)))
+    target = os.path.expandvars(os.path.expanduser(f"~/.{name}"))
     this = Path(__file__).absolute().parent
     plugin_dir = this / "test_artifacts" / name
     plugin_uri = plugin_dir.as_uri()
@@ -185,8 +182,8 @@ def build_python_versions(path, link_to=None):
         set_write_bit(bin_dir.as_posix())
         executable_names = [
             "python",
-            "python{0}".format(python_version[0]),
-            "python{0}".format(python_version[:3]),
+            f"python{python_version[0]}",
+            f"python{python_version[:3]}",
         ]
         for executable in executable_names:
             exe_file = bin_dir.joinpath(executable)
@@ -275,7 +272,7 @@ def special_character_python(tmp_path):
 @pytest.fixture(autouse=True)
 def setup_env():
     with temp_environ():
-        os.environ["ANSI_COLORS_DISABLED"] = str("1")
+        os.environ["ANSI_COLORS_DISABLED"] = "1"
 
 
 @pytest.fixture()

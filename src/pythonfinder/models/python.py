@@ -1,5 +1,3 @@
-# -*- coding=utf-8 -*-
-
 import logging
 import operator
 import os
@@ -206,8 +204,7 @@ class PythonFinder(BasePath, BaseFinder):
             if path.as_posix() in self._pythons:
                 yield self._pythons[path.as_posix()]
             elif version_tuple not in self.versions:
-                for python in entry.find_all_python_versions():
-                    yield python
+                yield from entry.find_all_python_versions()
             else:
                 yield self.versions[version_tuple]
 
@@ -348,7 +345,7 @@ class PythonFinder(BasePath, BaseFinder):
 
 
 @attr.s(slots=True)
-class PythonVersion(object):
+class PythonVersion:
     major = attr.ib(default=0, type=int)
     minor = attr.ib(default=None)  # type: Optional[int]
     patch = attr.ib(default=None)  # type: Optional[int]
@@ -364,7 +361,7 @@ class PythonVersion(object):
     name = attr.ib(default=None, type=str)
 
     def __getattribute__(self, key):
-        result = super(PythonVersion, self).__getattribute__(key)
+        result = super().__getattribute__(key)
         if key in ["minor", "patch"] and result is None:
             executable = None  # type: Optional[str]
             if self.executable:
@@ -377,7 +374,7 @@ class PythonVersion(object):
                 instance_dict = self.parse_executable(executable)
                 for k in instance_dict.keys():
                     try:
-                        super(PythonVersion, self).__getattribute__(k)
+                        super().__getattribute__(k)
                     except AttributeError:
                         continue
                     else:
@@ -451,7 +448,7 @@ class PythonVersion(object):
         if arch:
             own_arch = self.get_architecture()
             if arch.isdigit():
-                arch = "{0}bit".format(arch)
+                arch = f"{arch}bit"
         if (
             (major is None or self.major == major)
             and (minor is None or self.minor == minor)
@@ -669,12 +666,12 @@ class PythonVersion(object):
         # type: (...) -> PythonVersion
         if "architecture" in kwargs:
             if kwargs["architecture"].isdigit():
-                kwargs["architecture"] = "{0}bit".format(kwargs["architecture"])
+                kwargs["architecture"] = "{}bit".format(kwargs["architecture"])
         return cls(**kwargs)
 
 
 @attr.s
-class VersionMap(object):
+class VersionMap:
     versions = attr.ib(
         factory=defaultdict
     )  # type: DefaultDict[Tuple[int, Optional[int], Optional[int], bool, bool, bool], List[PathEntry]]
