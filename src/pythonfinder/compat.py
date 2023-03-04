@@ -1,7 +1,4 @@
-import sys
-from builtins import TimeoutError
-from functools import lru_cache
-from pathlib import Path
+from __future__ import annotations
 
 
 def getpreferredencoding():

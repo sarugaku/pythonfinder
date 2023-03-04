@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 import atexit
 import itertools
 import os
 import shutil
 import stat
-import sys
 import tempfile
 import warnings
 from contextlib import contextmanager
@@ -14,8 +15,7 @@ import click
 TRACKED_TEMPORARY_DIRECTORIES = []
 
 
-def set_write_bit(fn):
-    # type: (str) -> None
+def set_write_bit(fn: str) -> None:
     """
     Set read-write permissions for the current user on the target path.  Fail silently
     if the path doesn't exist.
@@ -84,8 +84,7 @@ def temp_environ():
         os.environ.update(environ)
 
 
-def normalize_path(path):
-    # type: (AnyStr) -> AnyStr
+def normalize_path(path: AnyStr) -> AnyStr:
     """
     Return a case-normalized absolute variable-expanded path.
 
@@ -111,8 +110,7 @@ def normalize_path(path):
     return os.path.normpath(os.path.normcase(path))
 
 
-def is_in_path(path, parent):
-    # type: (AnyStr, AnyStr) -> bool
+def is_in_path(path: AnyStr, parent: AnyStr) -> bool:
     """
     Determine if the provided full path is in the given parent root.
 
