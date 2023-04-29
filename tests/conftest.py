@@ -98,11 +98,6 @@ def no_pyenv_root_envvar(monkeypatch):
             "ASDF_DATA_DIR",
             normalize_path("~/.asdf"),
         )
-        m.setattr(
-            pythonfinder.environment,
-            "SHIM_PATHS",
-            pythonfinder.environment.get_shim_paths(),
-        )
         yield
 
 
