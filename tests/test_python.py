@@ -9,7 +9,8 @@ from packaging.version import Version
 
 import pythonfinder
 from pythonfinder import utils, environment
-from pythonfinder.models.python import PythonFinder
+from pythonfinder.pythonfinder import Finder
+from pythonfinder.models.python import PythonFinder, PythonVersion
 
 from .testutils import (
     is_in_ospath,
@@ -40,7 +41,7 @@ def test_python_versions(monkeypatch, special_character_python):
     os.environ["PYTHONFINDER_IGNORE_UNSUPPORTED"] = "1"
     with monkeypatch.context() as m:
         m.setattr("subprocess.Popen", mock_version)
-        parsed = pythonfinder.models.python.PythonVersion.from_path(
+        parsed = PythonVersion.from_path(
             special_character_python.as_posix()
         )
         assert isinstance(parsed.version, Version)
@@ -99,7 +100,7 @@ def test_python_version_output_variants(monkeypatch, path, version_output, versi
         get_pyversion = functools.partial(get_python_version, orig_fn=orig_run_fn)
         m.setattr("pythonfinder.utils.get_python_version", get_pyversion)
         path = PythonFinder(root=path, path=path)
-        parsed = pythonfinder.models.python.PythonVersion.from_path(path)
+        parsed = PythonVersion.from_path(path)
         assert isinstance(parsed.version, Version)
 
 
@@ -109,7 +110,7 @@ def test_shims_are_kept(monkeypatch, no_pyenv_root_envvar, setup_pythons, no_vir
         os.environ["PATH"] = "{}:{}".format(
             normalize_path("~/.pyenv/shims"), os.environ["PATH"]
         )
-        f = pythonfinder.pythonfinder.Finder(
+        f = Finder(
             global_search=True, system=False, ignore_unsupported=True
         )
         f.rehash()
@@ -161,7 +162,7 @@ def test_shims_are_removed(monkeypatch, no_virtual_env, setup_pythons):
             "SHIM_PATHS",
             environment.get_shim_paths(),
         )
-        f = pythonfinder.pythonfinder.Finder(
+        f = Finder(
             global_search=True, system=False, ignore_unsupported=True
         )
         f.rehash()
