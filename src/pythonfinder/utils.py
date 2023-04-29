@@ -341,12 +341,11 @@ def parse_asdf_version_order(filename=".tool-versions"):
 
 
 def split_version_and_name(
-    major=None,  # type: Optional[Union[str, int]]
-    minor=None,  # type: Optional[Union[str, int]]
-    patch=None,  # type: Optional[Union[str, int]]
-    name=None,  # type: Optional[str]
-):
-    # type: (...) -> Tuple[Optional[Union[str, int]], Optional[Union[str, int]], Optional[Union[str, int]], Optional[str]]  # noqa
+    major: str | int | None = None,
+    minor: str | int | None = None,
+    patch: str | int | None = None,
+    name: str | None = None,
+) -> tuple[str | int | None, str | int | None, str | int | None, str | None,]:
     if isinstance(major, str) and not minor and not patch:
         # Only proceed if this is in the format "x.y.z" or similar
         if major.isdigit() or (major.count(".") > 0 and major[0].isdigit()):
