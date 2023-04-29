@@ -7,7 +7,7 @@ from collections import defaultdict, ChainMap
 from typing import Any, Dict, List, Generator, Iterator, Optional, Tuple, Union
 
 from cached_property import cached_property
-from pydantic import Field, validator, root_validator
+from pydantic import Field, root_validator
 
 from .common import FinderBaseModel
 from ..compat import fs_str
@@ -529,12 +529,6 @@ class VersionPath(SystemPath):
         allow_mutation = True
         include_private_attributes = True
         keep_untouched = (cached_property,)
-
-    @validator('base', pre=True)
-    def optional_instance_of_path(cls, value):
-        if value is not None and not isinstance(value, Path):
-            raise ValueError('The "base" attribute must be an instance of Path or None')
-        return value
 
     @classmethod
     def create(cls, path, only_python=True, pythons=None, name=None):
