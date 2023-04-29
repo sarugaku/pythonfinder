@@ -98,7 +98,7 @@ def test_python_version_output_variants(monkeypatch, path, version_output, versi
         orig_run_fn = utils.get_python_version
         get_pyversion = functools.partial(get_python_version, orig_fn=orig_run_fn)
         m.setattr("pythonfinder.utils.get_python_version", get_pyversion)
-        path = PythonFinder(root=path)
+        path = PythonFinder(root=path, path=path)
         parsed = pythonfinder.models.python.PythonVersion.from_path(path)
         assert isinstance(parsed.version, Version)
 
