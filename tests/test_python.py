@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import functools
-import importlib
 import os
 import sys
 import pytest
 from packaging.version import Version
 
-import pythonfinder
 from pythonfinder import utils, environment
 from pythonfinder.pythonfinder import Finder
 from pythonfinder.models.python import PythonFinder, PythonVersion
@@ -154,8 +152,6 @@ def test_shims_are_removed(monkeypatch, no_virtual_env, setup_pythons):
     with monkeypatch.context() as m:
         pyenv_dir = utils.normalize_path("~/.pyenv")
         asdf_dir = utils.normalize_path("~/.asdf")
-        importlib.reload(environment)
-        importlib.reload(pythonfinder.models.path)
         m.setattr(
             environment,
             "SHIM_PATHS",
