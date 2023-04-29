@@ -82,10 +82,6 @@ class SystemPath(FinderBaseModel):
         values['path_order'] = []
         values['_finders'] = {}
         values['paths'] = defaultdict(PathEntry)
-        return values
-
-    @root_validator(pre=True)
-    def set_executables(cls, values):
         paths = values.get('paths')
         if paths:
             values['executables'] = [
