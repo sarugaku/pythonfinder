@@ -41,9 +41,9 @@ def test_python_versions(monkeypatch, special_character_python):
     os.environ["PYTHONFINDER_IGNORE_UNSUPPORTED"] = "1"
     with monkeypatch.context() as m:
         m.setattr("subprocess.Popen", mock_version)
-        parsed = PythonVersion.from_path(
-            special_character_python.as_posix()
-        )
+        path = special_character_python.as_posix()
+        path = PythonFinder(root=path, path=path)
+        parsed = PythonVersion.from_path(path)
         assert isinstance(parsed.version, Version)
 
 
