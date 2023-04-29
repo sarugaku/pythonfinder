@@ -62,16 +62,6 @@ class PythonFinder(PathEntry):
         return self._versions.values()
 
     @property
-    def pythons(self):
-        # type: () -> DefaultDict[str, PathEntry]
-        return self.pythons_ref
-
-    @pythons.setter
-    def pythons(self, value):
-        # type: (DefaultDict[str, PathEntry]) -> None
-        self.pythons_ref = value
-
-    @property
     def is_pyenv(self):
         # type: () -> bool
         return is_in_path(str(self.root), PYENV_ROOT)
@@ -191,18 +181,18 @@ class PythonFinder(PathEntry):
 
     @property
     def pythons(self) -> DefaultDict[str, PathEntry]:
-        if not self._pythons:
+        if not self.pythons_ref:
             from .path import PathEntry
 
-            self._pythons = defaultdict(PathEntry)  # type: DefaultDict[str, PathEntry]
+            self.pythons_ref = defaultdict(PathEntry)  # type: DefaultDict[str, PathEntry]
             for python in self._iter_pythons():
                 python_path = python.path.as_posix()  # type: ignore
-                self._pythons[python_path] = python
-        return self._pythons
+                self.pythons_ref[python_path] = python
+        return self.pythons_ref
 
     @pythons.setter
     def pythons(self, value) -> None:
-        self._pythons = value
+        self.pythons_ref = value
 
     def get_pythons(self) -> DefaultDict[str, PathEntry]:
         return self.pythons

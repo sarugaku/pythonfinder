@@ -4,13 +4,12 @@ import functools
 import importlib
 import os
 import sys
-from pathlib import Path
-
 import pytest
 from packaging.version import Version
 
 import pythonfinder
 from pythonfinder import utils, environment
+from pythonfinder.models.python import PythonFinder
 
 from .testutils import (
     is_in_ospath,
@@ -99,7 +98,7 @@ def test_python_version_output_variants(monkeypatch, path, version_output, versi
         orig_run_fn = utils.get_python_version
         get_pyversion = functools.partial(get_python_version, orig_fn=orig_run_fn)
         m.setattr("pythonfinder.utils.get_python_version", get_pyversion)
-        path = Path(path)
+        path = PythonFinder(path)
         parsed = pythonfinder.models.python.PythonVersion.from_path(path)
         assert isinstance(parsed.version, Version)
 
