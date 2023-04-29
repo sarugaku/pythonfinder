@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+import io
 import itertools
 import os
 import re
@@ -7,21 +7,15 @@ import subprocess
 from collections import OrderedDict
 from collections.abc import Iterable, Sequence
 from fnmatch import fnmatch
-from functools import lru_cache
-from pathlib import Path
 from threading import Timer
-from typing import TYPE_CHECKING, Any, Iterator, Optional, Union
+from pathlib import Path
+from builtins import TimeoutError
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
-import attr
-from packaging.version import InvalidVersion, Version
+from packaging.version import Version, InvalidVersion
 
 from .environment import PYENV_ROOT, SUBPROCESS_TIMEOUT
 from .exceptions import InvalidPythonVersion
-
-if TYPE_CHECKING:
-    from attr.validators import _OptionalValidator  # type: ignore
-
-    from .models.path import PathEntry
 
 
 version_re_str = (
@@ -56,8 +50,8 @@ PY_MATCH_STR = (
         "|".join(PYTHON_IMPLEMENTATIONS)
     )
 )
-EXE_MATCH_STR = r"{}(?:\.(?P<ext>{}))?".format(PY_MATCH_STR, "|".join(KNOWN_EXTS))
-RE_MATCHER = re.compile(rf"({version_re_str}|{PY_MATCH_STR})")
+EXE_MATCH_STR = r"{0}(?:\.(?P<ext>{1}))?".format(PY_MATCH_STR, "|".join(KNOWN_EXTS))
+RE_MATCHER = re.compile(r"({0}|{1})".format(version_re_str, PY_MATCH_STR))
 EXE_MATCHER = re.compile(EXE_MATCH_STR)
 RULES_BASE = [
     "*{0}",
@@ -72,11 +66,13 @@ RULES = [rule.format(impl) for impl in PYTHON_IMPLEMENTATIONS for rule in RULES_
 
 MATCH_RULES = []
 for rule in RULES:
-    MATCH_RULES.extend([f"{rule}.{ext}" if ext else f"{rule}" for ext in KNOWN_EXTS])
+    MATCH_RULES.extend(
+        ["{0}.{1}".format(rule, ext) if ext else "{0}".format(rule) for ext in KNOWN_EXTS]
+    )
 
 
-@lru_cache(maxsize=1024)
-def get_python_version(path: str) -> str:
+def get_python_version(path):
+    # type: (str) -> str
     """Get python version string using subprocess from a given path."""
     version_cmd = [
         path,
@@ -105,9 +101,9 @@ def get_python_version(path: str) -> str:
     return out.strip()
 
 
-@lru_cache(maxsize=1024)
-def parse_python_version(version_str: str) -> dict[str, str | int | Version]:
-    from packaging.version import parse as parse_version
+def parse_python_version(version_str):
+    # type: (str) -> Dict[str, Union[str, int, Version]]
+    from pipenv.patched.pip._vendor.packaging.version import parse as parse_version
 
     is_debug = False
     if version_str.endswith("-debug"):
@@ -116,7 +112,7 @@ def parse_python_version(version_str: str) -> dict[str, str | int | Version]:
     match = version_re.match(version_str)
     if not match:
         raise InvalidPythonVersion("%s is not a python version" % version_str)
-    version_dict: dict[str, str] = match.groupdict()
+    version_dict = match.groupdict()  # type: Dict[str, str]
     major = int(version_dict.get("major", 0)) if version_dict.get("major") else None
     minor = int(version_dict.get("minor", 0)) if version_dict.get("minor") else None
     patch = int(version_dict.get("patch", 0)) if version_dict.get("patch") else None
@@ -126,7 +122,7 @@ def parse_python_version(version_str: str) -> dict[str, str | int | Version]:
     if patch:
         patch = int(patch)
 
-    version: Version | None = None
+    version = None  # type: Optional[Version]
 
     try:
         version = parse_version(version_str)
@@ -138,7 +134,7 @@ def parse_python_version(version_str: str) -> dict[str, str | int | Version]:
         pre = ""
         if v_dict.get("prerel") and v_dict.get("prerelversion"):
             pre = v_dict.pop("prerel")
-            pre = "{}{}".format(pre, v_dict.pop("prerelversion"))
+            pre = "{0}{1}".format(pre, v_dict.pop("prerelversion"))
         v_dict["pre"] = pre
         keys = ["major", "minor", "patch", "pre", "postdev", "post", "dev"]
         values = [v_dict.get(val) for val in keys]
@@ -156,18 +152,8 @@ def parse_python_version(version_str: str) -> dict[str, str | int | Version]:
     }
 
 
-def optional_instance_of(cls: Any) -> _OptionalValidator:
-    """
-    Return an validator to determine whether an input is an optional instance of a class.
-
-    :return: A validator to determine optional instance membership.
-    :rtype: :class:`~attr.validators._OptionalValidator`
-    """
-
-    return attr.validators.optional(attr.validators.instance_of(cls))
-
-
-def path_is_executable(path: str) -> bool:
+def path_is_executable(path):
+    # type: (str) -> bool
     """
     Determine whether the supplied path is executable.
 
@@ -178,8 +164,8 @@ def path_is_executable(path: str) -> bool:
     return os.access(str(path), os.X_OK)
 
 
-@lru_cache(maxsize=1024)
-def path_is_known_executable(path: Path) -> bool:
+def path_is_known_executable(path):
+    # type: (Path) -> bool
     """
     Returns whether a given path is a known executable from known executable extensions
     or has the executable bit toggled.
@@ -197,8 +183,8 @@ def path_is_known_executable(path: Path) -> bool:
     )
 
 
-@lru_cache(maxsize=1024)
-def looks_like_python(name: str) -> bool:
+def looks_like_python(name):
+    # type: (str) -> bool
     """
     Determine whether the supplied filename looks like a possible name of python.
 
@@ -215,8 +201,8 @@ def looks_like_python(name: str) -> bool:
     return False
 
 
-@lru_cache(maxsize=1024)
-def path_is_python(path: Path) -> bool:
+def path_is_python(path):
+    # type: (Path) -> bool
     """
     Determine whether the supplied path is executable and looks like a possible path to python.
 
@@ -229,8 +215,8 @@ def path_is_python(path: Path) -> bool:
     return path_is_executable(path) and looks_like_python(path.name)
 
 
-@lru_cache(maxsize=1024)
-def guess_company(path: str) -> str | None:
+def guess_company(path):
+    # type: (str) -> Optional[str]
     """Given a path to python, guess the company who created it
 
     :param str path: The path to guess about
@@ -243,8 +229,8 @@ def guess_company(path: str) -> str | None:
     )
 
 
-@lru_cache(maxsize=1024)
-def path_is_pythoncore(path: str) -> bool:
+def path_is_pythoncore(path):
+    # type: (str) -> bool
     """Given a path, determine whether it appears to be pythoncore.
 
     Does not verify whether the path is in fact a path to python, but simply
@@ -261,8 +247,8 @@ def path_is_pythoncore(path: str) -> bool:
     return False
 
 
-@lru_cache(maxsize=1024)
-def ensure_path(path: Path | str) -> Path:
+def ensure_path(path):
+    # type: (Union[Path, str]) -> Path
     """
     Given a path (either a string or a Path object), expand variables and return a Path object.
 
@@ -278,14 +264,16 @@ def ensure_path(path: Path | str) -> Path:
     return path.absolute()
 
 
-def _filter_none(k: Any, v: Any) -> bool:
+def _filter_none(k, v):
+    # type: (Any, Any) -> bool
     if v:
         return True
     return False
 
 
 # TODO: Reimplement in vistir
-def normalize_path(path: str) -> str:
+def normalize_path(path):
+    # type: (str) -> str
     return os.path.normpath(
         os.path.normcase(
             os.path.abspath(os.path.expandvars(os.path.expanduser(str(path))))
@@ -293,8 +281,8 @@ def normalize_path(path: str) -> str:
     )
 
 
-@lru_cache(maxsize=1024)
-def filter_pythons(path: str | Path) -> Iterable:
+def filter_pythons(path):
+    # type: (Union[str, Path]) -> Iterable
     """Return all valid pythons in a given path"""
     if not isinstance(path, Path):
         path = Path(str(path))
@@ -304,8 +292,9 @@ def filter_pythons(path: str | Path) -> Iterable:
 
 
 # TODO: Port to vistir
-def unnest(item: Any) -> Iterable[Any]:
-    target: Iterable | None = None
+def unnest(item):
+    # type: (Any) -> Iterable[Any]
+    target = None  # type: Optional[Iterable]
     if isinstance(item, Iterable) and not isinstance(item, str):
         item, target = itertools.tee(item, 2)
     else:
@@ -314,27 +303,30 @@ def unnest(item: Any) -> Iterable[Any]:
         for el in target:
             if isinstance(el, Iterable) and not isinstance(el, str):
                 el, el_copy = itertools.tee(el, 2)
-                yield from unnest(el_copy)
+                for sub in unnest(el_copy):
+                    yield sub
             else:
                 yield el
     else:
         yield target
 
 
-def parse_pyenv_version_order(filename: str = "version") -> list[str]:
+def parse_pyenv_version_order(filename="version"):
+    # type: (str) -> List[str]
     version_order_file = normalize_path(os.path.join(PYENV_ROOT, filename))
     if os.path.exists(version_order_file) and os.path.isfile(version_order_file):
-        with open(version_order_file, encoding="utf-8") as fh:
+        with io.open(version_order_file, encoding="utf-8") as fh:
             contents = fh.read()
         version_order = [v for v in contents.splitlines()]
         return version_order
     return []
 
 
-def parse_asdf_version_order(filename: str = ".tool-versions") -> list[str]:
+def parse_asdf_version_order(filename=".tool-versions"):
+    # type: (str) -> List[str]
     version_order_file = normalize_path(os.path.join("~", filename))
     if os.path.exists(version_order_file) and os.path.isfile(version_order_file):
-        with open(version_order_file, encoding="utf-8") as fh:
+        with io.open(version_order_file, encoding="utf-8") as fh:
             contents = fh.read()
         python_section = next(
             iter(line for line in contents.splitlines() if line.startswith("python")),
@@ -349,12 +341,12 @@ def parse_asdf_version_order(filename: str = ".tool-versions") -> list[str]:
 
 
 def split_version_and_name(
-    major: str | int | None = None,
-    minor: str | int | None = None,
-    patch: str | int | None = None,
-    name: str | None = None,
-) -> tuple[str | int | None, str | int | None, str | int | None, str | None,]:
-    # noqa
+    major=None,  # type: Optional[Union[str, int]]
+    minor=None,  # type: Optional[Union[str, int]]
+    patch=None,  # type: Optional[Union[str, int]]
+    name=None,  # type: Optional[str]
+):
+    # type: (...) -> Tuple[Optional[Union[str, int]], Optional[Union[str, int]], Optional[Union[str, int]], Optional[str]]  # noqa
     if isinstance(major, str) and not minor and not patch:
         # Only proceed if this is in the format "x.y.z" or similar
         if major.isdigit() or (major.count(".") > 0 and major[0].isdigit()):
@@ -372,7 +364,7 @@ def split_version_and_name(
                 major = major
                 name = None
         else:
-            name = f"{major!s}"
+            name = "{0!s}".format(major)
             major = None
     return (major, minor, patch, name)
 
@@ -382,7 +374,7 @@ def is_in_path(path, parent):
     return normalize_path(str(path)).startswith(normalize_path(str(parent)))
 
 
-def expand_paths(path: Sequence | PathEntry, only_python: bool = True) -> Iterator:
+def expand_paths(path, only_python=True) -> Iterator:
     """
     Recursively expand a list or :class:`~pythonfinder.models.path.PathEntry` instance
 
@@ -399,15 +391,17 @@ def expand_paths(path: Sequence | PathEntry, only_python: bool = True) -> Iterat
         for p in path:
             if p is None:
                 continue
-            yield from itertools.chain.from_iterable(
+            for expanded in itertools.chain.from_iterable(
                 expand_paths(p, only_python=only_python)
-            )
+            ):
+                yield expanded
     elif path is not None and path.is_dir:
-        for p in path.children.values():
+        for p in path.children_ref.values():
             if p is not None and p.is_python and p.as_python is not None:
-                yield from itertools.chain.from_iterable(
+                for sub_path in itertools.chain.from_iterable(
                     expand_paths(p, only_python=only_python)
-                )
+                ):
+                    yield sub_path
     else:
         if path is not None and (
             not only_python or (path.is_python and path.as_python is not None)
@@ -415,7 +409,8 @@ def expand_paths(path: Sequence | PathEntry, only_python: bool = True) -> Iterat
             yield path
 
 
-def dedup(iterable: Iterable) -> Iterable:
+def dedup(iterable):
+    # type: (Iterable) -> Iterable
     """Deduplicate an iterable object like iter(set(iterable)) but
     order-reserved.
     """
