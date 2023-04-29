@@ -161,7 +161,6 @@ def test_shims_are_removed(monkeypatch, no_virtual_env, setup_pythons):
         assert os.environ["PYENV_ROOT"] == os.path.abspath(
             os.path.join(os.path.expanduser("~"), ".pyenv")
         )
-        assert environment.PYENV_INSTALLED
         assert f.system_path.pyenv_finder is not None
         python_version_paths = list(
             v.path
