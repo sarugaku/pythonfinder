@@ -1,6 +1,4 @@
-from typing import Any, Dict
-
-from pipenv.vendor.pydantic import BaseModel, Extra
+from pydantic import BaseModel, Extra
 
 
 class FinderBaseModel(BaseModel):
@@ -22,5 +20,3 @@ class FinderBaseModel(BaseModel):
         arbitrary_types_allowed = True
         allow_mutation = True
         include_private_attributes = False
-        check_fields = False  # Add this line
-
