@@ -113,7 +113,6 @@ def test_shims_are_kept(monkeypatch, no_pyenv_root_envvar, setup_pythons, no_vir
         f = Finder(
             global_search=True, system=False, ignore_unsupported=True
         )
-        f.rehash()
         assert is_in_ospath("~/.pyenv/shims")
         shim_paths = environment.get_shim_paths()
         # Shims directories are no longer added to the system path order
@@ -165,7 +164,6 @@ def test_shims_are_removed(monkeypatch, no_virtual_env, setup_pythons):
         f = Finder(
             global_search=True, system=False, ignore_unsupported=True
         )
-        f.rehash()
         python_versions = f.find_all_python_versions()
         assert os.environ["PYENV_ROOT"] == os.path.abspath(
             os.path.join(os.path.expanduser("~"), ".pyenv")
