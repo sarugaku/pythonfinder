@@ -237,10 +237,6 @@ def setup_pythons(isolated_envdir, monkeypatch):
         pyenv_dict = setup_pyenv(isolated_envdir)
         os.environ["PATH"] = os.environ.get("PATH").replace("::", ":")
         version_dicts = {"pyenv": pyenv_dict, "asdf": asdf_dict}
-        shim_paths = [
-            normalize_path(isolated_envdir.joinpath(p).as_posix())
-            for p in [".asdf/shims", ".pyenv/shims"]
-        ]
         yield version_dicts
 
 
