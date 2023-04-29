@@ -518,34 +518,3 @@ class SystemPath(FinderBaseModel):
         )
         instance._run_setup()
         return instance
-
-class VersionPath(SystemPath):
-    base: Optional[Path] = None
-    name: Optional[str] = None
-
-    class Config:
-        validate_assignment = True
-        arbitrary_types_allowed = True
-        allow_mutation = True
-        include_private_attributes = True
-        keep_untouched = (cached_property,)
-
-    @classmethod
-    def create(cls, path, only_python=True, pythons=None, name=None):
-        """Accepts a path to a base python version directory.
-
-        Generates the version listings for it"""
-
-        path = ensure_path(path)
-        path_entries = defaultdict(PathEntry)
-        bin_ = "{base}/bin"
-        if path.as_posix().endswith(Path(bin_).name):
-            path = path.parent
-        bin_dir = ensure_path(bin_.format(base=path.as_posix()))
-        if not name:
-            name = path.name
-        current_entry = PathEntry.create(
-            bin_dir, is_root=True, only_python=True, pythons=pythons, name=name
-        )
-        path_entries[bin_dir.as_posix()] = current_entry
-        return cls(name=name, base=bin_dir, paths=path_entries)
