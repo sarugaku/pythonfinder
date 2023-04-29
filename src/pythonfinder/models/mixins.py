@@ -27,10 +27,7 @@ from ..utils import (
     normalize_path,
 )
 
-from ..environment import (
-    SHIM_PATHS,
-    get_shim_paths,
-)
+from ..environment import get_shim_paths
 
 
 class PathEntry(BaseModel):
@@ -401,7 +398,7 @@ class PathEntry(BaseModel):
             if not guessed_name:
                 child_creation_args["name"] = _new.name  # type: ignore
             for pth, python in pythons.items():
-                if any(shim in normalize_path(str(pth)) for shim in SHIM_PATHS):
+                if any(shim in normalize_path(str(pth)) for shim in get_shim_paths()):
                     continue
                 pth = ensure_path(pth)
                 children[pth.as_posix()] = PathEntry(  # type: ignore

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import importlib
 import os
 import shutil
 import subprocess
@@ -13,6 +12,7 @@ import click.testing
 import pytest
 
 import pythonfinder
+from pythonfinder import environment
 
 from .testutils import (
     cd,
@@ -90,8 +90,6 @@ def no_pyenv_root_envvar(monkeypatch):
             m.delenv("PYENV_ROOT")
         if "ASDF_DATA_DIR" in os.environ:
             m.delenv("ASDF_DATA_DIR")
-        importlib.reload(pythonfinder.environment)
-        importlib.reload(pythonfinder.models.path)
         m.setattr(pythonfinder.environment, "PYENV_INSTALLED", False)
         m.setattr(pythonfinder.environment, "ASDF_INSTALLED", False)
         m.setattr(pythonfinder.environment, "PYENV_ROOT", normalize_path("~/.pyenv"))
