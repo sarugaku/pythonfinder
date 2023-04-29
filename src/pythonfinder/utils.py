@@ -103,7 +103,7 @@ def get_python_version(path):
 
 def parse_python_version(version_str):
     # type: (str) -> Dict[str, Union[str, int, Version]]
-    from pipenv.patched.pip._vendor.packaging.version import parse as parse_version
+    from packaging.version import parse as parse_version
 
     is_debug = False
     if version_str.endswith("-debug"):
