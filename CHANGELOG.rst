@@ -5,7 +5,7 @@ Bug Fixes
 ---------
 
 - Include tests and tests data into the sdist.  `#116 <https://github.com/sarugaku/pythonfinder/issues/116>`_
-    
+
 - Fix: catch `InvalidVersion` instead of handling `LegacyVersion`  `#127 <https://github.com/sarugaku/pythonfinder/issues/127>`_
 
 
@@ -28,7 +28,7 @@ Bug Fixes
 ---------
 
 - Check the permission as well as the existence of path when finding Pythons.  `#111 <https://github.com/sarugaku/pythonfinder/issues/111>`_
-    
+
 - Fix an error of pythonfinder when `PATH` contains unreadable paths.  `#118 <https://github.com/sarugaku/pythonfinder/issues/118>`_
 
 

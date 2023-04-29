@@ -354,7 +354,6 @@ def split_version_and_name(
     patch: str | int | None = None,
     name: str | None = None,
 ) -> tuple[str | int | None, str | int | None, str | int | None, str | None,]:
-    # noqa
     if isinstance(major, str) and not minor and not patch:
         # Only proceed if this is in the format "x.y.z" or similar
         if major.isdigit() or (major.count(".") > 0 and major[0].isdigit()):
