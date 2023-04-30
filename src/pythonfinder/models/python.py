@@ -4,7 +4,7 @@ import platform
 import sys
 from collections import defaultdict
 from pathlib import Path, WindowsPath
-from typing import Callable, DefaultDict, Dict, List, Optional, Tuple, Union, Generator, Iterator
+from typing import Any, Callable, DefaultDict, Dict, List, Optional, Tuple, Union, Generator, Iterator
 
 from packaging.version import Version
 from pydantic import Field, validator
@@ -57,29 +57,25 @@ class PythonFinder(PathEntry):
         # keep_untouched = (cached_property,)
 
     @property
-    def version_paths(self):
-        # type: () -> Any
+    def version_paths(self) -> Any:
         return self._versions.values()
 
     @property
-    def is_pyenv(self):
-        # type: () -> bool
+    def is_pyenv(self) -> bool:
         return is_in_path(str(self.root), PYENV_ROOT)
 
     @property
-    def is_asdf(self):
-        # type: () -> bool
+    def is_asdf(self) -> bool:
         return is_in_path(str(self.root), ASDF_DATA_DIR)
 
-    def get_version_order(self):
-        # type: () -> List[Path]
+    def get_version_order(self) -> List[Path]:
         version_paths = [
             p
             for p in self.root.glob(self.version_glob_path)
             if not (p.parent.name == "envs" or p.name == "envs")
         ]
         versions = {v.name: v for v in version_paths}
-        version_order = []  # type: List[Path]
+        version_order = []
         if self.is_pyenv:
             version_order = [
                 versions[v] for v in parse_pyenv_version_order() if v in versions
@@ -97,8 +93,7 @@ class PythonFinder(PathEntry):
             version_order = version_paths
         return version_order
 
-    def get_bin_dir(self, base):
-        # type: (Union[Path, str]) -> Path
+    def get_bin_dir(self, base) -> Path:
         if isinstance(base, str):
             base = Path(base)
         if os.name == "nt":
@@ -180,13 +175,13 @@ class PythonFinder(PathEntry):
         return _paths
 
     @property
-    def pythons(self) -> DefaultDict[str, PathEntry]:
+    def pythons(self) -> Dict:
         if not self.pythons_ref:
             from .path import PathEntry
 
-            self.pythons_ref = defaultdict(PathEntry)  # type: DefaultDict[str, PathEntry]
+            self.pythons_ref = defaultdict(PathEntry)
             for python in self._iter_pythons():
-                python_path = python.path.as_posix()  # type: ignore
+                python_path = python.path.as_posix()
                 self.pythons_ref[python_path] = python
         return self.pythons_ref
 
@@ -205,20 +200,20 @@ class PythonFinder(PathEntry):
         return cls(
             root=root,
             path=root,
-            ignore_unsupported=ignore_unsupported,  # type: ignore
+            ignore_unsupported=ignore_unsupported,
             sort_function=sort_function,
             version_glob_path=version_glob_path,
         )
 
     def find_all_python_versions(
         self,
-        major=None,  # type: Optional[Union[str, int]]
-        minor=None,  # type: Optional[int]
-        patch=None,  # type: Optional[int]
-        pre=None,  # type: Optional[bool]
-        dev=None,  # type: Optional[bool]
-        arch=None,  # type: Optional[str]
-        name=None,  # type: Optional[str]
+        major: Optional[Union[str, int]] = None,
+        minor: Optional[int] = None,
+        patch: Optional[int] = None,
+        pre: Optional[bool] = None,
+        dev: Optional[bool] = None,
+        arch: Optional[str] = None,
+        name: Optional[str] = None,
     ) -> List[PathEntry]:
         """Search for a specific python version on the path. Return all copies
 
@@ -231,7 +226,6 @@ class PythonFinder(PathEntry):
         :param str arch: Architecture to include, e.g. '64bit', defaults to None
         :param str name: The name of a python version, e.g. ``anaconda3-5.3.0``
         :return: A list of :class:`~pythonfinder.models.PathEntry` instances matching the version requested.
-        :rtype: List[:class:`~pythonfinder.models.PathEntry`]
         """
 
         call_method = "find_all_python_versions" if self.is_dir else "find_python_version"
@@ -259,13 +253,13 @@ class PythonFinder(PathEntry):
 
     def find_python_version(
         self,
-        major=None,  # type: Optional[Union[str, int]]
-        minor=None,  # type: Optional[int]
-        patch=None,  # type: Optional[int]
-        pre=None,  # type: Optional[bool]
-        dev=None,  # type: Optional[bool]
-        arch=None,  # type: Optional[str]
-        name=None,  # type: Optional[str]
+        major: Optional[Union[str, int]] = None,
+        minor: Optional[int] = None,
+        patch: Optional[int] = None,
+        pre: Optional[bool] = None,
+        dev: Optional[bool] = None,
+        arch: Optional[str] = None,
+        name: Optional[str] = None,
     ) -> Optional[PathEntry]:
         """Search or self for the specified Python version and return the first match.
 
@@ -335,7 +329,7 @@ class PythonVersion(FinderBaseModel):
     def __getattribute__(self, key):
         result = super(PythonVersion, self).__getattribute__(key)
         if key in ["minor", "patch"] and result is None:
-            executable = None  # type: Optional[str]
+            executable = None
             if self.executable:
                 executable = self.executable
             elif self.comes_from:
@@ -390,7 +384,6 @@ class PythonVersion(FinderBaseModel):
         Provides a version tuple for using as a dictionary key.
 
         :return: A tuple describing the python version meetadata contained.
-        :rtype: tuple
         """
 
         return (
@@ -404,14 +397,14 @@ class PythonVersion(FinderBaseModel):
 
     def matches(
         self,
-        major=None,  # type: Optional[int]
-        minor=None,  # type: Optional[int]
-        patch=None,  # type: Optional[int]
-        pre=False,  # type: bool
-        dev=False,  # type: bool
-        arch=None,  # type: Optional[str]
-        debug=False,  # type: bool
-        python_name=None,  # type: Optional[str]
+        major: Optional[int] = None,
+        minor: Optional[int] = None,
+        patch: Optional[int] = None,
+        pre: bool = False,
+        dev: bool = False,
+        arch: Optional[str] = None,
+        debug: bool = False,
+        python_name: Optional[str] = None,
     ) -> bool:
         result = False
         if arch:
@@ -486,7 +479,6 @@ class PythonVersion(FinderBaseModel):
 
         :param str version: A valid version string
         :return: A dictionary with metadata about the specified python version.
-        :rtype: dict
         """
 
         if version is None:
@@ -523,7 +515,6 @@ class PythonVersion(FinderBaseModel):
         :param bool ignore_unsupported: Whether to ignore or error on unsupported paths.
         :param Optional[str] company: The company or vendor packaging the distribution.
         :return: An instance of a PythonVersion.
-        :rtype: :class:`~pythonfinder.models.python.PythonVersion`
         """
         from ..environment import IGNORE_UNSUPPORTED
 
@@ -554,7 +545,7 @@ class PythonVersion(FinderBaseModel):
         instance_dict.update(
             {"comes_from": path, "name": name, "executable": path.path.as_posix()}
         )
-        return cls(**instance_dict)  # type: ignore
+        return cls(**instance_dict)
 
     @classmethod
     def parse_executable(cls, path) -> Dict[str, Optional[Union[str, int, Version]]]:
@@ -583,7 +574,6 @@ class PythonVersion(FinderBaseModel):
         :param Optional[str] name: The name of the distribution.
         :param Optional[str] company: The name of the distributing company.
         :return: An instance of a PythonVersion.
-        :rtype: :class:`~pythonfinder.models.python.PythonVersion`
         """
         creation_dict = cls.parse(launcher_entry.info.version)
         base_path = ensure_path(launcher_entry.info.install_path.__getattr__(""))
@@ -643,7 +633,7 @@ class VersionMap(FinderBaseModel):
             else:
                 current_entries = {
                     p.path
-                    for p in self.versions[version]  # type: ignore
+                    for p in self.versions[version]
                     if version in self.versions
                 }
                 new_entries = {p.path for p in entries}

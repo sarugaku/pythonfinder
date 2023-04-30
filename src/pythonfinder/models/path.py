@@ -5,7 +5,7 @@ from pathlib import Path
 import sys
 from collections import defaultdict, ChainMap
 from itertools import chain
-from typing import Any, Dict, List, Generator, Iterator, Optional, Tuple, Union
+from typing import Any, Dict, DefaultDict, List, Generator, Iterator, Optional, Tuple, Union
 
 from cached_property import cached_property
 from pydantic import Field, root_validator
@@ -44,7 +44,7 @@ def exists_and_is_accessible(path):
 class SystemPath(FinderBaseModel):
     global_search: bool = True
     paths: Dict[str, Union[PythonFinder, PathEntry]] = Field(default_factory=lambda: defaultdict(PathEntry))
-    executables: List[PathEntry] = Field(default_factory=lambda: list())
+    executables_tracking: List[PathEntry] = Field(default_factory=lambda: list())
     python_executables_tracking: Dict[str, PathEntry] = Field(default_factory=lambda: dict())
     path_order: List[str] = Field(default_factory=lambda: list())
     python_version_dict: Dict[Tuple, Any] = Field(default_factory=lambda: defaultdict(list))
@@ -110,16 +110,17 @@ class SystemPath(FinderBaseModel):
 
     @property
     def executables(self) -> List[PathEntry]:
-        self.executables = [
+        if self.executables_tracking:
+            return self.executables_tracking
+        self.executables_tracking = [
             p
             for p in chain(*(child.children_ref.values() for child in self.paths.values()))
             if p.is_executable
         ]
-        return self.executables
+        return self.executables_tracking
 
     @cached_property
-    def python_executables(self):
-        # type: () -> Dict[str, PathEntry]
+    def python_executables(self) -> Dict[str, PathEntry]:
         python_executables = {}
         for child in self.paths.values():
             if child.pythons:
@@ -131,17 +132,16 @@ class SystemPath(FinderBaseModel):
         return self.python_executables_tracking
 
     @cached_property
-    def version_dict(self):
-        # type: () -> DefaultDict[Tuple, List[PathEntry]]
+    def version_dict(self) -> DefaultDict[Tuple, List[PathEntry]]:
         self.version_dict_tracking = defaultdict(
             list
-        )  # type: DefaultDict[Tuple, List[PathEntry]]
+        )
         for finder_name, finder in self.finders_dict.items():
             for version, entry in finder.versions.items():
                 if entry not in self.version_dict_tracking[version] and entry.is_python:
                     self.version_dict_tracking[version].append(entry)
         for _, entry in self.python_executables.items():
-            version = entry.as_python  # type: PythonVersion
+            version = entry.as_python
             if not version:
                 continue
             if not isinstance(version, tuple):
@@ -385,13 +385,13 @@ class SystemPath(FinderBaseModel):
 
     def find_all_python_versions(
         self,
-        major=None,  # type: Optional[Union[str, int]]
-        minor=None,  # type: Optional[int]
-        patch=None,  # type: Optional[int]
-        pre=None,  # type: Optional[bool]
-        dev=None,  # type: Optional[bool]
-        arch=None,  # type: Optional[str]
-        name=None,  # type: Optional[str]
+        major: Optional[Union[str, int]] = None,
+        minor: Optional[int] = None,
+        patch: Optional[int] = None,
+        pre: Optional[bool] = None,
+        dev: Optional[bool] = None,
+        arch: Optional[str] = None,
+        name: Optional[str] = None,
     ) -> List["PathEntry"]:
 
         def sub_finder(obj):
@@ -410,15 +410,15 @@ class SystemPath(FinderBaseModel):
 
     def find_python_version(
         self,
-        major=None,  # type: Optional[Union[str, int]]
-        minor=None,  # type: Optional[Union[str, int]]
-        patch=None,  # type: Optional[Union[str, int]]
-        pre=None,  # type: Optional[bool]
-        dev=None,  # type: Optional[bool]
-        arch=None,  # type: Optional[str]
-        name=None,  # type: Optional[str]
-        sort_by_path=False,  # type: bool
-    ) -> PathEntry:
+        major: Optional[Union[str, int]] = None,
+        minor: Optional[Union[str, int]] = None,
+        patch: Optional[Union[str, int]] = None,
+        pre: Optional[bool] = None,
+        dev: Optional[bool] = None,
+        arch: Optional[str] = None,
+        name: Optional[str] = None,
+        sort_by_path: bool = False,
+    ) -> "PathEntry":
 
         def sub_finder(obj):
             return obj.find_python_version(major, minor, patch, pre, dev, arch, name)
@@ -458,11 +458,11 @@ class SystemPath(FinderBaseModel):
     @classmethod
     def create(
         cls,
-        path=None,  # type: str
-        system=False,  # type: bool
-        only_python=False,  # type: bool
-        global_search=True,  # type: bool
-        ignore_unsupported=True,  # type: bool
+        path: Optional[str] = None,
+        system: bool = False,
+        only_python: bool = False,
+        global_search: bool = True,
+        ignore_unsupported: bool = True,
     ) -> "SystemPath":
         """Create a new :class:`pythonfinder.models.SystemPath` instance.
 
@@ -472,7 +472,6 @@ class SystemPath(FinderBaseModel):
         :param bool only_python: Whether to search only for python executables, defaults to False
         :param bool ignore_unsupported: Whether to ignore unsupported python versions, if False, an error is raised, defaults to True
         :return: A new :class:`pythonfinder.models.SystemPath` instance.
-        :rtype: :class:`pythonfinder.models.SystemPath`
         """
 
         path_entries = defaultdict(PathEntry)
@@ -482,7 +481,7 @@ class SystemPath(FinderBaseModel):
         if global_search:
             if "PATH" in os.environ:
                 paths = os.environ["PATH"].split(os.pathsep)
-        path_order = []  # type: List[str]
+        path_order = []
         if path:
             path_order = [path]
             path_instance = ensure_path(path)
