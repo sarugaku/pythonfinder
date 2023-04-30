@@ -10,7 +10,7 @@ from fnmatch import fnmatch
 from threading import Timer
 from pathlib import Path
 from builtins import TimeoutError
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
+from typing import Any, Dict, Iterator, List, Optional, Union
 
 from packaging.version import Version, InvalidVersion
 
@@ -100,7 +100,7 @@ def get_python_version(path) -> str:
     return out.strip()
 
 
-def parse_python_version(version_str: str) -> Dict[str, Union[str, int, Version]]
+def parse_python_version(version_str: str) -> Dict[str, Union[str, int, Version]]:
     from packaging.version import parse as parse_version
 
     is_debug = False
