@@ -71,8 +71,7 @@ for rule in RULES:
     )
 
 
-def get_python_version(path):
-    # type: (str) -> str
+def get_python_version(path) -> str:
     """Get python version string using subprocess from a given path."""
     version_cmd = [
         path,
@@ -101,8 +100,7 @@ def get_python_version(path):
     return out.strip()
 
 
-def parse_python_version(version_str):
-    # type: (str) -> Dict[str, Union[str, int, Version]]
+def parse_python_version(version_str: str) -> Dict[str, Union[str, int, Version]]
     from packaging.version import parse as parse_version
 
     is_debug = False
@@ -112,7 +110,7 @@ def parse_python_version(version_str):
     match = version_re.match(version_str)
     if not match:
         raise InvalidPythonVersion("%s is not a python version" % version_str)
-    version_dict = match.groupdict()  # type: Dict[str, str]
+    version_dict = match.groupdict()
     major = int(version_dict.get("major", 0)) if version_dict.get("major") else None
     minor = int(version_dict.get("minor", 0)) if version_dict.get("minor") else None
     patch = int(version_dict.get("patch", 0)) if version_dict.get("patch") else None
@@ -121,8 +119,6 @@ def parse_python_version(version_str):
     is_devrelease = True if version_dict.get("dev") else False
     if patch:
         patch = int(patch)
-
-    version = None  # type: Optional[Version]
 
     try:
         version = parse_version(version_str)
@@ -152,28 +148,23 @@ def parse_python_version(version_str):
     }
 
 
-def path_is_executable(path):
-    # type: (str) -> bool
+def path_is_executable(path) -> bool:
     """
     Determine whether the supplied path is executable.
 
     :return: Whether the provided path is executable.
-    :rtype: bool
     """
 
     return os.access(str(path), os.X_OK)
 
 
-def path_is_known_executable(path):
-    # type: (Path) -> bool
+def path_is_known_executable(path: Path) -> bool:
     """
     Returns whether a given path is a known executable from known executable extensions
     or has the executable bit toggled.
 
     :param path: The path to the target executable.
-    :type path: :class:`~Path`
     :return: True if the path has chmod +x, or is a readable, known executable extension.
-    :rtype: bool
     """
 
     return (
@@ -183,14 +174,12 @@ def path_is_known_executable(path):
     )
 
 
-def looks_like_python(name):
-    # type: (str) -> bool
+def looks_like_python(name: str) -> bool:
     """
     Determine whether the supplied filename looks like a possible name of python.
 
     :param str name: The name of the provided file.
     :return: Whether the provided name looks like python.
-    :rtype: bool
     """
 
     if not any(name.lower().startswith(py_name) for py_name in PYTHON_IMPLEMENTATIONS):
@@ -201,27 +190,23 @@ def looks_like_python(name):
     return False
 
 
-def path_is_python(path):
-    # type: (Path) -> bool
+def path_is_python(path: Path) -> bool:
     """
     Determine whether the supplied path is executable and looks like a possible path to python.
 
     :param path: The path to an executable.
     :type path: :class:`~Path`
     :return: Whether the provided path is an executable path to python.
-    :rtype: bool
     """
 
     return path_is_executable(path) and looks_like_python(path.name)
 
 
-def guess_company(path):
-    # type: (str) -> Optional[str]
+def guess_company(path: str) -> Optional[str]:
     """Given a path to python, guess the company who created it
 
     :param str path: The path to guess about
     :return: The guessed company
-    :rtype: Optional[str]
     """
     non_core_pythons = [impl for impl in PYTHON_IMPLEMENTATIONS if impl != "python"]
     return next(
@@ -229,8 +214,7 @@ def guess_company(path):
     )
 
 
-def path_is_pythoncore(path):
-    # type: (str) -> bool
+def path_is_pythoncore(path: str) -> bool:
     """Given a path, determine whether it appears to be pythoncore.
 
     Does not verify whether the path is in fact a path to python, but simply
@@ -239,7 +223,6 @@ def path_is_pythoncore(path):
 
     :param str path: The path to check
     :return: Whether that path is a PythonCore path or not
-    :rtype: bool
     """
     company = guess_company(path)
     if company:
@@ -247,15 +230,13 @@ def path_is_pythoncore(path):
     return False
 
 
-def ensure_path(path):
-    # type: (Union[Path, str]) -> Path
+def ensure_path(path: Union[Path, str]) -> Path:
     """
     Given a path (either a string or a Path object), expand variables and return a Path object.
 
     :param path: A string or a :class:`~pathlib.Path` object.
     :type path: str or :class:`~pathlib.Path`
     :return: A fully expanded Path object.
-    :rtype: :class:`~pathlib.Path`
     """
 
     if isinstance(path, Path):
@@ -264,16 +245,13 @@ def ensure_path(path):
     return path.absolute()
 
 
-def _filter_none(k, v):
-    # type: (Any, Any) -> bool
+def _filter_none(k, v) -> bool:
     if v:
         return True
     return False
 
 
-# TODO: Reimplement in vistir
-def normalize_path(path):
-    # type: (str) -> str
+def normalize_path(path: str) -> str:
     return os.path.normpath(
         os.path.normcase(
             os.path.abspath(os.path.expandvars(os.path.expanduser(str(path))))
@@ -281,8 +259,7 @@ def normalize_path(path):
     )
 
 
-def filter_pythons(path):
-    # type: (Union[str, Path]) -> Iterable
+def filter_pythons(path: Union[str, Path]) -> Union[Iterable, Path]:
     """Return all valid pythons in a given path"""
     if not isinstance(path, Path):
         path = Path(str(path))
@@ -291,10 +268,7 @@ def filter_pythons(path):
     return filter(path_is_python, path.iterdir())
 
 
-# TODO: Port to vistir
-def unnest(item):
-    # type: (Any) -> Iterable[Any]
-    target = None  # type: Optional[Iterable]
+def unnest(item) -> Iterable[Any]:
     if isinstance(item, Iterable) and not isinstance(item, str):
         item, target = itertools.tee(item, 2)
     else:
@@ -311,8 +285,7 @@ def unnest(item):
         yield target
 
 
-def parse_pyenv_version_order(filename="version"):
-    # type: (str) -> List[str]
+def parse_pyenv_version_order(filename="version") -> List[str]:
     version_order_file = normalize_path(os.path.join(PYENV_ROOT, filename))
     if os.path.exists(version_order_file) and os.path.isfile(version_order_file):
         with io.open(version_order_file, encoding="utf-8") as fh:
@@ -322,8 +295,7 @@ def parse_pyenv_version_order(filename="version"):
     return []
 
 
-def parse_asdf_version_order(filename=".tool-versions"):
-    # type: (str) -> List[str]
+def parse_asdf_version_order(filename: str=".tool-versions") -> List[str]:
     version_order_file = normalize_path(os.path.join("~", filename))
     if os.path.exists(version_order_file) and os.path.isfile(version_order_file):
         with io.open(version_order_file, encoding="utf-8") as fh:
@@ -380,7 +352,6 @@ def expand_paths(path, only_python=True) -> Iterator:
     :param Union[Sequence, PathEntry] path: The path or list of paths to expand
     :param bool only_python: Whether to filter to include only python paths, default True
     :returns: An iterator over the expanded set of path entries
-    :rtype: Iterator[PathEntry]
     """
 
     if path is not None and (
@@ -408,8 +379,7 @@ def expand_paths(path, only_python=True) -> Iterator:
             yield path
 
 
-def dedup(iterable):
-    # type: (Iterable) -> Iterable
+def dedup(iterable: Iterable) -> Iterable:
     """Deduplicate an iterable object like iter(set(iterable)) but
     order-reserved.
     """

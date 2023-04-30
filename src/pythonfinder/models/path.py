@@ -4,13 +4,13 @@ import os
 from pathlib import Path
 import sys
 from collections import defaultdict, ChainMap
+from itertools import chain
 from typing import Any, Dict, List, Generator, Iterator, Optional, Tuple, Union
 
 from cached_property import cached_property
 from pydantic import Field, root_validator
 
 from .common import FinderBaseModel
-from ..compat import fs_str
 from ..environment import (
     ASDF_DATA_DIR,
     ASDF_INSTALLED,
@@ -109,8 +109,7 @@ class SystemPath(FinderBaseModel):
         return ASDF_INSTALLED or os.path.exists(normalize_path(ASDF_DATA_DIR))
 
     @property
-    def executables(self):
-        # type: () -> List[PathEntry]
+    def executables(self) -> List[PathEntry]:
         self.executables = [
             p
             for p in chain(*(child.children_ref.values() for child in self.paths.values()))
@@ -479,7 +478,7 @@ class SystemPath(FinderBaseModel):
         path_entries = defaultdict(PathEntry)
         paths = []
         if ignore_unsupported:
-            os.environ["PYTHONFINDER_IGNORE_UNSUPPORTED"] = fs_str("1")
+            os.environ["PYTHONFINDER_IGNORE_UNSUPPORTED"] = "1"
         if global_search:
             if "PATH" in os.environ:
                 paths = os.environ["PATH"].split(os.pathsep)

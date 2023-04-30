@@ -14,7 +14,6 @@ from typing import (
 
 from pydantic import BaseModel, Field, validator
 
-from ..compat import fs_str
 from ..exceptions import InvalidPythonVersion
 from ..utils import (
     KNOWN_EXTS,
@@ -56,7 +55,7 @@ class PathEntry(BaseModel):
         return v or cls()._gen_children()
 
     def __str__(self) -> str:
-        return fs_str("{0}".format(self.path.as_posix()))
+        return "{0}".format(self.path.as_posix())
 
     def __lt__(self, other) -> bool:
         return self.path.as_posix() < other.path.as_posix()
@@ -103,7 +102,7 @@ class PathEntry(BaseModel):
             from .python import PythonVersion
 
             try:
-                py_version = PythonVersion.from_path(  # type: ignore
+                py_version = PythonVersion.from_path(
                     path=self, name=self.name
                 )
             except (ValueError, InvalidPythonVersion):
@@ -166,7 +165,6 @@ class PathEntry(BaseModel):
         self.is_python_ref = None
 
     def get_py_version(self):
-        # type: () -> Optional[PythonVersion]
         from ..environment import IGNORE_UNSUPPORTED
 
         if self.is_dir:
@@ -176,7 +174,7 @@ class PathEntry(BaseModel):
             from .python import PythonVersion
 
             try:
-                py_version = PythonVersion.from_path(  # type: ignore
+                py_version = PythonVersion.from_path(
                     path=self, name=self.name
                 )
             except (InvalidPythonVersion, ValueError):
@@ -207,14 +205,14 @@ class PathEntry(BaseModel):
                 elif entry.is_python and entry.as_python is not None:
                     yield entry
         elif self.is_python and self.as_python is not None:
-            yield self  # type: ignore
+            yield self
 
     @property
     def pythons(self) -> Dict[Union[str, Path], "PathEntry"]:
         if not self.pythons_ref:
             self.pythons_ref = defaultdict(PathEntry)
             for python in self._iter_pythons():
-                python_path = python.path.as_posix()  # type: ignore
+                python_path = python.path.as_posix()
                 self.pythons_ref[python_path] = python
         return self.pythons_ref
 
@@ -230,13 +228,13 @@ class PathEntry(BaseModel):
 
     def find_all_python_versions(
         self,
-        major=None,  # type: Optional[Union[str, int]]
-        minor=None,  # type: Optional[int]
-        patch=None,  # type: Optional[int]
-        pre=None,  # type: Optional[bool]
-        dev=None,  # type: Optional[bool]
-        arch=None,  # type: Optional[str]
-        name=None,  # type: Optional[str]
+        major: Optional[Union[str, int]] = None,
+        minor: Optional[int] = None,
+        patch: Optional[int] = None,
+        pre: Optional[bool] = None,
+        dev: Optional[bool] = None,
+        arch: Optional[str] = None,
+        name: Optional[str] = None,
     ) -> List["PathEntry"]:
         """Search for a specific python version on the path. Return all copies
 
@@ -249,7 +247,6 @@ class PathEntry(BaseModel):
         :param str arch: Architecture to include, e.g. '64bit', defaults to None
         :param str name: The name of a python version, e.g. ``anaconda3-5.3.0``
         :return: A list of :class:`~pythonfinder.models.PathEntry` instances matching the version requested.
-        :rtype: List[:class:`~pythonfinder.models.PathEntry`]
         """
 
         call_method = "find_all_python_versions" if self.is_dir else "find_python_version"
@@ -271,13 +268,13 @@ class PathEntry(BaseModel):
 
     def find_python_version(
         self,
-        major=None,  # type: Optional[Union[str, int]]
-        minor=None,  # type: Optional[int]
-        patch=None,  # type: Optional[int]
-        pre=None,  # type: Optional[bool]
-        dev=None,  # type: Optional[bool]
-        arch=None,  # type: Optional[str]
-        name=None,  # type: Optional[str]
+        major: Optional[Union[str, int]] = None,
+        minor: Optional[int] = None,
+        patch: Optional[int] = None,
+        pre: Optional[bool] = None,
+        dev: Optional[bool] = None,
+        arch: Optional[str] = None,
+        name: Optional[str] = None,
     ) -> Optional["PathEntry"]:
         """Search or self for the specified Python version and return the first match.
 
@@ -296,7 +293,7 @@ class PathEntry(BaseModel):
 
         if not self.is_dir:
             if self.is_python and self.as_python and version_matcher(self.py_version):
-                return self  # type: ignore
+                return self
 
         matching_pythons = [
             [entry, entry.as_python.version_sort]
@@ -325,9 +322,9 @@ class PathEntry(BaseModel):
         pass_args = {"is_root": False, "only_python": self.only_python}
         if pass_name:
             if self.name is not None and isinstance(self.name, str):
-                pass_args["name"] = self.name  # type: ignore
+                pass_args["name"] = self.name
             elif self.path is not None and isinstance(self.path.name, str):
-                pass_args["name"] = self.path.name  # type: ignore
+                pass_args["name"] = self.path.name
 
         if not self.is_dir:
             yield (self.path.as_posix(), self)
@@ -337,21 +334,20 @@ class PathEntry(BaseModel):
                     continue
                 if self.only_python:
                     try:
-                        entry = PathEntry.create(path=child, **pass_args)  # type: ignore
+                        entry = PathEntry.create(path=child, **pass_args)
                     except (InvalidPythonVersion, ValueError):
                         continue
                 else:
                     try:
-                        entry = PathEntry.create(path=child, **pass_args)  # type: ignore
+                        entry = PathEntry.create(path=child, **pass_args)
                     except (InvalidPythonVersion, ValueError):
                         continue
                 yield (child.as_posix(), entry)
         return
 
     @property
-    def children(self):
-        # type: () -> Dict[str, PathEntry]
-        children = getattr(self, "children_ref", {})  # type: Dict[str, PathEntry]
+    def children(self) -> Dict[str, "PathEntry"]:
+        children = getattr(self, "children_ref", {})
         if not children:
             for child_key, child_val in self._gen_children():
                 children[child_key] = child_val
@@ -375,7 +371,6 @@ class PathEntry(BaseModel):
         :param dict pythons: A dictionary of existing python objects (usually from a finder), defaults to None
         :param str name: Name of the python version, e.g. ``anaconda3-5.3.0``
         :return: A new instance of the class.
-        :rtype: :class:`pythonfinder.models.PathEntry`
         """
 
         target = ensure_path(path)
@@ -396,12 +391,12 @@ class PathEntry(BaseModel):
             children = {}
             child_creation_args = {"is_root": False, "only_python": only_python}
             if not guessed_name:
-                child_creation_args["name"] = _new.name  # type: ignore
+                child_creation_args["name"] = _new.name
             for pth, python in pythons.items():
                 if any(shim in normalize_path(str(pth)) for shim in get_shim_paths()):
                     continue
                 pth = ensure_path(pth)
-                children[pth.as_posix()] = PathEntry(  # type: ignore
+                children[pth.as_posix()] = PathEntry(
                     py_version=python, path=pth, **child_creation_args
                 )
             _new.children_ref = children

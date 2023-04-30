@@ -47,12 +47,12 @@ class Finder(FinderBaseModel):
     @classmethod
     def parse_major(
         cls,
-        major,  # type: Optional[str]
-        minor=None,  # type: Optional[int]
-        patch=None,  # type: Optional[int]
-        pre=None,  # type: Optional[bool]
-        dev=None,  # type: Optional[bool]
-        arch=None,  # type: Optional[str]
+        major: Optional[str],
+        minor: Optional[int]=None,
+        patch: Optional[int]=None,
+        pre: Optional[bool]=None,
+        dev: Optional[bool]=None,
+        arch: Optional[str]=None,
     ) -> Dict[str, Any]:
 
         major_is_str = major and isinstance(major, str)
@@ -125,28 +125,27 @@ class Finder(FinderBaseModel):
 
     def find_python_version(
         self,
-        major=None,  # type: Optional[Union[str, int]]
-        minor=None,  # type: Optional[int]
-        patch=None,  # type: Optional[int]
-        pre=None,  # type: Optional[bool]
-        dev=None,  # type: Optional[bool]
-        arch=None,  # type: Optional[str]
-        name=None,  # type: Optional[str]
-        sort_by_path=False,  # type: bool
-     ) -> Optional[PathEntry]:
+        major: Optional[Union[str, int]] = None,
+        minor: Optional[int] = None,
+        patch: Optional[int] = None,
+        pre: Optional[bool] = None,
+        dev: Optional[bool] = None,
+        arch: Optional[str] = None,
+        name: Optional[str] = None,
+        sort_by_path: bool = False,
+    ) -> Optional[PathEntry]:
         """
         Find the python version which corresponds most closely to the version requested.
 
-        :param Union[str, int] major: The major version to look for, or the full version, or the name of the target version.
-        :param Optional[int] minor: The minor version. If provided, disables string-based lookups from the major version field.
-        :param Optional[int] patch: The patch version.
-        :param Optional[bool] pre: If provided, specifies whether to search pre-releases.
-        :param Optional[bool] dev: If provided, whether to search dev-releases.
-        :param Optional[str] arch: If provided, which architecture to search.
-        :param Optional[str] name: *Name* of the target python, e.g. ``anaconda3-5.3.0``
-        :param bool sort_by_path: Whether to sort by path -- default sort is by version(default: False)
+        :param major: The major version to look for, or the full version, or the name of the target version.
+        :param minor: The minor version. If provided, disables string-based lookups from the major version field.
+        :param patch: The patch version.
+        :param pre: If provided, specifies whether to search pre-releases.
+        :param dev: If provided, whether to search dev-releases.
+        :param arch: If provided, which architecture to search.
+        :param name: *Name* of the target python, e.g. ``anaconda3-5.3.0``
+        :param sort_by_path: Whether to sort by path -- default sort is by version(default: False)
         :return: A new *PathEntry* pointer at a matching python version, if one can be located.
-        :rtype: :class:`pythonfinder.models.path.PathEntry`
         """
         minor = int(minor) if minor is not None else minor
         patch = int(patch) if patch is not None else patch
@@ -185,13 +184,13 @@ class Finder(FinderBaseModel):
 
     def find_all_python_versions(
         self,
-        major=None,  # type: Optional[Union[str, int]]
-        minor=None,  # type: Optional[int]
-        patch=None,  # type: Optional[int]
-        pre=None,  # type: Optional[bool]
-        dev=None,  # type: Optional[bool]
-        arch=None,  # type: Optional[str]
-        name=None,  # type: Optional[str]
+        major: Optional[Union[str, int]] = None,
+        minor: Optional[int] = None,
+        patch: Optional[int] = None,
+        pre: Optional[bool] = None,
+        dev: Optional[bool] = None,
+        arch: Optional[str] = None,
+        name: Optional[str] = None,
     ) -> List[PathEntry]:
         version_sort = operator.attrgetter("as_python.version_sort")
         python_version_dict = getattr(self.system_path, "python_version_dict", {})
