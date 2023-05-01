@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import importlib
 import os
 import shutil
 import subprocess
@@ -13,6 +12,7 @@ import click.testing
 import pytest
 
 import pythonfinder
+from pythonfinder import environment
 
 from .testutils import (
     cd,
@@ -90,8 +90,6 @@ def no_pyenv_root_envvar(monkeypatch):
             m.delenv("PYENV_ROOT")
         if "ASDF_DATA_DIR" in os.environ:
             m.delenv("ASDF_DATA_DIR")
-        importlib.reload(pythonfinder.environment)
-        importlib.reload(pythonfinder.models.path)
         m.setattr(pythonfinder.environment, "PYENV_INSTALLED", False)
         m.setattr(pythonfinder.environment, "ASDF_INSTALLED", False)
         m.setattr(pythonfinder.environment, "PYENV_ROOT", normalize_path("~/.pyenv"))
@@ -99,11 +97,6 @@ def no_pyenv_root_envvar(monkeypatch):
             pythonfinder.environment,
             "ASDF_DATA_DIR",
             normalize_path("~/.asdf"),
-        )
-        m.setattr(
-            pythonfinder.environment,
-            "SHIM_PATHS",
-            pythonfinder.environment.get_shim_paths(),
         )
         yield
 
@@ -244,10 +237,6 @@ def setup_pythons(isolated_envdir, monkeypatch):
         pyenv_dict = setup_pyenv(isolated_envdir)
         os.environ["PATH"] = os.environ.get("PATH").replace("::", ":")
         version_dicts = {"pyenv": pyenv_dict, "asdf": asdf_dict}
-        shim_paths = [
-            normalize_path(isolated_envdir.joinpath(p).as_posix())
-            for p in [".asdf/shims", ".pyenv/shims"]
-        ]
         yield version_dicts
 
 
