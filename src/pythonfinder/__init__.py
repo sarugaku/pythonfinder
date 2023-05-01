@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from .exceptions import InvalidPythonVersion
 from .models import SystemPath
 from .pythonfinder import Finder

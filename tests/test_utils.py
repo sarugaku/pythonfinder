@@ -17,13 +17,7 @@ pythoninfo = namedtuple("PythonVersion", ["version", "path", "arch"])
 def _get_python_versions():
     finder = Finder(global_search=True, system=False, ignore_unsupported=True)
     pythons = finder.find_all_python_versions()
-    for v in pythons:
-        py = v.py_version
-        comes_from = getattr(py, "comes_from", None)
-        if comes_from is not None:
-            comes_from_path = getattr(comes_from, "path", v.path)
-        else:
-            comes_from_path = v.path
+
     return sorted(list(pythons))
 
 

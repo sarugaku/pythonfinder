@@ -7,12 +7,9 @@ import sys
 from collections import namedtuple
 from pathlib import Path
 
-import click
-import click.testing
 import pytest
 
 import pythonfinder
-from pythonfinder import environment
 
 from .testutils import (
     cd,
@@ -103,7 +100,6 @@ def no_pyenv_root_envvar(monkeypatch):
 
 @pytest.fixture
 def isolated_envdir(create_tmpdir):
-    runner = click.testing.CliRunner()
     fake_root_path = create_tmpdir()
     fake_root = fake_root_path.as_posix()
     set_write_bit(fake_root)
@@ -157,7 +153,7 @@ def setup_plugin(name):
     this = Path(__file__).absolute().parent
     plugin_dir = this / "test_artifacts" / name
     plugin_uri = plugin_dir.as_uri()
-    if not "file:///" in plugin_uri and "file:/" in plugin_uri:
+    if "file:///" not in plugin_uri and "file:/" in plugin_uri:
         plugin_uri = plugin_uri.replace("file:/", "file:///")
     out = subprocess.check_output(["git", "clone", plugin_uri, Path(target).as_posix()])
     print(out, file=sys.stderr)
@@ -230,7 +226,7 @@ def setup_asdf(home_dir):
 
 @pytest.fixture
 def setup_pythons(isolated_envdir, monkeypatch):
-    with monkeypatch.context() as m:
+    with monkeypatch.context():
         setup_plugin("asdf")
         setup_plugin("pyenv")
         asdf_dict = setup_asdf(isolated_envdir)
@@ -306,7 +302,7 @@ def get_windows_python_versions():
     versions = []
     for line in out.splitlines():
         line = line.strip()
-        if line and not "Installed Pythons found" in line:
+        if line and "Installed Pythons found" not in line:
             version, path = line.split("\t")
             version = version.strip().lstrip("-")
             path = normalize_path(path.strip().strip('"'))

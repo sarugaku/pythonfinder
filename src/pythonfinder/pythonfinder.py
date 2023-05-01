@@ -1,18 +1,16 @@
-import operator
-import os
-from typing import Any, Dict, List, Optional, Union
+from __future__ import annotations
 
-from pydantic import BaseModel
+import operator
+from typing import Any, Optional
 
 from .exceptions import InvalidPythonVersion
-from .utils import Iterable, version_re
+from .models.common import FinderBaseModel
 from .models.path import PathEntry, SystemPath
 from .models.python import PythonVersion
-from .models.common import FinderBaseModel
+from .utils import Iterable, version_re
 
 
 class Finder(FinderBaseModel):
-
     path_prepend: Optional[str] = None
     system: bool = False
     global_search: bool = True
@@ -41,20 +39,19 @@ class Finder(FinderBaseModel):
             ignore_unsupported=self.ignore_unsupported,
         )
 
-    def which(self, exe) -> Optional[PathEntry]:
+    def which(self, exe) -> PathEntry | None:
         return self.system_path.which(exe)
 
     @classmethod
     def parse_major(
         cls,
-        major: Optional[str],
-        minor: Optional[int]=None,
-        patch: Optional[int]=None,
-        pre: Optional[bool]=None,
-        dev: Optional[bool]=None,
-        arch: Optional[str]=None,
-    ) -> Dict[str, Any]:
-
+        major: str | None,
+        minor: int | None = None,
+        patch: int | None = None,
+        pre: bool | None = None,
+        dev: bool | None = None,
+        arch: str | None = None,
+    ) -> dict[str, Any]:
         major_is_str = major and isinstance(major, str)
         is_num = (
             major
@@ -70,7 +67,7 @@ class Finder(FinderBaseModel):
         )
         name = None
         if major and major_has_arch:
-            orig_string = "{0!s}".format(major)
+            orig_string = f"{major!s}"
             major, _, arch = major.rpartition("-")
             if arch:
                 arch = arch.lower().lstrip("x").replace("bit", "")
@@ -78,12 +75,12 @@ class Finder(FinderBaseModel):
                     major = orig_string
                     arch = None
                 else:
-                    arch = "{0}bit".format(arch)
+                    arch = f"{arch}bit"
             try:
                 version_dict = PythonVersion.parse(major)
             except (ValueError, InvalidPythonVersion):
                 if name is None:
-                    name = "{0!s}".format(major)
+                    name = f"{major!s}"
                     major = None
                 version_dict = {}
         elif major and major[0].isalpha():
@@ -125,15 +122,15 @@ class Finder(FinderBaseModel):
 
     def find_python_version(
         self,
-        major: Optional[Union[str, int]] = None,
-        minor: Optional[int] = None,
-        patch: Optional[int] = None,
-        pre: Optional[bool] = None,
-        dev: Optional[bool] = None,
-        arch: Optional[str] = None,
-        name: Optional[str] = None,
+        major: str | int | None = None,
+        minor: int | None = None,
+        patch: int | None = None,
+        pre: bool | None = None,
+        dev: bool | None = None,
+        arch: str | None = None,
+        name: str | None = None,
         sort_by_path: bool = False,
-    ) -> Optional[PathEntry]:
+    ) -> PathEntry | None:
         """
         Find the python version which corresponds most closely to the version requested.
 
@@ -184,14 +181,14 @@ class Finder(FinderBaseModel):
 
     def find_all_python_versions(
         self,
-        major: Optional[Union[str, int]] = None,
-        minor: Optional[int] = None,
-        patch: Optional[int] = None,
-        pre: Optional[bool] = None,
-        dev: Optional[bool] = None,
-        arch: Optional[str] = None,
-        name: Optional[str] = None,
-    ) -> List[PathEntry]:
+        major: str | int | None = None,
+        minor: int | None = None,
+        patch: int | None = None,
+        pre: bool | None = None,
+        dev: bool | None = None,
+        arch: str | None = None,
+        name: str | None = None,
+    ) -> list[PathEntry]:
         version_sort = operator.attrgetter("as_python.version_sort")
         python_version_dict = getattr(self.system_path, "python_version_dict", {})
         if python_version_dict:

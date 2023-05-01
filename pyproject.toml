@@ -9,11 +9,48 @@ extend-exclude = '''
 )
 '''
 
-[tool.isort]
-profile = "black"
-atomic = true
-filter_files = true
-known_first_party = ["pythonfinder"]
+[tool.ruff]
+target-version = "py37"
+fix = true
+line-length = 90
+select = [
+  "B",   # flake8-bugbear
+  "E",   # pycodestyle (flake8)
+  "F",   # pyflakes (flake8)
+  "I",   # isort
+  "PGH", # pygrep-hooks
+  "RUF", # Ruff u.a. yesqa
+  "TCH", # flake8-type-checking
+  "UP",  # pyupgrade
+  "W",   # pycodestyle (flake8)
+]
+ignore = [
+    "B904",    # Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+    "E501",    # line too long (flake8)
+    "PGH003",  # Use specific rule codes when ignoring type issues
+]
+unfixable = [
+    "F841",   # Local variable {x} is assigned to but never used (flake8)
+]
+[tool.ruff.per-file-ignores]
+"__init__.py" = [
+    "F401",  # module imported but unused (flake8)
+    "F403",  # ‘from module import *’ used; unable to detect undefined names (flake8)
+]
+"docs/*" = [
+  "I",
+]
+
+[tool.ruff.flake8-type-checking]
+runtime-evaluated-base-classes = [
+  "pydantic.BaseModel",
+  "pythonfinder.models.common.FinderBaseModel",
+  "pythonfinder.models.mixins.PathEntry",
+]
+
+[tool.ruff.isort]
+known-first-party = ["pythonfinder"]
+required-imports = ["from __future__ import annotations"]
 
 [tool.towncrier]
 package = "pythonfinder"
