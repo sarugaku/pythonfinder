@@ -1,32 +1,34 @@
-import operator
+from __future__ import annotations
+
 import os
 from collections import defaultdict
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
     Generator,
     Iterator,
-    List,
     Optional,
-    Union,
 )
 
 from pydantic import BaseModel, Field, validator
 
+from ..environment import get_shim_paths
 from ..exceptions import InvalidPythonVersion
 from ..utils import (
     KNOWN_EXTS,
-    expand_paths,
-    looks_like_python,
-    path_is_known_executable,
     ensure_path,
+    expand_paths,
     filter_pythons,
     is_in_path,
+    looks_like_python,
     normalize_path,
+    path_is_known_executable,
 )
 
-from ..environment import get_shim_paths
+if TYPE_CHECKING:
+    from pythonfinder.models.python import PythonVersion
 
 
 class PathEntry(BaseModel):
@@ -47,15 +49,15 @@ class PathEntry(BaseModel):
         allow_mutation = True
         include_private_attributes = True
 
-    @validator('children', pre=True, always=True, check_fields=False)
+    @validator("children", pre=True, always=True, check_fields=False)
     def set_children(cls, v, values, **kwargs):
-        path = values.get('path')
+        path = values.get("path")
         if path:
-            values['name'] = path.name
+            values["name"] = path.name
         return v or cls()._gen_children()
 
     def __str__(self) -> str:
-        return "{0}".format(self.path.as_posix())
+        return f"{self.path.as_posix()}"
 
     def __lt__(self, other) -> bool:
         return self.path.as_posix() < other.path.as_posix()
@@ -69,7 +71,7 @@ class PathEntry(BaseModel):
     def __gte__(self, other) -> bool:
         return self.path.as_posix() >= other.path.as_posix()
 
-    def which(self, name) -> Optional["PathEntry"]:
+    def which(self, name) -> PathEntry | None:
         """Search in this path for an executable.
 
         :param executable: The name of an executable to search for.
@@ -78,8 +80,7 @@ class PathEntry(BaseModel):
         """
 
         valid_names = [name] + [
-            "{0}.{1}".format(name, ext).lower() if ext else "{0}".format(name).lower()
-            for ext in KNOWN_EXTS
+            f"{name}.{ext}".lower() if ext else f"{name}".lower() for ext in KNOWN_EXTS
         ]
         children = self.children
         found = None
@@ -93,8 +94,9 @@ class PathEntry(BaseModel):
                 None,
             )
         return found
+
     @property
-    def as_python(self) -> "PythonVersion":
+    def as_python(self) -> PythonVersion:
         py_version = None
         if self.py_version_ref:
             return self.py_version_ref
@@ -102,9 +104,7 @@ class PathEntry(BaseModel):
             from .python import PythonVersion
 
             try:
-                py_version = PythonVersion.from_path(
-                    path=self, name=self.name
-                )
+                py_version = PythonVersion.from_path(path=self, name=self.name)
             except (ValueError, InvalidPythonVersion):
                 pass
         self.py_version_ref = py_version
@@ -174,9 +174,7 @@ class PathEntry(BaseModel):
             from .python import PythonVersion
 
             try:
-                py_version = PythonVersion.from_path(
-                    path=self, name=self.name
-                )
+                py_version = PythonVersion.from_path(path=self, name=self.name)
             except (InvalidPythonVersion, ValueError):
                 py_version = None
             except Exception:
@@ -186,7 +184,7 @@ class PathEntry(BaseModel):
         return None
 
     @property
-    def py_version(self) -> Optional["PythonVersion"]:
+    def py_version(self) -> PythonVersion | None:
         if not self.py_version_ref:
             py_version = self.get_py_version()
             self.py_version_ref = py_version
@@ -208,7 +206,7 @@ class PathEntry(BaseModel):
             yield self
 
     @property
-    def pythons(self) -> Dict[Union[str, Path], "PathEntry"]:
+    def pythons(self) -> dict[str | Path, PathEntry]:
         if not self.pythons_ref:
             self.pythons_ref = defaultdict(PathEntry)
             for python in self._iter_pythons():
@@ -217,8 +215,7 @@ class PathEntry(BaseModel):
         return self.pythons_ref
 
     def __iter__(self) -> Iterator:
-        for entry in self.children.values():
-            yield entry
+        yield from self.children.values()
 
     def __next__(self) -> Generator:
         return next(iter(self))
@@ -228,14 +225,14 @@ class PathEntry(BaseModel):
 
     def find_all_python_versions(
         self,
-        major: Optional[Union[str, int]] = None,
-        minor: Optional[int] = None,
-        patch: Optional[int] = None,
-        pre: Optional[bool] = None,
-        dev: Optional[bool] = None,
-        arch: Optional[str] = None,
-        name: Optional[str] = None,
-    ) -> List["PathEntry"]:
+        major: str | int | None = None,
+        minor: int | None = None,
+        patch: int | None = None,
+        pre: bool | None = None,
+        dev: bool | None = None,
+        arch: str | None = None,
+        name: str | None = None,
+    ) -> list[PathEntry]:
         """Search for a specific python version on the path. Return all copies
 
         :param major: Major python version to search for.
@@ -268,14 +265,14 @@ class PathEntry(BaseModel):
 
     def find_python_version(
         self,
-        major: Optional[Union[str, int]] = None,
-        minor: Optional[int] = None,
-        patch: Optional[int] = None,
-        pre: Optional[bool] = None,
-        dev: Optional[bool] = None,
-        arch: Optional[str] = None,
-        name: Optional[str] = None,
-    ) -> Optional["PathEntry"]:
+        major: str | int | None = None,
+        minor: int | None = None,
+        patch: int | None = None,
+        pre: bool | None = None,
+        dev: bool | None = None,
+        arch: str | None = None,
+        name: str | None = None,
+    ) -> PathEntry | None:
         """Search or self for the specified Python version and return the first match.
 
         :param major: Major version number.
@@ -288,8 +285,11 @@ class PathEntry(BaseModel):
         :param str name: The name of a python version, e.g. ``anaconda3-5.3.0``
         :returns: A :class:`~pythonfinder.models.PathEntry` instance matching the version requested.
         """
+
         def version_matcher(py_version):
-            return py_version.matches(major, minor, patch, pre, dev, arch, python_name=name)
+            return py_version.matches(
+                major, minor, patch, pre, dev, arch, python_name=name
+            )
 
         if not self.is_dir:
             if self.is_python and self.as_python and version_matcher(self.py_version):
@@ -346,7 +346,7 @@ class PathEntry(BaseModel):
         return
 
     @property
-    def children(self) -> Dict[str, "PathEntry"]:
+    def children(self) -> dict[str, PathEntry]:
         children = getattr(self, "children_ref", {})
         if not children:
             for child_key, child_val in self._gen_children():
@@ -357,12 +357,12 @@ class PathEntry(BaseModel):
     @classmethod
     def create(
         cls,
-        path: Union[str, Path],
+        path: str | Path,
         is_root: bool = False,
         only_python: bool = False,
-        pythons: Optional[Dict[str, "PythonVersion"]] = None,
-        name: Optional[str] = None,
-    ) -> "PathEntry":
+        pythons: dict[str, PythonVersion] | None = None,
+        name: str | None = None,
+    ) -> PathEntry:
         """Helper method for creating new :class:`pythonfinder.models.PathEntry` instances.
 
         :param str path: Path to the specified location.
@@ -401,4 +401,3 @@ class PathEntry(BaseModel):
                 )
             _new.children_ref = children
         return _new
-

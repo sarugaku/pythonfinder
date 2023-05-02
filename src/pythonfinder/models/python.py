@@ -1,15 +1,26 @@
+from __future__ import annotations
+
 import logging
 import os
 import platform
 import sys
 from collections import defaultdict
 from pathlib import Path, WindowsPath
-from typing import Any, Callable, DefaultDict, Dict, List, Optional, Tuple, Union, Generator, Iterator
+from typing import (
+    Any,
+    Callable,
+    DefaultDict,
+    Dict,
+    Iterator,
+    List,
+    Optional,
+    Tuple,
+    Union,
+)
 
 from packaging.version import Version
 from pydantic import Field, validator
 
-from .common import FinderBaseModel
 from ..environment import ASDF_DATA_DIR, PYENV_ROOT, SYSTEM_ARCH
 from ..exceptions import InvalidPythonVersion
 from ..utils import (
@@ -22,10 +33,9 @@ from ..utils import (
     parse_asdf_version_order,
     parse_pyenv_version_order,
     parse_python_version,
-    unnest,
 )
+from .common import FinderBaseModel
 from .mixins import PathEntry
-
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +78,7 @@ class PythonFinder(PathEntry):
     def is_asdf(self) -> bool:
         return is_in_path(str(self.root), ASDF_DATA_DIR)
 
-    def get_version_order(self) -> List[Path]:
+    def get_version_order(self) -> list[Path]:
         version_paths = [
             p
             for p in self.root.glob(self.version_glob_path)
@@ -101,11 +111,11 @@ class PythonFinder(PathEntry):
         return base / "bin"
 
     @classmethod
-    def version_from_bin_dir(cls, entry) -> Optional[PathEntry]:
+    def version_from_bin_dir(cls, entry) -> PathEntry | None:
         py_version = next(iter(entry.find_all_python_versions()), None)
         return py_version
 
-    def _iter_version_bases(self) -> Iterator[Tuple[Path, PathEntry]]:
+    def _iter_version_bases(self) -> Iterator[tuple[Path, PathEntry]]:
         for p in self.get_version_order():
             bin_dir = self.get_bin_dir(p)
             if bin_dir.exists() and bin_dir.is_dir():
@@ -115,7 +125,7 @@ class PythonFinder(PathEntry):
                 self.roots[p] = entry
                 yield (p, entry)
 
-    def _iter_versions(self) -> Iterator[Tuple[Path, PathEntry, Tuple]]:
+    def _iter_versions(self) -> Iterator[tuple[Path, PathEntry, tuple]]:
         for base_path, entry in self._iter_version_bases():
             version = None
             version_entry = None
@@ -150,7 +160,7 @@ class PythonFinder(PathEntry):
                 yield (base_path, entry, version_tuple)
 
     @property
-    def versions(self) -> DefaultDict[Tuple, PathEntry]:
+    def versions(self) -> DefaultDict[tuple, PathEntry]:
         if not self._versions:
             for _, entry, version_tuple in self._iter_versions():
                 self._versions[version_tuple] = entry
@@ -167,7 +177,7 @@ class PythonFinder(PathEntry):
                 yield self.versions[version_tuple]
 
     @validator("paths", pre=True, always=True)
-    def get_paths(cls, v) -> List[PathEntry]:
+    def get_paths(cls, v) -> list[PathEntry]:
         if v is not None:
             return v
 
@@ -175,7 +185,7 @@ class PythonFinder(PathEntry):
         return _paths
 
     @property
-    def pythons(self) -> Dict:
+    def pythons(self) -> dict:
         if not self.pythons_ref:
             from .path import PathEntry
 
@@ -193,7 +203,9 @@ class PythonFinder(PathEntry):
         return self.pythons
 
     @classmethod
-    def create(cls, root, sort_function, version_glob_path=None, ignore_unsupported=True) -> "PythonFinder":
+    def create(
+        cls, root, sort_function, version_glob_path=None, ignore_unsupported=True
+    ) -> PythonFinder:
         root = ensure_path(root)
         if not version_glob_path:
             version_glob_path = "versions/*"
@@ -207,14 +219,14 @@ class PythonFinder(PathEntry):
 
     def find_all_python_versions(
         self,
-        major: Optional[Union[str, int]] = None,
-        minor: Optional[int] = None,
-        patch: Optional[int] = None,
-        pre: Optional[bool] = None,
-        dev: Optional[bool] = None,
-        arch: Optional[str] = None,
-        name: Optional[str] = None,
-    ) -> List[PathEntry]:
+        major: str | int | None = None,
+        minor: int | None = None,
+        patch: int | None = None,
+        pre: bool | None = None,
+        dev: bool | None = None,
+        arch: str | None = None,
+        name: str | None = None,
+    ) -> list[PathEntry]:
         """Search for a specific python version on the path. Return all copies
 
         :param major: Major python version to search for.
@@ -253,14 +265,14 @@ class PythonFinder(PathEntry):
 
     def find_python_version(
         self,
-        major: Optional[Union[str, int]] = None,
-        minor: Optional[int] = None,
-        patch: Optional[int] = None,
-        pre: Optional[bool] = None,
-        dev: Optional[bool] = None,
-        arch: Optional[str] = None,
-        name: Optional[str] = None,
-    ) -> Optional[PathEntry]:
+        major: str | int | None = None,
+        minor: int | None = None,
+        patch: int | None = None,
+        pre: bool | None = None,
+        dev: bool | None = None,
+        arch: str | None = None,
+        name: str | None = None,
+    ) -> PathEntry | None:
         """Search or self for the specified Python version and return the first match.
 
         :param major: Major version number.
@@ -275,7 +287,7 @@ class PythonFinder(PathEntry):
         """
 
         def sub_finder(obj):
-            return getattr(obj, "find_python_version")(major, minor, patch, pre, dev, arch, name)
+            return obj.find_python_version(major, minor, patch, pre, dev, arch, name)
 
         def version_sort(path_entry):
             return path_entry.as_python.version_sort
@@ -289,8 +301,7 @@ class PythonFinder(PathEntry):
         paths = sorted(list(unnested), key=version_sort, reverse=True)
         return next(iter(p for p in paths if p is not None), None)
 
-
-    def which(self, name) -> Optional[PathEntry]:
+    def which(self, name) -> PathEntry | None:
         """Search in this path for an executable.
 
         :param executable: The name of an executable to search for.
@@ -313,7 +324,7 @@ class PythonVersion(FinderBaseModel):
     is_debug: bool = False
     version: Optional[Version] = None
     architecture: Optional[str] = None
-    comes_from: Optional['PathEntry'] = None
+    comes_from: Optional["PathEntry"] = None
     executable: Optional[Union[str, WindowsPath, Path]] = None
     company: Optional[str] = None
     name: Optional[str] = None
@@ -325,9 +336,8 @@ class PythonVersion(FinderBaseModel):
         include_private_attributes = True
         # keep_untouched = (cached_property,)
 
-
     def __getattribute__(self, key):
-        result = super(PythonVersion, self).__getattribute__(key)
+        result = super().__getattribute__(key)
         if key in ["minor", "patch"] and result is None:
             executable = None
             if self.executable:
@@ -340,7 +350,7 @@ class PythonVersion(FinderBaseModel):
                 instance_dict = self.parse_executable(executable)
                 for k in instance_dict.keys():
                     try:
-                        super(PythonVersion, self).__getattribute__(k)
+                        super().__getattribute__(k)
                     except AttributeError:
                         continue
                     else:
@@ -349,7 +359,7 @@ class PythonVersion(FinderBaseModel):
         return result
 
     @property
-    def version_sort(self) -> Tuple[int, int, Optional[int], int, int]:
+    def version_sort(self) -> tuple[int, int, int | None, int, int]:
         """
         A tuple for sorting against other instances of the same class.
 
@@ -379,7 +389,7 @@ class PythonVersion(FinderBaseModel):
         )
 
     @property
-    def version_tuple(self) -> Tuple[int, int, int, bool, bool, bool]:
+    def version_tuple(self) -> tuple[int, int, int, bool, bool, bool]:
         """
         Provides a version tuple for using as a dictionary key.
 
@@ -397,20 +407,20 @@ class PythonVersion(FinderBaseModel):
 
     def matches(
         self,
-        major: Optional[int] = None,
-        minor: Optional[int] = None,
-        patch: Optional[int] = None,
+        major: int | None = None,
+        minor: int | None = None,
+        patch: int | None = None,
         pre: bool = False,
         dev: bool = False,
-        arch: Optional[str] = None,
+        arch: str | None = None,
         debug: bool = False,
-        python_name: Optional[str] = None,
+        python_name: str | None = None,
     ) -> bool:
         result = False
         if arch:
             own_arch = self.get_architecture()
             if arch.isdigit():
-                arch = "{0}bit".format(arch)
+                arch = f"{arch}bit"
         if (
             (major is None or self.major == major)
             and (minor is None or self.minor == minor)
@@ -428,16 +438,16 @@ class PythonVersion(FinderBaseModel):
             result = True
         return result
 
-    def as_major(self) -> "PythonVersion":
+    def as_major(self) -> PythonVersion:
         self.minor = None
         self.patch = None
         return self
 
-    def as_minor(self) -> "PythonVersion":
+    def as_minor(self) -> PythonVersion:
         self.patch = None
         return self
 
-    def as_dict(self) -> Dict[str, Union[int, bool, Version, None]]:
+    def as_dict(self) -> dict[str, int | bool | Version | None]:
         return {
             "major": self.major,
             "minor": self.minor,
@@ -468,7 +478,7 @@ class PythonVersion(FinderBaseModel):
                 setattr(self, key, metadata[key])
 
     @classmethod
-    def parse(cls, version) -> Dict[str, Union[str, int, Version]]:
+    def parse(cls, version) -> dict[str, str | int | Version]:
         """
         Parse a valid version string into a dictionary
 
@@ -502,7 +512,9 @@ class PythonVersion(FinderBaseModel):
         return self.architecture
 
     @classmethod
-    def from_path(cls, path, name=None, ignore_unsupported=True, company=None) -> "PythonVersion":
+    def from_path(
+        cls, path, name=None, ignore_unsupported=True, company=None
+    ) -> PythonVersion:
         """
         Parses a python version from a system path.
 
@@ -548,7 +560,7 @@ class PythonVersion(FinderBaseModel):
         return cls(**instance_dict)
 
     @classmethod
-    def parse_executable(cls, path) -> Dict[str, Optional[Union[str, int, Version]]]:
+    def parse_executable(cls, path) -> dict[str, str | int | Version | None]:
         result_dict = {}
         result_version = None
         if path is None:
@@ -567,7 +579,9 @@ class PythonVersion(FinderBaseModel):
         return result_dict
 
     @classmethod
-    def from_windows_launcher(cls, launcher_entry, name=None, company=None) -> "PythonVersion":
+    def from_windows_launcher(
+        cls, launcher_entry, name=None, company=None
+    ) -> PythonVersion:
         """Create a new PythonVersion instance from a Windows Launcher Entry
 
         :param launcher_entry: A python launcher environment object.
@@ -601,15 +615,17 @@ class PythonVersion(FinderBaseModel):
         return py_version
 
     @classmethod
-    def create(cls, **kwargs) -> "PythonVersion":
+    def create(cls, **kwargs) -> PythonVersion:
         if "architecture" in kwargs:
             if kwargs["architecture"].isdigit():
-                kwargs["architecture"] = "{0}bit".format(kwargs["architecture"])
+                kwargs["architecture"] = "{}bit".format(kwargs["architecture"])
         return cls(**kwargs)
 
 
 class VersionMap(FinderBaseModel):
-    versions: DefaultDict[Tuple[int, Optional[int], Optional[int], bool, bool, bool], List[PathEntry]] = defaultdict(list)
+    versions: DefaultDict[
+        Tuple[int, Optional[int], Optional[int], bool, bool, bool], List[PathEntry]
+    ] = defaultdict(list)
 
     class Config:
         validate_assignment = True
@@ -632,9 +648,7 @@ class VersionMap(FinderBaseModel):
                 self.versions[version] = entries
             else:
                 current_entries = {
-                    p.path
-                    for p in self.versions[version]
-                    if version in self.versions
+                    p.path for p in self.versions[version] if version in self.versions
                 }
                 new_entries = {p.path for p in entries}
                 new_entries -= current_entries

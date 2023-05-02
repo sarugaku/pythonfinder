@@ -60,7 +60,7 @@ def cli(
                 comes_from_path = getattr(comes_from, "path", found.path)
             else:
                 comes_from_path = found.path
-            arch = getattr(py, "architecture", None)
+
             click.secho("Found python at the following locations:", fg="green")
             click.secho(
                 "{py.name!s}: {py.version!s} ({py.architecture!s}) @ {comes_from!s}".format(

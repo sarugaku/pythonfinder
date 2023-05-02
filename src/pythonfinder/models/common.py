@@ -1,10 +1,14 @@
+from __future__ import annotations
+
 from pydantic import BaseModel, Extra
 
 
 class FinderBaseModel(BaseModel):
-    def __setattr__(self, name, value):  # noqa: C901 (ignore complexity)
+    def __setattr__(self, name, value):
         private_attributes = {
-            field_name for field_name in self.__annotations__ if field_name.startswith("_")
+            field_name
+            for field_name in self.__annotations__
+            if field_name.startswith("_")
         }
 
         if name in private_attributes or name in self.__fields__:

@@ -1,22 +1,20 @@
 from __future__ import annotations
-import io
+
 import itertools
 import os
 import re
 import subprocess
+from builtins import TimeoutError
 from collections import OrderedDict
 from collections.abc import Iterable, Sequence
 from fnmatch import fnmatch
-from threading import Timer
 from pathlib import Path
-from builtins import TimeoutError
-from typing import Any, Dict, Iterator, List, Optional, Union
+from typing import Any, Iterator
 
-from packaging.version import Version, InvalidVersion
+from packaging.version import InvalidVersion, Version
 
-from .environment import PYENV_ROOT, SUBPROCESS_TIMEOUT
+from .environment import PYENV_ROOT
 from .exceptions import InvalidPythonVersion
-
 
 version_re_str = (
     r"(?P<major>\d+)(?:\.(?P<minor>\d+))?(?:\.(?P<patch>(?<=\.)[0-9]+))?\.?"
@@ -46,12 +44,12 @@ KNOWN_EXTS = KNOWN_EXTS | set(
     filter(None, os.environ.get("PATHEXT", "").split(os.pathsep))
 )
 PY_MATCH_STR = (
-    r"((?P<implementation>{0})(?:\d?(?:\.\d[cpm]{{0,3}}))?(?:-?[\d\.]+)*(?!w))".format(
+    r"((?P<implementation>{})(?:\d?(?:\.\d[cpm]{{,3}}))?(?:-?[\d\.]+)*(?!w))".format(
         "|".join(PYTHON_IMPLEMENTATIONS)
     )
 )
-EXE_MATCH_STR = r"{0}(?:\.(?P<ext>{1}))?".format(PY_MATCH_STR, "|".join(KNOWN_EXTS))
-RE_MATCHER = re.compile(r"({0}|{1})".format(version_re_str, PY_MATCH_STR))
+EXE_MATCH_STR = r"{}(?:\.(?P<ext>{}))?".format(PY_MATCH_STR, "|".join(KNOWN_EXTS))
+RE_MATCHER = re.compile(rf"({version_re_str}|{PY_MATCH_STR})")
 EXE_MATCHER = re.compile(EXE_MATCH_STR)
 RULES_BASE = [
     "*{0}",
@@ -66,9 +64,7 @@ RULES = [rule.format(impl) for impl in PYTHON_IMPLEMENTATIONS for rule in RULES_
 
 MATCH_RULES = []
 for rule in RULES:
-    MATCH_RULES.extend(
-        ["{0}.{1}".format(rule, ext) if ext else "{0}".format(rule) for ext in KNOWN_EXTS]
-    )
+    MATCH_RULES.extend([f"{rule}.{ext}" if ext else f"{rule}" for ext in KNOWN_EXTS])
 
 
 def get_python_version(path) -> str:
@@ -86,7 +82,7 @@ def get_python_version(path) -> str:
         "shell": False,
     }
     c = subprocess.Popen(version_cmd, **subprocess_kwargs)
-    timer = Timer(SUBPROCESS_TIMEOUT, c.kill)
+
     try:
         out, _ = c.communicate()
     except (SystemExit, KeyboardInterrupt, TimeoutError):
@@ -100,7 +96,7 @@ def get_python_version(path) -> str:
     return out.strip()
 
 
-def parse_python_version(version_str: str) -> Dict[str, Union[str, int, Version]]:
+def parse_python_version(version_str: str) -> dict[str, str | int | Version]:
     from packaging.version import parse as parse_version
 
     is_debug = False
@@ -130,7 +126,7 @@ def parse_python_version(version_str: str) -> Dict[str, Union[str, int, Version]
         pre = ""
         if v_dict.get("prerel") and v_dict.get("prerelversion"):
             pre = v_dict.pop("prerel")
-            pre = "{0}{1}".format(pre, v_dict.pop("prerelversion"))
+            pre = "{}{}".format(pre, v_dict.pop("prerelversion"))
         v_dict["pre"] = pre
         keys = ["major", "minor", "patch", "pre", "postdev", "post", "dev"]
         values = [v_dict.get(val) for val in keys]
@@ -202,7 +198,7 @@ def path_is_python(path: Path) -> bool:
     return path_is_executable(path) and looks_like_python(path.name)
 
 
-def guess_company(path: str) -> Optional[str]:
+def guess_company(path: str) -> str | None:
     """Given a path to python, guess the company who created it
 
     :param str path: The path to guess about
@@ -230,7 +226,7 @@ def path_is_pythoncore(path: str) -> bool:
     return False
 
 
-def ensure_path(path: Union[Path, str]) -> Path:
+def ensure_path(path: Path | str) -> Path:
     """
     Given a path (either a string or a Path object), expand variables and return a Path object.
 
@@ -259,7 +255,7 @@ def normalize_path(path: str) -> str:
     )
 
 
-def filter_pythons(path: Union[str, Path]) -> Union[Iterable, Path]:
+def filter_pythons(path: str | Path) -> Iterable | Path:
     """Return all valid pythons in a given path"""
     if not isinstance(path, Path):
         path = Path(str(path))
@@ -285,20 +281,20 @@ def unnest(item) -> Iterable[Any]:
         yield target
 
 
-def parse_pyenv_version_order(filename="version") -> List[str]:
+def parse_pyenv_version_order(filename="version") -> list[str]:
     version_order_file = normalize_path(os.path.join(PYENV_ROOT, filename))
     if os.path.exists(version_order_file) and os.path.isfile(version_order_file):
-        with io.open(version_order_file, encoding="utf-8") as fh:
+        with open(version_order_file, encoding="utf-8") as fh:
             contents = fh.read()
         version_order = [v for v in contents.splitlines()]
         return version_order
     return []
 
 
-def parse_asdf_version_order(filename: str=".tool-versions") -> List[str]:
+def parse_asdf_version_order(filename: str = ".tool-versions") -> list[str]:
     version_order_file = normalize_path(os.path.join("~", filename))
     if os.path.exists(version_order_file) and os.path.isfile(version_order_file):
-        with io.open(version_order_file, encoding="utf-8") as fh:
+        with open(version_order_file, encoding="utf-8") as fh:
             contents = fh.read()
         python_section = next(
             iter(line for line in contents.splitlines() if line.startswith("python")),
@@ -335,7 +331,7 @@ def split_version_and_name(
                 major = major
                 name = None
         else:
-            name = "{0!s}".format(major)
+            name = f"{major!s}"
             major = None
     return (major, minor, patch, name)
 

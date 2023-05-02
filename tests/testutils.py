@@ -9,6 +9,7 @@ import tempfile
 import warnings
 from contextlib import contextmanager
 from pathlib import Path
+from typing import AnyStr
 
 import click
 
