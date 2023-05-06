@@ -1,1 +1,0 @@
-Include tests and tests data into the sdist.

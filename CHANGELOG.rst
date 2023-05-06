@@ -1,3 +1,12 @@
+2.0.0 (2023-05-06)
+==================
+
+Bug Fixes
+---------
+
+- Include tests and tests data into the sdist.  `#116 <https://github.com/sarugaku/pythonfinder/issues/116>`_
+
+
 1.3.2 (2023-02-06)
 ==================
 
