@@ -1,0 +1,2 @@
+Corrected pyenv detection and usage which broke with the release of ``pythonfinder==2.0.0``
+
