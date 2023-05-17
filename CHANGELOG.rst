@@ -1,3 +1,12 @@
+2.0.1 (2023-05-16)
+==================
+
+Bug Fixes
+---------
+
+- Corrected ``asdf`` and ``pyenv`` detection and usage which broke with the release of ``pythonfinder==2.0.0``  `#137 <https://github.com/sarugaku/pythonfinder/issues/137>`_
+
+
 2.0.0 (2023-05-06)
 ==================
 
