@@ -176,10 +176,7 @@ class SystemPath(FinderBaseModel):
         if self.global_search and "PATH" in os.environ:
             path_order = path_order + os.environ["PATH"].split(os.pathsep)
         path_order = list(dedup(path_order))
-        path_instances = [
-            ensure_path(p.strip('"'))
-            for p in path_order
-        ]
+        path_instances = [ensure_path(p.strip('"')) for p in path_order]
         self.paths.update(
             {
                 p.as_posix(): PathEntry.create(
@@ -206,9 +203,9 @@ class SystemPath(FinderBaseModel):
         else:
             bin_dir = "bin"
         if venv and (self.system or self.global_search):
-            path_order = [(p / bin_dir).as_posix(), *self.path_order]
+            path_order = [(venv / bin_dir).as_posix(), *self.path_order]
             self.path_order = path_order
-            self.paths[p] = self.get_path(p.joinpath(bin_dir))
+            self.paths[venv] = self.get_path(venv.joinpath(bin_dir))
         if self.system:
             syspath = Path(sys.executable)
             syspath_bin = syspath.parent
