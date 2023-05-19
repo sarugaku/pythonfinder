@@ -1,0 +1,1 @@
+Fix edge case with windows git bash and environment variables having backslash.
