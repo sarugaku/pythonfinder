@@ -1,3 +1,12 @@
+2.0.3 (2023-05-19)
+==================
+
+Bug Fixes
+---------
+
+- Fix edge case from refactor to pydantic -- only search for any python version when a specific version was not requested.  `#139 <https://github.com/sarugaku/pythonfinder/issues/139>`_
+
+
 2.0.2 (2023-05-19)
 ==================
 

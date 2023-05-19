@@ -1,1 +1,0 @@
-Fix edge case from refactor to pydantic -- only search for any python version when a specific version was not requested.
