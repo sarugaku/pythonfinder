@@ -1,3 +1,12 @@
+2.0.2 (2023-05-19)
+==================
+
+Bug Fixes
+---------
+
+- Fix edge case with windows git bash and environment variables having backslash.  `#138 <https://github.com/sarugaku/pythonfinder/issues/138>`_
+
+
 2.0.1 (2023-05-16)
 ==================
 
