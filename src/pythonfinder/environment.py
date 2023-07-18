@@ -19,16 +19,18 @@ def possibly_convert_to_windows_style_path(path):
     if not isinstance(path, str):
         path = str(path)
     # Check if the path is in Unix-style (Git Bash)
-    if os.name == 'nt':
-        if path.startswith('/'):
-            drive, tail = re.match(r"^/([a-zA-Z])/(.*)", path).groups()
-            revised_path = drive.upper() + ":\\" + tail.replace('/', '\\')
-            return revised_path
-        elif path.startswith('\\'):
-            drive, tail = re.match(r"^\\([a-zA-Z])\\(.*)", path).groups()
-            revised_path = drive.upper() + ":\\" + tail
-            return revised_path
-
+    if os.name != 'nt':
+        return path
+    if os.path.exists(path):
+        return path
+    match = re.match(r"[/\\]([a-zA-Z])[/\\](.*)", path)
+    if match is None:
+        return path
+    drive, rest_of_path = match.groups()
+    rest_of_path = rest_of_path.replace("/", "\\")
+    revised_path = f"{drive.upper()}:\\{rest_of_path}"
+    if os.path.exists(revised_path):
+        return revised_path
     return path
 
 
