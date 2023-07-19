@@ -5,8 +5,3 @@ name = "pypi"
 
 [packages]
 pythonfinder = {editable = true, extras = ["dev", "tests"], path = "."}
-
-[dev-packages]
-
-[requires]
-python_version = "3.10"
