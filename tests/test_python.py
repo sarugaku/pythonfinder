@@ -95,6 +95,6 @@ def test_python_version_output_variants(monkeypatch, path, version_output, versi
         assert isinstance(parsed.version, Version)
 
 
-@pytest.mark.skip_nt
+@pytest.mark.skipif(os.name == "nt", reason="Does not run on Windows")
 def test_pythonfinder(expected_python_versions, all_python_versions):
     assert sorted(expected_python_versions) == sorted(all_python_versions)

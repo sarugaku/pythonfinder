@@ -24,11 +24,6 @@ from .testutils import (
 pythoninfo = namedtuple("PythonVersion", ["name", "version", "path", "arch"])
 
 
-def pytest_runtest_setup(item):
-    if item.get_closest_marker("skip_nt") is not None and os.name == "nt":
-        pytest.skip("does not run on windows")
-
-
 @pytest.fixture
 def pathlib_tmpdir(request, tmpdir):
     yield Path(str(tmpdir))
