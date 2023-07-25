@@ -19,7 +19,10 @@ from typing import (
     Union,
 )
 
-from cached_property import cached_property
+if sys.version_info >= (3, 8):
+    from functools import cached_property
+else:
+    from cached_property import cached_property
 from pydantic import Field, root_validator
 
 from ..environment import (

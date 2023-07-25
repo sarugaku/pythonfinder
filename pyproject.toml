@@ -1,13 +1,107 @@
 [build-system]
-requires = ['setuptools>=40.8.0', 'wheel>=0.33.0']
+requires = ['setuptools>=61.0.0']
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pythonfinder"
+description = "A cross-platform python discovery tool to help locate python on any system."
+authors = [{name = "Dan Ryan", email = "dan@danryan.co"}]
+readme = "README.rst"
+license = {text = "MIT"}
+keywords = [
+    "pythonfinder",
+    "path",
+    "finder",
+    "pathfinder",
+    "which",
+    "pep514",
+    "pyenv",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Software Development :: Build Tools",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
+]
+dynamic = ["version"]
+requires-python = ">=3.7"
+dependencies = [
+    "cached-property; python_version < \"3.8\"",
+    "packaging>=22.0",
+    "pydantic>=1.10.7,<2",
+]
+
+[project.optional-dependencies]
+cli = ["click"]
+tests = [
+    "pytest",
+    "pytest-cov",
+    "pytest-timeout",
+    "coverage<5",
+]
+dev = [
+    "parver",
+    "build",
+    "invoke",
+    "twine",
+    "lxml",
+    "pre-commit",
+    "towncrier",
+]
+
+[project.scripts]
+pyfinder = "pythonfinder.cli:cli"
+
+[project.urls]
+Homepage = "https://github.com/sarugaku/pythonfinder"
+
+[tool.setuptools]
+zip-safe = true
+package-data = { pythonfinder = ["LICENSE*", "README*"] }
+package-dir = {"" = "src"}
+license-files = ["LICENSE.txt"]
+
+[tool.setuptools.dynamic]
+version = {attr = "pythonfinder.__version__"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+exclude = [
+    "tests",
+    "docs",
+    "tasks",
+]
+namespaces = false
+
+[tool.pytest.ini_options]
+addopts = "-ra --timeout 300 --cov"
+testpaths = ["tests/"]
+norecursedirs = [".*", "build", "dist", "news", "tasks", "docs"]
+markers = [
+    "parse",
+    "is_python",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]
+
+[tool.mypy]
+ignore_missing_imports = true
+follow_imports = "skip"
+html_report = "mypyhtml"
+python_version = "3.7"
 
 [tool.black]
 line-length = 90
-extend-exclude = '''
-/(
-  src/pythonfinder/_vendor
-)
-'''
 
 [tool.ruff]
 target-version = "py37"

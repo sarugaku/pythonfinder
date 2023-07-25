@@ -59,9 +59,9 @@ def build_dists(ctx, drop_existing=True):
     if drop_existing:
         drop_dist_dirs(ctx)
     log("Building sdist using %s ...." % sys.executable)
-    ctx.run("%s setup.py sdist" % sys.executable)
+    ctx.run("%s -m build --sdist" % sys.executable)
     log("Building wheel using %s ...." % sys.executable)
-    ctx.run("%s setup.py bdist_wheel" % sys.executable)
+    ctx.run("%s -m build --wheel" % sys.executable)
 
 
 @invoke.task(build_dists)
