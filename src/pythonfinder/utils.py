@@ -241,12 +241,6 @@ def ensure_path(path: Path | str) -> Path:
     return path.absolute()
 
 
-def _filter_none(k, v) -> bool:
-    if v:
-        return True
-    return False
-
-
 def normalize_path(path: str) -> str:
     return os.path.normpath(
         os.path.normcase(
