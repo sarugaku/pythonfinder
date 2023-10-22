@@ -5,6 +5,7 @@ import operator
 import os
 import sys
 from collections import ChainMap, defaultdict
+from functools import cached_property
 from itertools import chain
 from pathlib import Path
 from typing import (
@@ -19,10 +20,6 @@ from typing import (
     Union,
 )
 
-if sys.version_info >= (3, 8):
-    from functools import cached_property
-else:
-    from cached_property import cached_property
 from pydantic import Field, root_validator
 
 from ..environment import (

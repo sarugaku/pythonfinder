@@ -22,7 +22,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
@@ -32,9 +31,8 @@ classifiers = [
     "Topic :: Utilities",
 ]
 dynamic = ["version"]
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 dependencies = [
-    "cached-property; python_version < \"3.8\"",
     "packaging>=22.0",
     "pydantic>=1.10.7,<2",
 ]
@@ -98,13 +96,13 @@ filterwarnings = [
 ignore_missing_imports = true
 follow_imports = "skip"
 html_report = "mypyhtml"
-python_version = "3.7"
+python_version = "3.8"
 
 [tool.black]
 line-length = 90
 
 [tool.ruff]
-target-version = "py37"
+target-version = "py38"
 fix = true
 line-length = 90
 select = [
