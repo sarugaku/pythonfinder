@@ -45,7 +45,7 @@ tests = [
     "pytest",
     "pytest-cov",
     "pytest-timeout",
-    "coverage<5",
+    "coverage[toml]",
 ]
 dev = [
     "parver",
@@ -145,6 +145,35 @@ runtime-evaluated-base-classes = [
 [tool.ruff.isort]
 known-first-party = ["pythonfinder"]
 required-imports = ["from __future__ import annotations"]
+
+[tool.coverage.run]
+branch = true
+source = ["src/pythonfinder/"]
+omit = ["src/pythonfinder/_vendor/*"]
+
+[tool.coverage.report]
+# Regexes for lines to exclude from consideration
+exclude_lines = [
+    # Have to re-enable the standard pragma
+    "pragma: no cover",
+
+    # Don't complain about missing debug-only code:
+    "def __repr__",
+    "if self.debug",
+
+    # Don't complain if tests don't hit defensive assertion code:
+    "raise AssertionError",
+    "raise NotImplementedError",
+    # Don't complain if non-runnable code isn't run:
+    "if 0:",
+    "if __name__ == .__main__.:"
+]
+[tool.coverage.html]
+directory = "htmlcov"
+
+[tool.coverage.xml]
+output = "coverage.xml"
+
 
 [tool.towncrier]
 package = "pythonfinder"
