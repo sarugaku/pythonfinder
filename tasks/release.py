@@ -2,15 +2,18 @@
 from __future__ import annotations
 
 import re
+import shutil
 import sys
 from pathlib import Path
 
 import invoke
 from parver import Version
 
-from .vendoring import drop_dir
-
 TASK_NAME = "RELEASE"
+
+
+def drop_dir(path):
+    shutil.rmtree(str(path))
 
 
 def _get_git_root(ctx):

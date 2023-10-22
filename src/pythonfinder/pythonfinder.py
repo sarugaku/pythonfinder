@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 import operator
+from collections.abc import Iterable
 from typing import Any, Optional
 
+from .environment import set_asdf_paths, set_pyenv_paths
 from .exceptions import InvalidPythonVersion
 from .models.common import FinderBaseModel
 from .models.path import PathEntry, SystemPath
 from .models.python import PythonVersion
-from .environment import set_asdf_paths, set_pyenv_paths
-from .utils import Iterable, version_re
+from .utils import version_re
 
 
 class Finder(FinderBaseModel):

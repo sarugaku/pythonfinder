@@ -7,14 +7,6 @@ import shutil
 import sys
 
 
-def is_type_checking():
-    try:
-        from typing import TYPE_CHECKING
-    except ImportError:
-        return False
-    return TYPE_CHECKING
-
-
 def possibly_convert_to_windows_style_path(path):
     if not isinstance(path, str):
         path = str(path)
@@ -53,7 +45,6 @@ else:
 
 
 IGNORE_UNSUPPORTED = bool(os.environ.get("PYTHONFINDER_IGNORE_UNSUPPORTED", False))
-MYPY_RUNNING = os.environ.get("MYPY_RUNNING", is_type_checking())
 SUBPROCESS_TIMEOUT = os.environ.get("PYTHONFINDER_SUBPROCESS_TIMEOUT", 5)
 """The default subprocess timeout for determining python versions
 
