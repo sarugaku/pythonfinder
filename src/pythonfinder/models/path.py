@@ -20,7 +20,7 @@ from typing import (
     Union,
 )
 
-from pydantic import Field, root_validator
+from pydantic import model_validator, ConfigDict, Field
 
 from ..environment import (
     ASDF_DATA_DIR,
@@ -74,13 +74,9 @@ class SystemPath(FinderBaseModel):
     system: bool = False
     ignore_unsupported: bool = False
     finders_dict: Dict[str, PythonFinder] = Field(default_factory=lambda: dict())
-
-    class Config:
-        validate_assignment = True
-        arbitrary_types_allowed = True
-        allow_mutation = True
-        include_private_attributes = True
-        keep_untouched = (cached_property,)
+    # TODO[pydantic]: The following keys were removed: `allow_mutation`.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
+    model_config = ConfigDict(validate_assignment=True, arbitrary_types_allowed=True, allow_mutation=True, include_private_attributes=True, ignored_types=(cached_property,))
 
     def __init__(self, **data):
         super().__init__(**data)
@@ -93,7 +89,8 @@ class SystemPath(FinderBaseModel):
                 python_executables.update(dict(finder.pythons))
         self.python_executables_tracking = python_executables
 
-    @root_validator(pre=True)
+    @model_validator(mode="before")
+    @classmethod
     def set_defaults(cls, values):
         values["python_version_dict"] = defaultdict(list)
         values["pyenv_finder"] = None

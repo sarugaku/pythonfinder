@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, Extra
+from pydantic import ConfigDict, BaseModel, Extra
 
 
 class FinderBaseModel(BaseModel):
@@ -18,9 +18,6 @@ class FinderBaseModel(BaseModel):
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
 
         object.__setattr__(self, name, value)
-
-    class Config:
-        validate_assignment = True
-        arbitrary_types_allowed = True
-        allow_mutation = True
-        include_private_attributes = False
+    # TODO[pydantic]: The following keys were removed: `allow_mutation`.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
+    model_config = ConfigDict(validate_assignment=True, arbitrary_types_allowed=True, allow_mutation=True, include_private_attributes=False)

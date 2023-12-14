@@ -12,7 +12,7 @@ from typing import (
     Optional,
 )
 
-from pydantic import BaseModel, Field, validator
+from pydantic import ConfigDict, BaseModel, Field, validator
 
 from ..exceptions import InvalidPythonVersion
 from ..utils import (
@@ -39,13 +39,12 @@ class PathEntry(BaseModel):
     is_dir_ref: Optional[bool] = None
     is_executable_ref: Optional[bool] = None
     is_python_ref: Optional[bool] = None
+    # TODO[pydantic]: The following keys were removed: `allow_mutation`.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
+    model_config = ConfigDict(validate_assignment=True, arbitrary_types_allowed=True, allow_mutation=True, include_private_attributes=True)
 
-    class Config:
-        validate_assignment = True
-        arbitrary_types_allowed = True
-        allow_mutation = True
-        include_private_attributes = True
-
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("children", pre=True, always=True, check_fields=False)
     def set_children(cls, v, values, **kwargs):
         path = values.get("path")

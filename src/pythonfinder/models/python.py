@@ -19,7 +19,7 @@ from typing import (
 )
 
 from packaging.version import Version
-from pydantic import Field, validator
+from pydantic import ConfigDict, Field, validator
 
 from ..environment import ASDF_DATA_DIR, PYENV_ROOT, SYSTEM_ARCH
 from ..exceptions import InvalidPythonVersion
@@ -54,19 +54,15 @@ class PythonFinder(PathEntry):
     #: List of paths discovered during search
     paths: List = Field(default_factory=lambda: list())
     #: Versions discovered in the specified paths
-    _versions: Dict = Field(default_factory=lambda: defaultdict())
+    versions: Dict = Field(default_factory=lambda: defaultdict())
     pythons_ref: Dict = Field(default_factory=lambda: defaultdict())
-
-    class Config:
-        validate_assignment = True
-        arbitrary_types_allowed = True
-        allow_mutation = True
-        include_private_attributes = True
-        # keep_untouched = (cached_property,)
+    # TODO[pydantic]: The following keys were removed: `allow_mutation`.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
+    model_config = ConfigDict(validate_assignment=True, arbitrary_types_allowed=True, allow_mutation=True, include_private_attributes=True)
 
     @property
     def version_paths(self) -> Any:
-        return self._versions.values()
+        return self.versions.values()
 
     @property
     def is_pyenv(self) -> bool:
@@ -159,10 +155,10 @@ class PythonFinder(PathEntry):
 
     @property
     def versions(self) -> DefaultDict[tuple, PathEntry]:
-        if not self._versions:
+        if not self.versions:
             for _, entry, version_tuple in self._iter_versions():
-                self._versions[version_tuple] = entry
-        return self._versions
+                self.versions[version_tuple] = entry
+        return self.versions
 
     def _iter_pythons(self) -> Iterator:
         for path, entry, version_tuple in self._iter_versions():
@@ -174,6 +170,8 @@ class PythonFinder(PathEntry):
             else:
                 yield self.versions[version_tuple]
 
+    # TODO[pydantic]: We couldn't refactor the `validator`, please replace it by `field_validator` manually.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-validators for more information.
     @validator("paths", pre=True, always=True)
     def get_paths(cls, v) -> list[PathEntry]:
         if v is not None:
@@ -326,13 +324,9 @@ class PythonVersion(FinderBaseModel):
     executable: Optional[Union[str, WindowsPath, Path]] = None
     company: Optional[str] = None
     name: Optional[str] = None
-
-    class Config:
-        validate_assignment = True
-        arbitrary_types_allowed = True
-        allow_mutation = True
-        include_private_attributes = True
-        # keep_untouched = (cached_property,)
+    # TODO[pydantic]: The following keys were removed: `allow_mutation`.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
+    model_config = ConfigDict(validate_assignment=True, arbitrary_types_allowed=True, allow_mutation=True, include_private_attributes=True)
 
     def __getattribute__(self, key):
         result = super().__getattribute__(key)
@@ -624,13 +618,9 @@ class VersionMap(FinderBaseModel):
     versions: DefaultDict[
         Tuple[int, Optional[int], Optional[int], bool, bool, bool], List[PathEntry]
     ] = defaultdict(list)
-
-    class Config:
-        validate_assignment = True
-        arbitrary_types_allowed = True
-        allow_mutation = True
-        include_private_attributes = True
-        # keep_untouched = (cached_property,)
+    # TODO[pydantic]: The following keys were removed: `allow_mutation`.
+    # Check https://docs.pydantic.dev/dev-v2/migration/#changes-to-config for more information.
+    model_config = ConfigDict(validate_assignment=True, arbitrary_types_allowed=True, allow_mutation=True, include_private_attributes=True)
 
     def add_entry(self, entry) -> None:
         version = entry.as_python
