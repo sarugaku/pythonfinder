@@ -173,7 +173,7 @@ class PythonFinder(PathEntry):
         _paths = [base for _, base in self._iter_version_bases()]
         return _paths
 
-    @cached_property
+    @property
     def pythons(self) -> dict:
         if not self.pythons_ref:
             from .path import PathEntry
