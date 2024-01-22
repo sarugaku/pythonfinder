@@ -515,25 +515,33 @@ class PythonVersion:
 
         ignore_unsupported = ignore_unsupported or IGNORE_UNSUPPORTED
 
-        # Check if path is a string or an object with 'path' attribute
+        # Check if path is a string, a PathEntry, or a PythonFinder object
         if isinstance(path, str):
             path_obj = Path(path)  # Convert string to Path object
             path_name = path_obj.name
+            path_str = path
         elif hasattr(path, "path") and isinstance(path.path, Path):
             path_obj = path.path
             path_name = getattr(path, "name", path_obj.name)
+            path_str = path.path.absolute().as_posix()
+        elif isinstance(path, PythonFinder):  # If path is a PythonFinder object
+            path_obj = path.path  # Assuming PythonFinder has a path attribute
+            path_name = getattr(path, "name", path_obj.name)
+            path_str = (
+                path.path.absolute().as_posix()
+            )  # Assuming PythonFinder has a path attribute
         else:
             raise ValueError(
-                f"Invalid path type: {type(path)}. Expected str or object with 'path' attribute."
+                f"Invalid path type: {type(path)}. Expected str, PathEntry, or PythonFinder."
             )
 
         try:
             instance_dict = cls.parse(path_name)
         except Exception:
-            instance_dict = cls.parse_executable(path.path.absolute().as_posix())
+            instance_dict = cls.parse_executable(path_str)
         else:
-            if instance_dict.get("minor") is None and looks_like_python(path.path.name):
-                instance_dict = cls.parse_executable(path.path.absolute().as_posix())
+            if instance_dict.get("minor") is None and looks_like_python(path_obj.name):
+                instance_dict = cls.parse_executable(path_str)
 
         if (
             not isinstance(instance_dict.get("version"), Version)
@@ -541,14 +549,12 @@ class PythonVersion:
         ):
             raise ValueError("Not a valid python path: %s" % path)
         if instance_dict.get("patch") is None:
-            instance_dict = cls.parse_executable(path.path.absolute().as_posix())
+            instance_dict = cls.parse_executable(path_str)
         if name is None:
             name = path_name
         if company is None:
-            company = guess_company(path.path.as_posix())
-        instance_dict.update(
-            {"comes_from": path, "name": name, "executable": path.path.as_posix()}
-        )
+            company = guess_company(path_str)
+        instance_dict.update({"comes_from": path, "name": name, "executable": path_str})
         return cls(**instance_dict)
 
     @classmethod
