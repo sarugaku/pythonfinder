@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import dataclasses
 import logging
 import os
 import platform
 import sys
 from collections import defaultdict
+from dataclasses import field
+from functools import cached_property
 from pathlib import Path, WindowsPath
 from typing import (
     Any,
@@ -14,12 +17,9 @@ from typing import (
     Iterator,
     List,
     Optional,
-    Tuple,
-    Union,
 )
 
 from packaging.version import Version
-from pydantic import Field, validator
 
 from ..environment import ASDF_DATA_DIR, PYENV_ROOT, SYSTEM_ARCH
 from ..exceptions import InvalidPythonVersion
@@ -34,35 +34,25 @@ from ..utils import (
     parse_pyenv_version_order,
     parse_python_version,
 )
-from .common import FinderBaseModel
 from .mixins import PathEntry
 
 logger = logging.getLogger(__name__)
 
 
+@dataclasses.dataclass
 class PythonFinder(PathEntry):
-    root: Path
-    # should come before versions, because its value is used in versions's default initializer.
-    #: Whether to ignore any paths which raise exceptions and are not actually python
+    root: Path = field(default_factory=Path)
     ignore_unsupported: bool = True
-    #: Glob path for python versions off of the root directory
     version_glob_path: str = "versions/*"
-    #: The function to use to sort version order when returning an ordered version set
     sort_function: Optional[Callable] = None
-    #: The root locations used for discovery
-    roots: Dict = Field(default_factory=lambda: defaultdict())
-    #: List of paths discovered during search
-    paths: List = Field(default_factory=lambda: list())
-    #: Versions discovered in the specified paths
-    _versions: Dict = Field(default_factory=lambda: defaultdict())
-    pythons_ref: Dict = Field(default_factory=lambda: defaultdict())
+    roots: Dict = field(default_factory=lambda: defaultdict())
+    paths: Optional[List[PathEntry]] = field(default_factory=list)
+    _versions: Dict = field(default_factory=lambda: defaultdict())
+    pythons_ref: Dict = field(default_factory=lambda: defaultdict())
 
-    class Config:
-        validate_assignment = True
-        arbitrary_types_allowed = True
-        allow_mutation = True
-        include_private_attributes = True
-        # keep_untouched = (cached_property,)
+    def __post_init__(self):
+        # Ensuring that paths are set correctly
+        self.paths = self.get_paths(self.paths)
 
     @property
     def version_paths(self) -> Any:
@@ -157,7 +147,7 @@ class PythonFinder(PathEntry):
                 )
                 yield (base_path, entry, version_tuple)
 
-    @property
+    @cached_property
     def versions(self) -> DefaultDict[tuple, PathEntry]:
         if not self._versions:
             for _, entry, version_tuple in self._iter_versions():
@@ -174,15 +164,16 @@ class PythonFinder(PathEntry):
             else:
                 yield self.versions[version_tuple]
 
-    @validator("paths", pre=True, always=True)
-    def get_paths(cls, v) -> list[PathEntry]:
-        if v is not None:
-            return v
+    def get_paths(self, paths) -> list[PathEntry]:
+        # If paths are provided, use them
+        if paths is not None:
+            return paths
 
-        _paths = [base for _, base in cls._iter_version_bases()]
+        # Otherwise, generate paths using _iter_version_bases
+        _paths = [base for _, base in self._iter_version_bases()]
         return _paths
 
-    @property
+    @cached_property
     def pythons(self) -> dict:
         if not self.pythons_ref:
             from .path import PathEntry
@@ -312,27 +303,21 @@ class PythonFinder(PathEntry):
         return non_empty_match
 
 
-class PythonVersion(FinderBaseModel):
+@dataclasses.dataclass
+class PythonVersion:
     major: int = 0
-    minor: Optional[int] = None
-    patch: Optional[int] = None
+    minor: int | None = None
+    patch: int | None = None
     is_prerelease: bool = False
     is_postrelease: bool = False
     is_devrelease: bool = False
     is_debug: bool = False
-    version: Optional[Version] = None
-    architecture: Optional[str] = None
-    comes_from: Optional["PathEntry"] = None
-    executable: Optional[Union[str, WindowsPath, Path]] = None
-    company: Optional[str] = None
-    name: Optional[str] = None
-
-    class Config:
-        validate_assignment = True
-        arbitrary_types_allowed = True
-        allow_mutation = True
-        include_private_attributes = True
-        # keep_untouched = (cached_property,)
+    version: Version | None = None
+    architecture: str | None = None
+    comes_from: PathEntry | None = None
+    executable: str | WindowsPath | Path | None = None
+    company: str | None = None
+    name: str | None = None
 
     def __getattribute__(self, key):
         result = super().__getattribute__(key)
@@ -620,17 +605,11 @@ class PythonVersion(FinderBaseModel):
         return cls(**kwargs)
 
 
-class VersionMap(FinderBaseModel):
+@dataclasses.dataclass
+class VersionMap:
     versions: DefaultDict[
-        Tuple[int, Optional[int], Optional[int], bool, bool, bool], List[PathEntry]
-    ] = defaultdict(list)
-
-    class Config:
-        validate_assignment = True
-        arbitrary_types_allowed = True
-        allow_mutation = True
-        include_private_attributes = True
-        # keep_untouched = (cached_property,)
+        tuple[int, int | None, int | None, bool, bool, bool], list[PathEntry]
+    ] = field(default_factory=lambda: defaultdict(list))
 
     def add_entry(self, entry) -> None:
         version = entry.as_python

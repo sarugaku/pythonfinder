@@ -1,18 +1,15 @@
 from __future__ import annotations
 
+import dataclasses
 import os
 from collections import defaultdict
-from pathlib import Path
+from dataclasses import field
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
     Generator,
     Iterator,
-    Optional,
 )
-
-from pydantic import BaseModel, Field, validator
 
 from ..exceptions import InvalidPythonVersion
 from ..utils import (
@@ -25,33 +22,37 @@ from ..utils import (
 )
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from pythonfinder.models.python import PythonVersion
 
 
-class PathEntry(BaseModel):
-    is_root: bool = Field(default=False, order=False)
-    name: Optional[str] = None
-    path: Optional[Path] = None
-    children_ref: Optional[Any] = Field(default_factory=lambda: dict())
-    only_python: Optional[bool] = False
-    py_version_ref: Optional[Any] = None
-    pythons_ref: Optional[Dict[Any, Any]] = defaultdict(lambda: None)
-    is_dir_ref: Optional[bool] = None
-    is_executable_ref: Optional[bool] = None
-    is_python_ref: Optional[bool] = None
+@dataclasses.dataclass(unsafe_hash=True)
+class PathEntry:
+    is_root: bool = False
+    name: str | None = None
+    path: Path | None = None
+    children_ref: dict[str, Any] | None = field(default_factory=dict)
+    only_python: bool | None = False
+    py_version_ref: Any | None = None
+    pythons_ref: dict[str, Any] | None = field(
+        default_factory=lambda: defaultdict(lambda: None)
+    )
+    is_dir_ref: bool | None = None
+    is_executable_ref: bool | None = None
+    is_python_ref: bool | None = None
 
-    class Config:
-        validate_assignment = True
-        arbitrary_types_allowed = True
-        allow_mutation = True
-        include_private_attributes = True
+    def __post_init__(self):
+        # If path is set, use its name for the name field
+        if self.path and not self.name:
+            self.name = self.path.name
 
-    @validator("children", pre=True, always=True, check_fields=False)
-    def set_children(cls, v, values, **kwargs):
-        path = values.get("path")
-        if path:
-            values["name"] = path.name
-        return v or cls()._gen_children()
+        # Ensure children are properly set
+        self.children_ref = self.set_children(self.children_ref)
+
+    def set_children(self, children):
+        # If children are not provided, generate them
+        return children or self._gen_children()
 
     def __str__(self) -> str:
         return f"{self.path.as_posix()}"
@@ -360,7 +361,7 @@ class PathEntry(BaseModel):
         pythons: dict[str, PythonVersion] | None = None,
         name: str | None = None,
     ) -> PathEntry:
-        """Helper method for creating new :class:`pythonfinder.models.PathEntry` instances.
+        """Helper method for creating new :class:`PathEntry` instances.
 
         :param str path: Path to the specified location.
         :param bool is_root: Whether this is a root from the environment PATH variable, defaults to False
