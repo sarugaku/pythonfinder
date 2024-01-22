@@ -525,11 +525,8 @@ class PythonVersion:
             path_name = getattr(path, "name", path_obj.name)
             path_str = path.path.absolute().as_posix()
         elif isinstance(path, PythonFinder):  # If path is a PythonFinder object
-            path_obj = path.path  # Assuming PythonFinder has a path attribute
-            path_name = getattr(path, "name", path_obj.name)
-            path_str = (
-                path.path.absolute().as_posix()
-            )  # Assuming PythonFinder has a path attribute
+            path_name = None
+            path_str = path.path
         else:
             raise ValueError(
                 f"Invalid path type: {type(path)}. Expected str, PathEntry, or PythonFinder."
