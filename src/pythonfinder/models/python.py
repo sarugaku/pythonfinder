@@ -514,10 +514,19 @@ class PythonVersion:
         from ..environment import IGNORE_UNSUPPORTED
 
         ignore_unsupported = ignore_unsupported or IGNORE_UNSUPPORTED
-        path_name = getattr(path, "name", path.path.name)  # str
-        if not path.is_python:
-            if not (ignore_unsupported or IGNORE_UNSUPPORTED):
-                raise ValueError("Not a valid python path: %s" % path.path)
+
+        # Check if path is a string or an object with 'path' attribute
+        if isinstance(path, str):
+            path_obj = Path(path)  # Convert string to Path object
+            path_name = path_obj.name
+        elif hasattr(path, "path") and isinstance(path.path, Path):
+            path_obj = path.path
+            path_name = getattr(path, "name", path_obj.name)
+        else:
+            raise ValueError(
+                f"Invalid path type: {type(path)}. Expected str or object with 'path' attribute."
+            )
+
         try:
             instance_dict = cls.parse(path_name)
         except Exception:
