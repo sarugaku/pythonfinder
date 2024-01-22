@@ -32,7 +32,7 @@ class PathEntry:
     is_root: bool = False
     name: str | None = None
     path: Path | None = None
-    children_ref: dict[str, Any] | None = field(default_factory=dict)
+    children_ref: dict[str, Any] = field(default_factory=dict)
     only_python: bool | None = False
     py_version_ref: Any | None = None
     pythons_ref: dict[str, Any] | None = field(
@@ -43,12 +43,8 @@ class PathEntry:
     is_python_ref: bool | None = None
 
     def __post_init__(self):
-        # If path is set, use its name for the name field
-        if self.path and not self.name:
-            self.name = self.path.name
-
-        # Ensure children are properly set
-        self.children_ref = self.set_children(self.children_ref)
+        if not self.children_ref:
+            self._gen_children()
 
     def set_children(self, children):
         # If children are not provided, generate them
@@ -317,39 +313,26 @@ class PathEntry:
             children = self.path.iterdir()
         return children
 
-    def _gen_children(self) -> Iterator:
-        pass_name = self.name != self.path.name
-        pass_args = {"is_root": False, "only_python": self.only_python}
-        if pass_name:
-            if self.name is not None and isinstance(self.name, str):
-                pass_args["name"] = self.name
-            elif self.path is not None and isinstance(self.path.name, str):
-                pass_args["name"] = self.path.name
+    def _gen_children(self):
+        if self.is_dir and self.is_root and self.path is not None:
+            # Assuming _filter_children returns an iterator over child paths
+            for child_path in self._filter_children():
+                pass_name = self.name != self.path.name
+                pass_args = {"is_root": False, "only_python": self.only_python}
+                if pass_name:
+                    if self.name is not None and isinstance(self.name, str):
+                        pass_args["name"] = self.name
+                    elif self.path is not None and isinstance(self.path.name, str):
+                        pass_args["name"] = self.path.name
 
-        if not self.is_dir:
-            yield (self.path.as_posix(), self)
-        elif self.is_root:
-            for child in self._filter_children():
-                if self.only_python:
-                    try:
-                        entry = PathEntry.create(path=child, **pass_args)
-                    except (InvalidPythonVersion, ValueError):
-                        continue
-                else:
-                    try:
-                        entry = PathEntry.create(path=child, **pass_args)
-                    except (InvalidPythonVersion, ValueError):
-                        continue
-                yield (child.as_posix(), entry)
-        return
+                try:
+                    entry = PathEntry.create(path=child_path, **pass_args)
+                    self.children_ref[child_path.as_posix()] = entry
+                except (InvalidPythonVersion, ValueError):
+                    continue  # Or handle as needed
 
     @property
     def children(self) -> dict[str, PathEntry]:
-        children = getattr(self, "children_ref", {})
-        if not children:
-            for child_key, child_val in self._gen_children():
-                children[child_key] = child_val
-            self.children_ref = children
         return self.children_ref
 
     @classmethod
