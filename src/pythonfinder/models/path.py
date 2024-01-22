@@ -5,7 +5,7 @@ import errno
 import operator
 import os
 import sys
-from collections import ChainMap, defaultdict
+from collections import defaultdict
 from dataclasses import field
 from functools import cached_property
 from itertools import chain
@@ -90,11 +90,10 @@ class SystemPath:
         # The part with 'paths' seems to be setting up 'executables'
         if self.paths:
             self.executables_tracking = [
-                p
-                for p in ChainMap(
-                    *(child.children_ref.values() for child in self.paths.values())
-                )
-                if p.is_executable
+                child
+                for path_entry in self.paths.values()
+                for child in path_entry.children_ref.values()
+                if child.is_executable
             ]
 
     def _register_finder(self, finder_name, finder):
