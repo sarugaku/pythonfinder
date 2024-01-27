@@ -30,7 +30,6 @@ from ..utils import (
     parse_asdf_version_order,
     parse_pyenv_version_order,
     resolve_path,
-    split_version_and_name,
 )
 from .mixins import PathEntry
 from .python import PythonFinder
@@ -157,9 +156,9 @@ class SystemPath:
 
     def _handle_virtualenv_and_system_paths(self):
         venv = os.environ.get("VIRTUAL_ENV")
+        bin_dir = "Scripts" if os.name == "nt" else "bin"
         if venv:
             venv_path = Path(venv).resolve()
-            bin_dir = "Scripts" if os.name == "nt" else "bin"
             venv_bin_path = venv_path / bin_dir
             if venv_bin_path.exists() and (self.system or self.global_search):
                 self.path_order = [str(venv_bin_path), *self.path_order]
@@ -235,7 +234,7 @@ class SystemPath:
             if not current_path.endswith("shims"):
                 normalized = resolve_path(current_path)
                 new_order.append(normalized)
-        new_order = [ensure_path(p).as_posix() for p in new_order]
+        new_order = [ensure_path(p) for p in new_order]
         self.path_order = new_order
 
     def _remove_path(self, path) -> SystemPath:
@@ -440,34 +439,49 @@ class SystemPath:
         def alternate_sub_finder(obj):
             return obj.find_all_python_versions(None, None, None, None, None, None, name)
 
-        major, minor, patch, name = split_version_and_name(major, minor, patch, name)
-        if major and minor and patch:
-            _tuple_pre = pre if pre is not None else False
-            _tuple_dev = dev if dev is not None else False
-
         if sort_by_path:
-            paths = [self.get_path(k) for k in self.path_order]
-            for path in paths:
-                found_version = sub_finder(path)
-                if found_version:
-                    return found_version
-            if name and not (minor or patch or pre or dev or arch or major):
-                for path in paths:
-                    found_version = alternate_sub_finder(path)
-                    if found_version:
-                        return found_version
+            found_version = self._find_version_by_path(
+                sub_finder,
+                alternate_sub_finder,
+                name,
+                minor,
+                patch,
+                pre,
+                dev,
+                arch,
+                major,
+            )
+            if found_version:
+                return found_version
 
         ver = next(iter(self.get_pythons(sub_finder)), None)
-        if not ver and name and not (minor or patch or pre or dev or arch or major):
+        if not ver and name and not any([minor, patch, pre, dev, arch, major]):
             ver = next(iter(self.get_pythons(alternate_sub_finder)), None)
 
-        if ver:
-            if ver.as_python.version_tuple[:5] in self.python_version_dict:
-                self.python_version_dict[ver.as_python.version_tuple[:5]].append(ver)
-            else:
-                self.python_version_dict[ver.as_python.version_tuple[:5]] = [ver]
+        self._update_python_version_dict(ver)
 
         return ver
+
+    def _find_version_by_path(self, sub_finder, alternate_sub_finder, name, *args):
+        paths = [self.get_path(k) for k in self.path_order]
+        for path in paths:
+            found_version = sub_finder(path)
+            if found_version:
+                return found_version
+        if name and not any(args):
+            for path in paths:
+                found_version = alternate_sub_finder(path)
+                if found_version:
+                    return found_version
+        return None
+
+    def _update_python_version_dict(self, ver):
+        if ver:
+            version_key = ver.as_python.version_tuple[:5]
+            if version_key in self.python_version_dict:
+                self.python_version_dict[version_key].append(ver)
+            else:
+                self.python_version_dict[version_key] = [ver]
 
     @classmethod
     def create(
@@ -501,18 +515,18 @@ class SystemPath:
             path_instance = ensure_path(path)
             path_entries.update(
                 {
-                    path_instance.as_posix(): PathEntry.create(
-                        path=path_instance.absolute(),
+                    path_instance: PathEntry.create(
+                        path=path_instance.resolve(),
                         is_root=True,
                         only_python=only_python,
                     )
                 }
             )
             paths = [path, *paths]
-        _path_objects = [ensure_path(p.strip('"')) for p in paths]
+        _path_objects = [ensure_path(p) for p in paths]
         path_entries.update(
             {
-                p.as_posix(): PathEntry.create(
+                str(p): PathEntry.create(
                     path=p.absolute(), is_root=True, only_python=only_python
                 )
                 for p in _path_objects

@@ -156,8 +156,8 @@ class PythonFinder(PathEntry):
 
     def _iter_pythons(self) -> Iterator:
         for path, entry, version_tuple in self._iter_versions():
-            if path.as_posix() in self._pythons:
-                yield self._pythons[path.as_posix()]
+            if str(path) in self._pythons:
+                yield self._pythons[str(path)]
             elif version_tuple not in self.versions:
                 for python in entry.find_all_python_versions():
                     yield python
@@ -180,7 +180,7 @@ class PythonFinder(PathEntry):
 
             self.pythons_ref = defaultdict(PathEntry)
             for python in self._iter_pythons():
-                python_path = python.path.as_posix()
+                python_path = str(python.path)
                 self.pythons_ref[python_path] = python
         return self.pythons_ref
 
@@ -282,13 +282,11 @@ class PythonFinder(PathEntry):
             return path_entry.as_python.version_sort
 
         unnested = [sub_finder(self.roots[path]) for path in self.roots]
-        print(f"unnested: {unnested}")
         unnested = [
             p
             for p in unnested
             if p is not None and p.is_python and p.as_python is not None
         ]
-        print(unnested)
         paths = sorted(list(unnested), key=version_sort, reverse=True)
         return next(iter(p for p in paths if p is not None), None)
 
@@ -328,10 +326,10 @@ class PythonVersion:
             if self.executable:
                 executable = self.executable
             elif self.comes_from:
-                executable = self.comes_from.path.as_posix()
+                executable = self.comes_from.path
             if executable is not None:
                 if not isinstance(executable, str):
-                    executable = executable.as_posix()
+                    executable = executable
                 instance_dict = self.parse_executable(executable)
                 for k in instance_dict.keys():
                     try:
@@ -491,7 +489,7 @@ class PythonVersion:
             return self.architecture
         arch = None
         if self.comes_from is not None:
-            arch, _ = platform.architecture(self.comes_from.path.as_posix())
+            arch, _ = platform.architecture(str(self.comes_from.path))
         elif self.executable is not None:
             arch, _ = platform.architecture(self.executable)
         if arch is None:
@@ -528,7 +526,7 @@ class PythonVersion:
         elif hasattr(path, "path") and isinstance(path.path, Path):
             path_obj = path.path
             path_name = getattr(path, "name", path_obj.name)
-            path_str = path.path.absolute().as_posix()
+            path_str = str(path.path.absolute())
         elif isinstance(path, PythonFinder):  # If path is a PythonFinder object
             path_name = None
             path_str = path.path
@@ -566,7 +564,7 @@ class PythonVersion:
         if path is None:
             raise TypeError("Must pass a valid path to parse.")
         if not isinstance(path, str):
-            path = path.as_posix()
+            path = str(path)
         # if not looks_like_python(path):
         #     raise ValueError("Path %r does not look like a valid python path" % path)
         try:
@@ -597,7 +595,7 @@ class PythonVersion:
         exe_path = ensure_path(
             getattr(launcher_entry.info.install_path, "executable_path", default_path)
         )
-        company = getattr(launcher_entry, "company", guess_company(exe_path.as_posix()))
+        company = getattr(launcher_entry, "company", guess_company(exe_path))
         creation_dict.update(
             {
                 "architecture": getattr(
