@@ -41,7 +41,6 @@ dependencies = [
 cli = ["click"]
 tests = [
     "pytest",
-    "pytest-cov",
     "pytest-timeout",
     "coverage[toml]",
 ]
@@ -80,7 +79,7 @@ exclude = [
 namespaces = false
 
 [tool.pytest.ini_options]
-addopts = "-ra --timeout 300 --cov"
+addopts = "-ra"
 testpaths = ["tests/"]
 norecursedirs = [".*", "build", "dist", "news", "tasks", "docs"]
 markers = [
