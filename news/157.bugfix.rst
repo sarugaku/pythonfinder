@@ -1,0 +1,1 @@
+* Convert away from pydantic to reduce complexity; simplify the path manipulation logics to use pathlib.

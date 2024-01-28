@@ -35,7 +35,6 @@ dynamic = ["version"]
 requires-python = ">=3.8"
 dependencies = [
     "packaging>=22.0",
-    "pydantic>=1.10.7,<2",
 ]
 
 [project.optional-dependencies]
@@ -136,7 +135,6 @@ unfixable = [
 
 [tool.ruff.flake8-type-checking]
 runtime-evaluated-base-classes = [
-  "pydantic.BaseModel",
   "pythonfinder.models.common.FinderBaseModel",
   "pythonfinder.models.mixins.PathEntry",
 ]
