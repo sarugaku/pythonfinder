@@ -390,15 +390,15 @@ class PythonVersion:
 
     def matches(
         self,
-        major=None,
-        minor=None,
-        patch=None,
-        pre=False,
-        dev=False,
-        arch=None,
-        debug=False,
-        python_name=None,
-    ):
+        major: int | None = None,
+        minor: int | None = None,
+        patch: int | None = None,
+        pre: bool = False,
+        dev: bool = False,
+        arch: str | None = None,
+        debug: bool = False,
+        python_name: str | None = None,
+    ) -> bool:
         result = False
         if arch:
             own_arch = self.get_architecture()

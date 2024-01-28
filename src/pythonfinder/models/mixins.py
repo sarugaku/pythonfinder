@@ -46,10 +46,6 @@ class PathEntry:
         if not self.children_ref:
             self._gen_children()
 
-    def set_children(self, children):
-        # If children are not provided, generate them
-        return children or self._gen_children()
-
     def __str__(self) -> str:
         return f"{self.path}"
 
