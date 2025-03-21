@@ -74,7 +74,13 @@ def test_create_python_info():
                     assert python_info.is_debug is False
                     assert python_info.company == "PythonCore"
                     assert python_info.name == "python"
-                    assert python_info.executable == "/usr/bin/python"
+                    # Handle Windows path separators in the executable path
+                    if os.name == "nt":
+                        assert (
+                            python_info.executable.replace("\\", "/") == "/usr/bin/python"
+                        )
+                    else:
+                        assert python_info.executable == "/usr/bin/python"
 
     # Test with non-Python path
     with mock.patch(
@@ -281,7 +287,13 @@ def test_which(simple_path_finder):
                 result = simple_path_finder.which("python")
 
                 # Check that we got the correct path
-                assert result == Path("/usr/bin/python")
+                if os.name == "nt":
+                    # On Windows, normalize the path for comparison
+                    assert result.as_posix().endswith(
+                        "/usr/bin/python"
+                    ) or result.as_posix().endswith("/usr/bin/python.exe")
+                else:
+                    assert result == Path("/usr/bin/python")
 
     # Test with only_python=True and python executable
     simple_path_finder.only_python = True
