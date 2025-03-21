@@ -41,9 +41,18 @@ def test_system_finder_initialization():
                 )
 
                 # Check that the paths were added correctly
-                assert set(p.as_posix() for p in finder.paths) == set(
-                    p.as_posix() for p in paths
-                )
+                # On Windows, paths might have drive letters, so we need to normalize
+                if os.name == "nt":
+                    # Extract just the path part without drive letter for comparison
+                    finder_paths = set(
+                        p.as_posix().split(":", 1)[-1] for p in finder.paths
+                    )
+                    expected_paths = set(p.as_posix().split(":", 1)[-1] for p in paths)
+                    assert finder_paths == expected_paths
+                else:
+                    assert set(p.as_posix() for p in finder.paths) == set(
+                        p.as_posix() for p in paths
+                    )
                 assert finder.only_python is True
                 assert finder.ignore_unsupported is False
 
