@@ -42,37 +42,34 @@ Install from `Github`_:
 Usage
 ******
 
-Using PythonFinder is easy.  Simply import it and ask for a python:
+Using PythonFinder is easy. Simply import it and ask for a python:
 
 .. code-block:: pycon
-
-    >>> from pythonfinder.pythonfinder import PythonFinder
-    >>> PythonFinder.from_line('python3')
-    '/home/techalchemy/.pyenv/versions/3.6.5/python3'
 
     >>> from pythonfinder import Finder
     >>> f = Finder()
     >>> f.find_python_version(3, minor=6)
-    PathEntry(path=PosixPath('/home/hawk/.pyenv/versions/3.6.5/bin/python'), _children={}, is_root=False, only_python=False, py_version=PythonVersion(major=3, minor=6, patch=5, is_prerelease=False, is_postrelease=False, is_devrelease=False, version=<Version('3.6.5')>, architecture='64bit', comes_from=PathEntry(path=PosixPath('/home/hawk/.pyenv/versions/3.6.5/bin/python'), _children={}, is_root=True, only_python=False, py_version=None, pythons=None), executable=None), pythons=None)
+    PythonInfo(path=PosixPath('/home/user/.pyenv/versions/3.6.5/bin/python'), version_str='3.6.5', major=3, minor=6, patch=5, is_prerelease=False, is_postrelease=False, is_devrelease=False, is_debug=False, version=<Version('3.6.5')>, architecture='64bit', company='PythonCore', name='python', executable='/home/user/.pyenv/versions/3.6.5/bin/python')
+
     >>> f.find_python_version(2)
-    PathEntry(path=PosixPath('/home/hawk/.pyenv/shims/python2'), ...py_version=PythonVersion(major=2, minor=7, patch=15, is_prerelease=False, is_postrelease=False, is_devrelease=False, version=<Version('2.7.15')>, architecture='64bit', comes_from=PathEntry(path=PosixPath('/home/hawk/.pyenv/shims/python2'), _children={}, is_root=True, only_python=False, py_version=None, pythons=None), executable=None), pythons=None)
-    >>> f.find_python_version("anaconda3-5.3.0")
+    PythonInfo(path=PosixPath('/home/user/.pyenv/versions/2.7.15/bin/python'), version_str='2.7.15', major=2, minor=7, patch=15, is_prerelease=False, is_postrelease=False, is_devrelease=False, is_debug=False, version=<Version('2.7.15')>, architecture='64bit', company='PythonCore', name='python', executable='/home/user/.pyenv/versions/2.7.15/bin/python')
 
 Find a named distribution, such as ``anaconda3-5.3.0``:
 
 .. code-block:: pycon
 
-    PathEntry(path=PosixPath('/home/hawk/.pyenv/versions/anaconda3-5.3.0/bin/python3.7m'), _children={'/home/hawk/.pyenv/versions/anaconda3-5.3.0/bin/python3.7m': ...}, only_python=False, name='anaconda3-5.3.0', _py_version=PythonVersion(major=3, minor=7, patch=0, is_prerelease=False, is_postrelease=False, is_devrelease=False,...))
+    >>> f.find_python_version("anaconda3-5.3.0")
+    PythonInfo(path=PosixPath('/home/user/.pyenv/versions/anaconda3-5.3.0/bin/python'), version_str='3.7.0', major=3, minor=7, patch=0, is_prerelease=False, is_postrelease=False, is_devrelease=False, is_debug=False, version=<Version('3.7.0')>, architecture='64bit', company='Anaconda', name='anaconda3-5.3.0', executable='/home/user/.pyenv/versions/anaconda3-5.3.0/bin/python')
 
 PythonFinder can even find beta releases:
 
 .. code-block:: pycon
 
-    >>> f.find_python_version(3, minor=7)
-    PathEntry(path=PosixPath('/home/hawk/.pyenv/versions/3.7.0b1/bin/python'), _children={}, is_root=False, only_python=False, py_version=PythonVersion(major=3, minor=7, patch=0, is_prerelease=True, is_postrelease=False, is_devrelease=False, version=<Version('3.7.0b1')>, architecture='64bit', comes_from=PathEntry(path=PosixPath('/home/hawk/.pyenv/versions/3.7.0b1/bin/python'), _children={}, is_root=True, only_python=False, py_version=None, pythons=None), executable=None), pythons=None)
+    >>> f.find_python_version(3, minor=7, pre=True)
+    PythonInfo(path=PosixPath('/home/user/.pyenv/versions/3.7.0b1/bin/python'), version_str='3.7.0b1', major=3, minor=7, patch=0, is_prerelease=True, is_postrelease=False, is_devrelease=False, is_debug=False, version=<Version('3.7.0b1')>, architecture='64bit', company='PythonCore', name='python', executable='/home/user/.pyenv/versions/3.7.0b1/bin/python')
 
     >>> f.which('python')
-    PathEntry(path=PosixPath('/home/hawk/.pyenv/versions/3.6.5/bin/python'), _children={}, is_root=False, only_python=False, py_version=PythonVersion(major=3, minor=6, patch=5, is_prerelease=False, is_postrelease=False, is_devrelease=False, version=<Version('3.6.5')>, architecture='64bit', comes_from=PathEntry(path=PosixPath('/home/hawk/.pyenv/versions/3.6.5/bin/python'), _children={}, is_root=True, only_python=False, py_version=None, pythons=None), executable=None), pythons=None)
+    PosixPath('/home/user/.pyenv/versions/3.6.5/bin/python')
 
 
 Windows Support
@@ -85,13 +82,13 @@ PythonFinder natively supports windows via both the *PATH* environment variable 
     >>> from pythonfinder import Finder
     >>> f = Finder()
     >>> f.find_python_version(3, minor=6)
-    PythonVersion(major=3, minor=6, patch=4, is_prerelease=False, is_postrelease=False, is_devrelease=False, version=<Version('3.6.4')>, architecture='64bit', comes_from=PathEntry(path=WindowsPath('C:/Program Files/Python36/python.exe'), _children={}, is_root=False, only_python=True, py_version=None, pythons=None), executable=WindowsPath('C:/Program Files/Python36/python.exe'))
+    PythonInfo(path=WindowsPath('C:/Program Files/Python36/python.exe'), version_str='3.6.4', major=3, minor=6, patch=4, is_prerelease=False, is_postrelease=False, is_devrelease=False, is_debug=False, version=<Version('3.6.4')>, architecture='64bit', company='PythonCore', name='python', executable='C:/Program Files/Python36/python.exe')
 
     >>> f.find_python_version(3, minor=7, pre=True)
-    PythonVersion(major=3, minor=7, patch=0, is_prerelease=True, is_postrelease=False, is_devrelease=False, version=<Version('3.7.0b5')>, architecture='64bit', comes_from=PathEntry(path=WindowsPath('C:/Program Files/Python37/python.exe'), _children={}, is_root=False, only_python=True, py_version=None, pythons=None), executable=WindowsPath('C:/Program Files/Python37/python.exe'))
+    PythonInfo(path=WindowsPath('C:/Program Files/Python37/python.exe'), version_str='3.7.0b5', major=3, minor=7, patch=0, is_prerelease=True, is_postrelease=False, is_devrelease=False, is_debug=False, version=<Version('3.7.0b5')>, architecture='64bit', company='PythonCore', name='python', executable='C:/Program Files/Python37/python.exe')
 
     >>> f.which('python')
-    PathEntry(path=WindowsPath('C:/Python27/python.exe'), _children={}, is_root=False, only_python=False, py_version=None, pythons=None)
+    WindowsPath('C:/Python27/python.exe')
 
 Finding Executables
 ///////////////////
@@ -101,16 +98,16 @@ PythonFinder also provides **which** functionality across platforms, and it uses
 .. code-block:: pycon
 
     >>> f.which('cmd')
-    PathEntry(path=WindowsPath('C:/windows/system32/cmd.exe'), _children={}, is_root=False, only_python=False, py_version=None, pythons=None)
+    WindowsPath('C:/windows/system32/cmd.exe')
 
     >>> f.which('code')
-    PathEntry(path=WindowsPath('C:/Program Files/Microsoft VS Code/bin/code'), _children={}, is_root=False, only_python=False, py_version=None, pythons=None)
+    WindowsPath('C:/Program Files/Microsoft VS Code/bin/code')
 
      >>> f.which('vim')
-    PathEntry(path=PosixPath('/usr/bin/vim'), _children={}, is_root=False, only_python=False, py_version=None, pythons=None)
+    PosixPath('/usr/bin/vim')
 
     >>> f.which('inv')
-    PathEntry(path=PosixPath('/home/hawk/.pyenv/versions/3.6.5/bin/inv'), _children={}, is_root=False, only_python=False, py_version=None, pythons=None)
+    PosixPath('/home/user/.pyenv/versions/3.6.5/bin/inv')
 
 
 Architecture support
@@ -121,7 +118,7 @@ PythonFinder supports architecture specific lookups on all platforms:
 .. code-block:: pycon
 
     >>> f.find_python_version(3, minor=6, arch="64")
-    PathEntry(path=PosixPath('/usr/bin/python3'), _children={'/usr/bin/python3': ...}, only_python=False, name='python3', _py_version=PythonVersion(major=3, minor=6, patch=7, is_prerelease=False, is_postrelease=False, is_devrelease=False, is_debug=False, version=<Version('3.6.7')>, architecture='64bit', comes_from=..., executable='/usr/bin/python3', name='python3'), _pythons=defaultdict(None, {}), is_root=False)
+    PythonInfo(path=PosixPath('/usr/bin/python3'), version_str='3.6.7', major=3, minor=6, patch=7, is_prerelease=False, is_postrelease=False, is_devrelease=False, is_debug=False, version=<Version('3.6.7')>, architecture='64bit', company='PythonCore', name='python3', executable='/usr/bin/python3')
 
 
 Integrations
@@ -134,6 +131,6 @@ Integrations
 * `Pipenv <https://pipenv.org>`_
 
 
-.. click:: pythonfinder:cli
-   :prog: pyfinder
+.. click:: pythonfinder.cli:cli
+   :prog: pythonfinder
    :show-nested:

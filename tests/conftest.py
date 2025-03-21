@@ -268,7 +268,7 @@ def _build_python_tuples():
     for v in finder_versions:
         if not v.is_python:
             continue
-        version = v.as_python
+        version = v
         if not version:
             continue
         arch = (

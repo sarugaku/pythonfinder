@@ -1,12 +1,11 @@
-#!env python
-
+#!/usr/bin/env python
 
 from __future__ import annotations
 
 import os
 import sys
 
-from pythonfinder.cli import cli
+from .cli import cli
 
 PYTHONFINDER_MAIN = os.path.dirname(os.path.abspath(__file__))
 PYTHONFINDER_PACKAGE = os.path.dirname(PYTHONFINDER_MAIN)
