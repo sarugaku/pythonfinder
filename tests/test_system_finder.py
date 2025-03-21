@@ -60,9 +60,9 @@ def test_system_finder_with_global_search():
             # Create a SystemFinder with global_search=True
             finder = SystemFinder(global_search=True)
 
-            # Check that the paths from PATH were added
-            assert Path("/usr/bin") in finder.paths
-            assert Path("/usr/local/bin") in finder.paths
+            # Check that the paths from PATH were added using path normalization
+            assert any("usr/bin" in p.as_posix() for p in finder.paths)
+            assert any("usr/local/bin" in p.as_posix() for p in finder.paths)
 
 
 def test_system_finder_with_system():
@@ -77,8 +77,8 @@ def test_system_finder_with_system():
             # Create a SystemFinder with system=True
             finder = SystemFinder(system=True)
 
-            # Check that the system Python path was added
-            assert Path("/usr/bin") in finder.paths
+            # Check that the system Python path was added using path normalization
+            assert any("usr/bin" in p.as_posix() for p in finder.paths)
 
 
 def test_system_finder_with_virtual_env():
@@ -95,10 +95,11 @@ def test_system_finder_with_virtual_env():
                 finder = SystemFinder(global_search=False, system=False)
 
                 # Check that the virtual environment path was added
-                venv_path = Path(
-                    "/path/to/venv/Scripts" if os.name == "nt" else "/path/to/venv/bin"
+                bin_dir = "Scripts" if os.name == "nt" else "bin"
+                # Use path normalization for cross-platform compatibility
+                assert any(
+                    f"path/to/venv/{bin_dir}" in p.as_posix() for p in finder.paths
                 )
-                assert venv_path in finder.paths
 
 
 def test_system_finder_with_custom_paths():
@@ -117,10 +118,10 @@ def test_system_finder_with_custom_paths():
         # Create a SystemFinder with custom paths
         finder = SystemFinder(paths=custom_paths)
 
-        # Check that the custom paths were added
-        assert Path("/custom/path1") in finder.paths
-        assert Path("/custom/path2") in finder.paths
-        assert Path("/custom/path3") in finder.paths
+        # Check that the custom paths were added using path normalization
+        assert any("custom/path1" in p.as_posix() for p in finder.paths)
+        assert any("custom/path2" in p.as_posix() for p in finder.paths)
+        assert any("custom/path3" in p.as_posix() for p in finder.paths)
 
 
 def test_system_finder_filters_non_existent_paths():
@@ -141,11 +142,11 @@ def test_system_finder_filters_non_existent_paths():
             # Set up the mock to return True for existing paths and False for non-existent path
             def side_effect(path):
                 path_str = str(path)
-                if "/existing/path1" in path_str:
+                if "existing/path1" in path_str.replace("\\", "/"):
                     return True
-                elif "/non-existent/path" in path_str:
+                elif "non-existent/path" in path_str.replace("\\", "/"):
                     return False
-                elif "/existing/path2" in path_str:
+                elif "existing/path2" in path_str.replace("\\", "/"):
                     return True
                 return False
 
@@ -155,9 +156,15 @@ def test_system_finder_filters_non_existent_paths():
             finder = SystemFinder(paths=paths, global_search=False, system=False)
 
             # Check that only the existing paths were added
-            assert any(str(p).endswith("/existing/path1") for p in finder.paths)
-            assert not any(str(p).endswith("/non-existent/path") for p in finder.paths)
-            assert any(str(p).endswith("/existing/path2") for p in finder.paths)
+            assert any(
+                "existing/path1" in str(p).replace("\\", "/") for p in finder.paths
+            )
+            assert not any(
+                "non-existent/path" in str(p).replace("\\", "/") for p in finder.paths
+            )
+            assert any(
+                "existing/path2" in str(p).replace("\\", "/") for p in finder.paths
+            )
 
 
 def test_system_finder_inherits_from_path_finder():
