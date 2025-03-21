@@ -11,7 +11,4 @@ Submodules
 
 .. toctree::
 
-   pythonfinder.models.mixins
-   pythonfinder.models.path
-   pythonfinder.models.python
-   pythonfinder.models.windows
+   pythonfinder.models.python_info
