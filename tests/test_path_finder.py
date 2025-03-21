@@ -307,7 +307,13 @@ def test_which(simple_path_finder):
                 result = simple_path_finder.which("python")
 
                 # Check that we got the correct path
-                assert result == Path("/usr/bin/python")
+                if os.name == "nt":
+                    # On Windows, normalize the path for comparison
+                    assert result.as_posix().endswith(
+                        "/usr/bin/python"
+                    ) or result.as_posix().endswith("/usr/bin/python.exe")
+                else:
+                    assert result == Path("/usr/bin/python")
 
     # Test with only_python=True and non-python executable
     simple_path_finder.only_python = True
