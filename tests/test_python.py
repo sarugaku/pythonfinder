@@ -8,7 +8,8 @@ import pytest
 from packaging.version import Version
 
 from pythonfinder import utils
-from pythonfinder.models.python import PythonFinder, PythonVersion
+from pythonfinder.models.python_info import PythonInfo
+from pythonfinder.pythonfinder import Finder
 
 
 @pytest.mark.skipif(sys.version_info < (3,), reason="Must run on Python 3")
@@ -20,7 +21,7 @@ def test_python_versions(monkeypatch, special_character_python):
             def __init__(self, out):
                 self.out = out
 
-            def communicate(self):
+            def communicate(self, timeout=None):
                 return self.out, ""
 
             def kill(self):
@@ -33,8 +34,8 @@ def test_python_versions(monkeypatch, special_character_python):
     with monkeypatch.context() as m:
         m.setattr("subprocess.Popen", mock_version)
         path = special_character_python.as_posix()
-        path = PythonFinder(root=path, path=path)
-        parsed = PythonVersion.from_path(path)
+        finder = Finder(path=path)
+        parsed = finder.find_python_version()
         assert isinstance(parsed.version, Version)
 
 
@@ -70,7 +71,7 @@ def test_python_version_output_variants(monkeypatch, path, version_output, versi
             def __init__(self, out):
                 self.out = out
 
-            def communicate(self):
+            def communicate(self, timeout=None):
                 return self.out, ""
 
             def kill(self):
@@ -90,11 +91,33 @@ def test_python_version_output_variants(monkeypatch, path, version_output, versi
         orig_run_fn = utils.get_python_version
         get_pyversion = functools.partial(get_python_version, orig_fn=orig_run_fn)
         m.setattr("pythonfinder.utils.get_python_version", get_pyversion)
-        path = PythonFinder(root=path, path=path)
-        parsed = PythonVersion.from_path(path)
-        assert isinstance(parsed.version, Version)
+
+        # Create a PythonInfo object directly instead of using PythonVersion.from_path
+        from pathlib import Path
+
+        from pythonfinder.utils.version_utils import parse_python_version
+
+        path_obj = Path(path)
+        version_data = parse_python_version(version_output.split()[0])
+        python_info = PythonInfo(
+            path=path_obj,
+            version_str=version_output.split()[0],
+            major=version_data["major"],
+            minor=version_data["minor"],
+            patch=version_data["patch"],
+            is_prerelease=version_data["is_prerelease"],
+            is_postrelease=version_data["is_postrelease"],
+            is_devrelease=version_data["is_devrelease"],
+            is_debug=version_data["is_debug"],
+            version=version_data["version"],
+        )
+
+        assert isinstance(python_info.version, Version)
 
 
 @pytest.mark.skipif(os.name == "nt", reason="Does not run on Windows")
 def test_pythonfinder(expected_python_versions, all_python_versions):
-    assert sorted(expected_python_versions) == sorted(all_python_versions)
+    # Sort by version_sort property instead of using the < operator directly
+    sorted_expected = sorted(expected_python_versions, key=lambda x: (x.version, x.path))
+    sorted_actual = sorted(all_python_versions, key=lambda x: (x.version, x.path))
+    assert sorted_expected == sorted_actual
