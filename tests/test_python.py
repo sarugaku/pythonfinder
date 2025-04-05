@@ -32,6 +32,9 @@ def test_python_versions(monkeypatch, special_character_python):
                 
             def __exit__(self, exc_type, exc_val, exc_tb):
                 self.kill()
+                
+            def poll(self):
+                return 0
 
         c = FakeObj(version_output.split()[0])
         return c
