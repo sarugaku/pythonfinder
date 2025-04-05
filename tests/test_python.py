@@ -20,6 +20,7 @@ def test_python_versions(monkeypatch, special_character_python):
         class FakeObj:
             def __init__(self, out):
                 self.out = out
+                self.args = ['py', '--list-paths']
 
             def communicate(self, *args, **kwargs):
                 return self.out, ""
@@ -79,6 +80,7 @@ def test_python_version_output_variants(monkeypatch, path, version_output, versi
         class FakeObj:
             def __init__(self, out):
                 self.out = out
+                self.args = ['py', '--list-paths']
 
             def communicate(self, *args, **kwargs):
                 return self.out, ""
@@ -91,6 +93,9 @@ def test_python_version_output_variants(monkeypatch, path, version_output, versi
                 
             def __exit__(self, exc_type, exc_val, exc_tb):
                 self.kill()
+                
+            def poll(self):
+                return 0
 
         c = FakeObj(".".join([str(i) for i in version_output.split()[0].split(".")]))
         return c
