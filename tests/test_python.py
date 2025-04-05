@@ -21,7 +21,7 @@ def test_python_versions(monkeypatch, special_character_python):
             def __init__(self, out):
                 self.out = out
 
-            def communicate(self, timeout=None):
+            def communicate(self, *args, **kwargs):
                 return self.out, ""
 
             def kill(self):
@@ -77,7 +77,7 @@ def test_python_version_output_variants(monkeypatch, path, version_output, versi
             def __init__(self, out):
                 self.out = out
 
-            def communicate(self, timeout=None):
+            def communicate(self, *args, **kwargs):
                 return self.out, ""
 
             def kill(self):
