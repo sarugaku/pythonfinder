@@ -26,6 +26,12 @@ def test_python_versions(monkeypatch, special_character_python):
 
             def kill(self):
                 pass
+                
+            def __enter__(self):
+                return self
+                
+            def __exit__(self, exc_type, exc_val, exc_tb):
+                self.kill()
 
         c = FakeObj(version_output.split()[0])
         return c
@@ -76,6 +82,12 @@ def test_python_version_output_variants(monkeypatch, path, version_output, versi
 
             def kill(self):
                 pass
+                
+            def __enter__(self):
+                return self
+                
+            def __exit__(self, exc_type, exc_val, exc_tb):
+                self.kill()
 
         c = FakeObj(".".join([str(i) for i in version_output.split()[0].split(".")]))
         return c
