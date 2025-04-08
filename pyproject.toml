@@ -39,7 +39,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-cli = ["click"]
+cli = ["click", "colorama"]
 tests = [
     "pytest",
     "pytest-timeout",

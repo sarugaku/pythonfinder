@@ -1,16 +1,35 @@
 from __future__ import annotations
 
 import argparse
+import os
+import platform
 import sys
 
 from . import __version__
 from .pythonfinder import Finder
 
+# Use colorama for cross-platform color support if available
+try:
+    import colorama
+    colorama.init()
+    HAS_COLORAMA = True
+except ImportError:
+    HAS_COLORAMA = False
+
 
 def colorize(text: str, color: str | None = None, bold: bool = False) -> str:
     """
     Simple function to colorize text for terminal output.
+
+    Uses colorama for cross-platform support if available.
+    Falls back to ANSI escape codes on Unix/Linux systems.
+    On Windows without colorama, returns plain text.
     """
+    # Check if colors should be disabled
+    if "ANSI_COLORS_DISABLED" in os.environ:
+        return text
+
+    # Define ANSI color codes
     colors = {
         "red": "\033[31m",
         "green": "\033[32m",
@@ -25,7 +44,12 @@ def colorize(text: str, color: str | None = None, bold: bool = False) -> str:
     bold_code = "\033[1m" if bold else ""
     color_code = colors.get(color, "")
 
+    # If no color or bold requested, return plain text
     if not color_code and not bold:
+        return text
+
+    # On Windows without colorama, return plain text
+    if platform.system() == "Windows" and not HAS_COLORAMA:
         return text
 
     return f"{bold_code}{color_code}{text}{reset}"
