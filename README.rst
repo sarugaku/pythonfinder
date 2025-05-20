@@ -5,7 +5,7 @@ PythonFinder: Cross Platform Search Tool for Finding Pythons
     :target: https://pypi.org/project/pythonfinder
 
 .. image:: https://img.shields.io/pypi/l/pythonfinder.svg
-    :target: https://pypi.org/project/pythonfinder
+    :target: https://github.com/sarugaku/pythonfinder/blob/master/LICENSE.txt
 
 .. image:: https://img.shields.io/pypi/pyversions/pythonfinder.svg
     :target: https://pypi.org/project/pythonfinder
