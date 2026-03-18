@@ -241,6 +241,19 @@ def test_exists_and_is_accessible():
         ):
             exists_and_is_accessible(Path("/usr/bin/python"))
 
+    class WindowsAccessDenied(OSError):
+        def __init__(self):
+            super().__init__("Access is denied")
+            self.winerror = 5
+            self.errno = None
+
+    with mock.patch("pathlib.Path.exists", side_effect=WindowsAccessDenied()):
+        assert not exists_and_is_accessible(Path("/usr/bin/python"))
+
+    with pytest.raises(OSError):
+        with mock.patch("pathlib.Path.exists", side_effect=OSError(1, "Other error")):
+            exists_and_is_accessible(Path("/usr/bin/python"))
+
 
 def test_is_in_path():
     """Test that is_in_path correctly checks if a path is inside another path."""

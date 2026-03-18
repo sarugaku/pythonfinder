@@ -238,11 +238,14 @@ def exists_and_is_accessible(path: Path) -> bool:
     """
     try:
         return path.exists()
-    except PermissionError as pe:
-        if pe.errno == errno.EACCES:  # Permission denied
+    except PermissionError as error:
+        if error.errno == errno.EACCES or getattr(error, "winerror", None) == 5:
             return False
-        else:
-            raise
+        raise
+    except OSError as error:
+        if error.errno == errno.EACCES or getattr(error, "winerror", None) == 5:
+            return False
+        raise
 
 
 def is_in_path(path: str | Path, parent_path: str | Path) -> bool:
