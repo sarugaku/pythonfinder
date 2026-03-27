@@ -1,0 +1,15 @@
+Fix full-version matching for Python installations discovered via the Windows
+py launcher.
+
+``py --list-paths`` only reports ``major.minor`` (e.g. ``3.11``), so
+``PyLauncherFinder`` was storing ``patch=None`` for every entry.  Callers that
+searched for a specific full version such as ``3.11.9`` (e.g. from
+``python_full_version`` in a Pipfile) received no match because
+``matches(patch=9)`` evaluated ``None == 9 → False``.
+
+The finder now queries each discovered executable for its real version string
+(e.g. ``3.11.9``) via ``get_python_version()`` after the py-launcher lookup,
+so that full-version searches succeed.  If the executable cannot be queried the
+code falls back gracefully to the ``major.minor`` string reported by the py
+launcher.
+
