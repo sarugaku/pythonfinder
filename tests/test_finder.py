@@ -34,6 +34,19 @@ def test_finder_initialization():
         assert finder.windows_finder is not None
 
 
+def test_finder_pyenv_only_initialization():
+    """Test that pyenv_only restricts the finder list to pyenv."""
+    finder = Finder(system=True, global_search=True, pyenv_only=True)
+
+    assert finder.pyenv_only is True
+    assert finder.pyenv_finder is not None
+    assert finder.system_finder is None
+    assert finder.asdf_finder is None
+    assert finder.py_launcher_finder is None
+    assert finder.windows_finder is None
+    assert finder.finders == [finder.pyenv_finder]
+
+
 def test_which_method():
     """Test the which method to find an executable."""
     finder = Finder(system=True, global_search=True)

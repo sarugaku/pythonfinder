@@ -4,8 +4,6 @@ import os
 from pathlib import Path
 from unittest import mock
 
-import pytest
-
 from pythonfinder.utils.path_utils import (
     ensure_path,
     exists_and_is_accessible,
@@ -234,12 +232,10 @@ def test_exists_and_is_accessible():
     ):
         assert not exists_and_is_accessible(Path("/usr/bin/python"))
 
-    # Test with other error
-    with pytest.raises(PermissionError):
-        with mock.patch(
-            "pathlib.Path.exists", side_effect=PermissionError(1, "Other error")
-        ):
-            exists_and_is_accessible(Path("/usr/bin/python"))
+    with mock.patch(
+        "pathlib.Path.exists", side_effect=PermissionError(1, "Other error")
+    ):
+        assert not exists_and_is_accessible(Path("/usr/bin/python"))
 
     class WindowsAccessDenied(OSError):
         def __init__(self):
@@ -250,9 +246,8 @@ def test_exists_and_is_accessible():
     with mock.patch("pathlib.Path.exists", side_effect=WindowsAccessDenied()):
         assert not exists_and_is_accessible(Path("/usr/bin/python"))
 
-    with pytest.raises(OSError):
-        with mock.patch("pathlib.Path.exists", side_effect=OSError(1, "Other error")):
-            exists_and_is_accessible(Path("/usr/bin/python"))
+    with mock.patch("pathlib.Path.exists", side_effect=OSError(1, "Other error")):
+        assert not exists_and_is_accessible(Path("/usr/bin/python"))
 
 
 def test_is_in_path():

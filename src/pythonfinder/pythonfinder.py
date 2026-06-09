@@ -32,6 +32,7 @@ class Finder:
         global_search: bool = True,
         ignore_unsupported: bool = True,
         sort_by_path: bool = False,
+        pyenv_only: bool = False,
     ):
         """
         Initialize a new Finder.
@@ -41,54 +42,63 @@ class Finder:
             system: Whether to include the system Python.
             global_search: Whether to search in the system PATH.
             ignore_unsupported: Whether to ignore unsupported Python versions.
+            pyenv_only: Whether to restrict searches to pyenv-managed Pythons.
         """
         self.path = path
         self.system = system
         self.global_search = global_search
         self.ignore_unsupported = ignore_unsupported
         self.sort_by_path = sort_by_path
+        self.pyenv_only = pyenv_only
 
         # Initialize finders
-        self.system_finder = SystemFinder(
-            paths=[path] if path else None,
-            global_search=global_search,
-            system=system,
-            ignore_unsupported=ignore_unsupported,
-        )
-
         self.pyenv_finder = PyenvFinder(
             ignore_unsupported=ignore_unsupported,
         )
 
-        self.asdf_finder = AsdfFinder(
-            ignore_unsupported=ignore_unsupported,
-        )
-
-        # Initialize Windows-specific finders if on Windows
-        self.py_launcher_finder = None
-        self.windows_finder = None
-        if os.name == "nt":
-            self.py_launcher_finder = PyLauncherFinder(
+        if pyenv_only:
+            self.system_finder = None
+            self.asdf_finder = None
+            self.py_launcher_finder = None
+            self.windows_finder = None
+            self.finders: list[BaseFinder] = [self.pyenv_finder]
+        else:
+            self.system_finder = SystemFinder(
+                paths=[path] if path else None,
+                global_search=global_search,
+                system=system,
                 ignore_unsupported=ignore_unsupported,
             )
-            self.windows_finder = WindowsRegistryFinder(
+
+            self.asdf_finder = AsdfFinder(
                 ignore_unsupported=ignore_unsupported,
             )
 
-        # List of all finders
-        self.finders: list[BaseFinder] = [
-            self.pyenv_finder,
-            self.asdf_finder,
-        ]
+            # Initialize Windows-specific finders if on Windows
+            self.py_launcher_finder = None
+            self.windows_finder = None
+            if os.name == "nt":
+                self.py_launcher_finder = PyLauncherFinder(
+                    ignore_unsupported=ignore_unsupported,
+                )
+                self.windows_finder = WindowsRegistryFinder(
+                    ignore_unsupported=ignore_unsupported,
+                )
 
-        # Add Windows-specific finders if on Windows
-        if self.py_launcher_finder:
-            self.finders.append(self.py_launcher_finder)
-        if self.windows_finder:
-            self.finders.append(self.windows_finder)
-            
-        # Add system finder last
-        self.finders.append(self.system_finder)
+            # List of all finders
+            self.finders: list[BaseFinder] = [
+                self.pyenv_finder,
+                self.asdf_finder,
+            ]
+
+            # Add Windows-specific finders if on Windows
+            if self.py_launcher_finder:
+                self.finders.append(self.py_launcher_finder)
+            if self.windows_finder:
+                self.finders.append(self.windows_finder)
+
+            # Add system finder last
+            self.finders.append(self.system_finder)
 
     def which(self, executable: str) -> Path | None:
         """

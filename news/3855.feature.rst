@@ -1,0 +1,1 @@
+Add ``Finder(pyenv_only=True)`` to restrict discovery to pyenv-managed Python installations.
