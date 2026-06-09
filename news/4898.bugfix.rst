@@ -1,1 +1,0 @@
-Treat any ``Path.exists()`` ``OSError`` as an inaccessible path during discovery, allowing FUSE and network mount failures to be skipped cleanly.

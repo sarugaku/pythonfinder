@@ -1,3 +1,81 @@
+3.0.4 (2026-06-09)
+==================
+
+Features & Improvements
+-----------------------
+
+- Add ``Finder(pyenv_only=True)`` to restrict discovery to pyenv-managed Python installations.  `#3855 <https://github.com/sarugaku/pythonfinder/issues/3855>`_
+    
+
+Bug Fixes
+---------
+
+- * Convert away from pydantic to reduce complexity; simplify the path manipulation logics to use pathlib.  `#157 <https://github.com/sarugaku/pythonfinder/issues/157>`_
+    
+- Fix full-version matching for Python installations discovered via the Windows
+  py launcher.
+
+  ``py --list-paths`` only reports ``major.minor`` (e.g. ``3.11``), so
+  ``PyLauncherFinder`` was storing ``patch=None`` for every entry.  Callers that
+  searched for a specific full version such as ``3.11.9`` (e.g. from
+  ``python_full_version`` in a Pipfile) received no match because
+  ``matches(patch=9)`` evaluated ``None == 9 → False``.
+
+  The finder now queries each discovered executable for its real version string
+  (e.g. ``3.11.9``) via ``get_python_version()`` after the py-launcher lookup,
+  so that full-version searches succeed.  If the executable cannot be queried the
+  code falls back gracefully to the ``major.minor`` string reported by the py
+  launcher.  `#158 <https://github.com/sarugaku/pythonfinder/issues/158>`_
+    
+- Treat any ``Path.exists()`` ``OSError`` as an inaccessible path during discovery, allowing FUSE and network mount failures to be skipped cleanly.  `#4898 <https://github.com/sarugaku/pythonfinder/issues/4898>`_
+    
+- Refactor pythonfinder for improved efficiency and PEP 514 support
+  Summary
+
+  This PR completely refactors the pythonfinder module to improve efficiency, reduce logical errors, and fix support for PEP 514 (Python registration in the Windows registry). The refactoring replaces the complex object hierarchy with a more modular, composition-based approach that is easier to maintain and extend.
+  Motivation
+
+  The original pythonfinder implementation had several issues:
+
+      Complex object wrapping with paths as objects, leading to excessive recursion
+      Tight coupling between classes making the code difficult to follow and maintain
+      Broken Windows registry support (PEP 514)
+      Performance issues due to redundant path scanning and inefficient caching
+
+  Changes
+
+      Architecture: Replaced inheritance-heavy design with a composition-based approach using specialized finders
+      Data Model: Simplified the data model with a clean PythonInfo dataclass
+      Windows Support: Implemented proper PEP 514 support for Windows registry
+      Performance: Improved caching and reduced redundant operations
+      Error Handling: Added more specific exceptions and better error handling
+
+  Features
+
+  The refactored implementation continues to support all required features:
+
+      System and user PATH searches
+      pyenv installations
+      asdf installations
+      Windows registry (PEP 514) - now working correctly
+
+  Implementation Details
+
+  The new implementation is organized into three main components:
+
+      Finders: Specialized classes for finding Python in different locations
+          SystemFinder: Searches in the system PATH
+          PyenvFinder: Searches in pyenv installations
+          AsdfFinder: Searches in asdf installations
+          WindowsRegistryFinder: Implements PEP 514 for Windows registry
+
+      Models: Simple data classes for storing Python information
+          PythonInfo: Stores information about a Python installation
+
+      Utils: Utility functions for path and version handling
+          path_utils.py: Path-related utility functions
+          version_utils.py: Version-related utility functions  `#rewrite-3.0 <https://github.com/sarugaku/pythonfinder/issues/rewrite-3.0>`_
+    
 2.0.6 (2023-10-19)
 ==================
 
